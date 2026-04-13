@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -11,33 +11,62 @@ export class FeedbackService {
 
   constructor(private http: HttpClient) {}
 
+  private getToken(): string {
+    return localStorage.getItem('token')
+      || localStorage.getItem('authToken')
+      || '';
+  }
+
+  private getAuthHeaders(): HttpHeaders {
+    const token = this.getToken();
+
+    console.log('TOKEN ENVOYÉ =', token);
+
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+  }
+
   getAll(): Observable<any[]> {
-    return this.http.get<any[]>(this.apiUrl);
+    return this.http.get<any[]>(this.apiUrl, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   getByWatchParty(watchPartyId: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/watchparty/${watchPartyId}`);
+    return this.http.get<any[]>(`${this.apiUrl}/watchparty/${watchPartyId}`, {
+      headers: this.getAuthHeaders()
+    });
   }
 
-  addFeedback(data: { note: number; commentaire: string; watchPartyId: string; clientId?: string }): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/add`, data);
+  addFeedback(data: { note: number; commentaire: string; watchPartyId: string }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/add`, data, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   updateFeedback(id: string, data: { note: number; commentaire: string }): Observable<any> {
-    return this.http.put<any>(`${this.apiUrl}/${id}`, data);
+    return this.http.put<any>(`${this.apiUrl}/${id}`, data, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   deleteFeedback(id: string): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/${id}`);
+    return this.http.delete<any>(`${this.apiUrl}/${id}`, {
+      headers: this.getAuthHeaders()
+    });
   }
 
-  likeFeedback(id: string, userId?: string): Observable<any> {
-    const query = userId ? `?userId=${encodeURIComponent(userId)}` : '';
-    return this.http.post<any>(`${this.apiUrl}/${id}/like${query}`, {});
+  likeFeedback(id: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${id}/like`, {}, {
+      headers: this.getAuthHeaders()
+    });
   }
 
-  dislikeFeedback(id: string, userId?: string): Observable<any> {
-    const query = userId ? `?userId=${encodeURIComponent(userId)}` : '';
-    return this.http.post<any>(`${this.apiUrl}/${id}/dislike${query}`, {});
+  dislikeFeedback(id: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${id}/dislike`, {}, {
+      headers: this.getAuthHeaders()
+    });
   }
 }

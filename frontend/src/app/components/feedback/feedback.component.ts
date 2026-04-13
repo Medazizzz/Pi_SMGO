@@ -1,12 +1,17 @@
-import { AfterViewChecked, Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, ViewChild } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnChanges,
+  OnInit,
+  OnDestroy,
+  SimpleChanges,
+  inject
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FeedbackService } from '../../services/feedback.service';
 import { WatchpartyService } from '../../services/watchparty.service';
-import { Chart, registerables } from 'chart.js';
-
-Chart.register(...registerables);
 
 @Component({
   selector: 'app-feedback',
@@ -15,128 +20,101 @@ Chart.register(...registerables);
   templateUrl: './feedback.component.html',
   styleUrls: ['./feedback.component.css']
 })
-export class FeedbackComponent implements OnInit, OnChanges, AfterViewChecked {
-
+export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
   @Input() mode: 'user' | 'admin' = 'user';
-  @ViewChild('ratingChart') ratingChartRef!: ElementRef<HTMLCanvasElement>;
 
   note: number | null = null;
-  commentaire = '';
-  watchPartyId = '';
+  commentaire: string = '';
+  watchPartyId: string = '';
+
   feedbacks: any[] = [];
+  allFeedbacks: any[] = [];
   watchParties: any[] = [];
-  errorMessage = '';
-  successMessage = '';
+  selectedWatchParty: any = null;
+
+  errorMessage: string = '';
+  successMessage: string = '';
 
   editingId: string | null = null;
   editNote: number | null = null;
-  editCommentaire = '';
+  editCommentaire: string = '';
 
   stars: number[] = [1, 2, 3, 4, 5];
-  hoveredStar = 0;
-  editHoveredStar = 0;
+  hoveredStar: number = 0;
+  editHoveredStar: number = 0;
 
-  isParticipant = false;
-  currentUserId = '';
+  currentUserId: string = '';
 
-  statsTotal = 0;
-  statsMoyenne = 0;
-  statsMeilleure = 0;
-  statsPire = 0;
-  statsRepartition: number[] = [0, 0, 0, 0, 0];
-  starsArray = '';
+  private feedbackPollTimer: ReturnType<typeof setInterval> | null = null;
 
-  private chartInstance: Chart | null = null;
-  private chartRendered = false;
-  private readonly userStorageKey = 'wp_current_user_id';
-
-  constructor(
-    private feedbackService: FeedbackService,
-    private watchPartyService: WatchpartyService,
-    private router: Router
-  ) {}
+  private feedbackService = inject(FeedbackService);
+  private watchPartyService = inject(WatchpartyService);
+  private router = inject(Router);
 
   ngOnInit(): void {
-    this.mode = this.router.url.includes('/admin/') ? 'admin' : 'user';
-
-    this.currentUserId = this.resolveCurrentUserId();
-
-    if (this.mode === 'admin') {
-      this.loadFeedbacks();
-    } else {
-      this.loadWatchParties();
-    }
+    this.resolveModeFromRoute();
+    this.currentUserId = this.extractUserIdFromToken();
+    this.initializePage();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['mode']?.currentValue === 'admin') {
-      this.loadFeedbacks();
-    }
-    if (changes['mode']?.currentValue === 'user') {
-      this.loadWatchParties();
+    if (changes['mode']) {
+      this.resolveModeFromRoute();
+      this.initializePage();
     }
   }
 
-  ngAfterViewChecked(): void {
-    if (this.statsTotal > 0 && !this.chartRendered && this.ratingChartRef?.nativeElement) {
-      this.chartRendered = true;
-      this.renderChart();
+  ngOnDestroy(): void {
+    this.stopFeedbackPolling();
+  }
+
+  private resolveModeFromRoute(): void {
+    this.mode = this.router.url.includes('/admin/') ? 'admin' : 'user';
+  }
+
+  private initializePage(): void {
+    this.stopFeedbackPolling();
+    this.resetMessages();
+    this.loadWatchParties();
+    this.loadAllFeedbacks();
+
+    if (this.mode === 'user') {
+      this.startFeedbackPolling();
     }
   }
 
-  private resolveCurrentUserId(): string {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        if (parsed?.userId) {
-          return String(parsed.userId);
-        }
-      } catch {
-        // Continue with token/local fallback.
-      }
-    }
+  private resetMessages(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
 
+  private extractUserIdFromToken(): string {
     try {
-      const token = localStorage.getItem('token') || localStorage.getItem('authToken') || '';
-      if (token) {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const tokenUserId = payload.userId || payload.id || payload.sub;
-        if (tokenUserId) {
-          return String(tokenUserId);
-        }
+      const token =
+        localStorage.getItem('token') ||
+        localStorage.getItem('authToken') ||
+        '';
+
+      if (!token) {
+        return '';
       }
+
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return String(payload.sub || payload.userId || payload.id || payload._id || '');
     } catch {
-      // Fallback handled below.
+      return '';
     }
-
-    const existing = localStorage.getItem(this.userStorageKey);
-    if (existing && existing.trim()) {
-      return existing;
-    }
-
-    const generated = `user_${Math.random().toString(36).slice(2, 8)}`;
-    localStorage.setItem(this.userStorageKey, generated);
-    return generated;
-  }
-
-  loadFeedbacks(): void {
-    this.feedbackService.getAll().subscribe({
-      next: (data) => {
-        this.feedbacks = data;
-        this.errorMessage = '';
-        this.computeStats();
-      },
-      error: () => {
-        this.errorMessage = 'Unable to load feedbacks.';
-      }
-    });
   }
 
   loadWatchParties(): void {
     this.watchPartyService.getAll().subscribe({
       next: (data) => {
-        this.watchParties = data;
+        this.watchParties = (data || []).filter((wp: any) => wp?.statut !== 'CANCELLED');
+
+        if (this.watchPartyId) {
+          this.selectedWatchParty =
+            this.watchParties.find((w) => w.id === this.watchPartyId) || null;
+        }
       },
       error: () => {
         this.watchParties = [];
@@ -144,102 +122,112 @@ export class FeedbackComponent implements OnInit, OnChanges, AfterViewChecked {
     });
   }
 
-  onWatchPartyChange(): void {
-    this.isParticipant = false;
-    this.feedbacks = [];
-    this.errorMessage = '';
-
-    if (!this.watchPartyId) {
-      return;
-    }
-
-    this.feedbackService.getByWatchParty(this.watchPartyId).subscribe({
+  loadAllFeedbacks(): void {
+    this.feedbackService.getAll().subscribe({
       next: (data) => {
-        this.feedbacks = data;
-        this.computeStats();
-      },
-      error: () => {
-        this.errorMessage = 'Unable to load watchparty feedbacks.';
-      }
-    });
+        this.allFeedbacks = data || [];
 
-    this.watchPartyService.getParticipants(this.watchPartyId).subscribe({
-      next: (participants: string[]) => {
-        this.isParticipant = participants.includes(this.currentUserId);
-      },
-      error: () => {
-        this.isParticipant = false;
-      }
-    });
-  }
+        if (this.mode === 'admin') {
+          this.feedbacks = [...this.allFeedbacks];
+          return;
+        }
 
-  submit(form: NgForm): void {
-    this.successMessage = '';
-    this.errorMessage = '';
-
-    if (!this.watchPartyId) {
-      this.errorMessage = 'Please select a WatchParty first.';
-      return;
-    }
-
-    if (!this.isParticipant) {
-      this.errorMessage = 'You must join this WatchParty before adding feedback.';
-      return;
-    }
-
-    if (form.invalid || !this.note) {
-      form.control.markAllAsTouched();
-      this.errorMessage = 'Please correct the form errors.';
-      return;
-    }
-
-    const payload = {
-      note: this.note!,
-      commentaire: this.commentaire.trim(),
-      watchPartyId: this.watchPartyId.trim(),
-      clientId: this.currentUserId
-    };
-
-    this.feedbackService.addFeedback(payload).subscribe({
-      next: () => {
-        this.successMessage = 'Feedback added successfully.';
-        form.resetForm();
-        this.note = null;
-        this.hoveredStar = 0;
-        this.commentaire = '';
-        this.watchPartyId = '';
-        this.isParticipant = false;
-        this.feedbacks = [];
-      },
-      error: () => {
-        this.errorMessage = 'Failed to add feedback.';
-      }
-    });
-  }
-
-  vote(feedbackId: string, type: 'like' | 'dislike'): void {
-    const call = type === 'like'
-      ? this.feedbackService.likeFeedback(feedbackId, this.currentUserId)
-      : this.feedbackService.dislikeFeedback(feedbackId, this.currentUserId);
-
-    call.subscribe({
-      next: (updated) => {
-        const index = this.feedbacks.findIndex(f => f.id === feedbackId);
-        if (index !== -1) {
-          this.feedbacks[index] = updated;
+        if (this.watchPartyId) {
+          this.feedbacks = this.allFeedbacks.filter(
+            (f) => f.watchPartyId === this.watchPartyId
+          );
+        } else {
+          this.feedbacks = [...this.allFeedbacks];
         }
       },
       error: () => {
-        this.errorMessage = 'Failed to register vote.';
+        this.feedbacks = [];
+        this.allFeedbacks = [];
+        this.errorMessage = 'Impossible de charger les feedbacks.';
       }
     });
   }
 
+  onWatchPartyChange(): void {
+    this.successMessage = '';
+    this.errorMessage = '';
+    this.note = null;
+    this.commentaire = '';
+
+    this.selectedWatchParty =
+      this.watchParties.find((w) => w.id === this.watchPartyId) || null;
+
+    if (!this.watchPartyId) {
+      this.feedbacks = [...this.allFeedbacks];
+      return;
+    }
+
+    this.feedbacks = this.allFeedbacks.filter(
+      (f) => f.watchPartyId === this.watchPartyId
+    );
+  }
+
+  private startFeedbackPolling(): void {
+    this.stopFeedbackPolling();
+
+    this.feedbackPollTimer = setInterval(() => {
+      this.loadAllFeedbacks();
+    }, 3000);
+  }
+
+  private stopFeedbackPolling(): void {
+    if (this.feedbackPollTimer) {
+      clearInterval(this.feedbackPollTimer);
+      this.feedbackPollTimer = null;
+    }
+  }
+
+  isParticipantOfSelectedWatchParty(): boolean {
+    if (!this.selectedWatchParty || !this.currentUserId) {
+      return false;
+    }
+
+    const participants = Array.isArray(this.selectedWatchParty.participantIds)
+      ? this.selectedWatchParty.participantIds
+      : [];
+
+    const isParticipant = participants.includes(this.currentUserId);
+    const isHost =
+      this.selectedWatchParty.clientId === this.currentUserId ||
+      this.selectedWatchParty.adminId === this.currentUserId;
+
+    return isParticipant || isHost;
+  }
+
+  canCreateFeedback(): boolean {
+    return !!this.watchPartyId && this.isParticipantOfSelectedWatchParty();
+  }
+
+  hasUserAlreadyPosted(): boolean {
+    if (!this.watchPartyId) {
+      return false;
+    }
+
+    return this.allFeedbacks.some(
+      (f) => f.watchPartyId === this.watchPartyId && f.clientId === this.currentUserId
+    );
+  }
+
+  canSubmitFeedback(): boolean {
+    return this.canCreateFeedback() && !this.hasUserAlreadyPosted();
+  }
+
   setNote(star: number): void {
+    if (!this.canSubmitFeedback()) {
+      return;
+    }
     this.note = star;
   }
 
   hoverStar(star: number): void {
+    if (!this.canSubmitFeedback()) {
+      return;
+    }
     this.hoveredStar = star;
   }
 
@@ -267,73 +255,70 @@ export class FeedbackComponent implements OnInit, OnChanges, AfterViewChecked {
     return star <= (this.editHoveredStar || this.editNote || 0);
   }
 
-  computeStats(): void {
-    this.chartRendered = false;
+  vote(feedbackId: string, type: 'like' | 'dislike'): void {
+    const call =
+      type === 'like'
+        ? this.feedbackService.likeFeedback(feedbackId)
+        : this.feedbackService.dislikeFeedback(feedbackId);
 
-    if (this.feedbacks.length === 0) {
-      this.statsTotal = 0;
-      this.statsMoyenne = 0;
-      this.statsMeilleure = 0;
-      this.statsPire = 0;
-      this.statsRepartition = [0, 0, 0, 0, 0];
-      this.starsArray = '';
-      return;
-    }
+    call.subscribe({
+      next: (updated) => {
+        const indexAll = this.allFeedbacks.findIndex((f) => f.id === feedbackId);
+        if (indexAll !== -1) {
+          this.allFeedbacks[indexAll] = updated;
+        }
 
-    const notes = this.feedbacks.map((f) => f.note);
-    this.statsTotal = this.feedbacks.length;
-    const sum = notes.reduce((a, b) => a + b, 0);
-    this.statsMoyenne = Number((sum / notes.length).toFixed(1));
-    this.statsMeilleure = Math.max(...notes);
-    this.statsPire = Math.min(...notes);
-    this.statsRepartition = [1, 2, 3, 4, 5].map((n) => notes.filter((v) => v === n).length);
-    const rounded = Math.round(this.statsMoyenne);
-    this.starsArray = '★'.repeat(rounded) + '☆'.repeat(5 - rounded);
+        const indexVisible = this.feedbacks.findIndex((f) => f.id === feedbackId);
+        if (indexVisible !== -1) {
+          this.feedbacks[indexVisible] = updated;
+        }
+      },
+      error: () => {
+        this.errorMessage = 'Erreur lors du vote.';
+      }
+    });
   }
 
-  renderChart(): void {
-    const canvas = this.ratingChartRef?.nativeElement;
-    if (!canvas) {
+  submit(form: NgForm): void {
+    this.successMessage = '';
+    this.errorMessage = '';
+
+    if (!this.canCreateFeedback()) {
+      this.errorMessage = 'Seuls les membres de cette WatchParty peuvent ajouter un feedback.';
       return;
     }
 
-    if (this.chartInstance) {
-      this.chartInstance.destroy();
-      this.chartInstance = null;
+    if (this.hasUserAlreadyPosted()) {
+      this.errorMessage = 'Vous avez déjà ajouté un feedback pour cette WatchParty.';
+      return;
     }
 
-    this.chartInstance = new Chart(canvas, {
-      type: 'bar',
-      data: {
-        labels: ['1 ★', '2 ★', '3 ★', '4 ★', '5 ★'],
-        datasets: [
-          {
-            data: this.statsRepartition,
-            backgroundColor: ['#E24B4A', '#EF9F27', '#888780', '#1D9E75', '#8B5CF6'],
-            borderRadius: 6,
-            borderWidth: 0
-          }
-        ]
+    if (form.invalid || !this.note || !this.watchPartyId || !this.commentaire.trim()) {
+      form.control.markAllAsTouched();
+      this.errorMessage = 'Veuillez corriger les erreurs du formulaire.';
+      return;
+    }
+
+    this.feedbackService.addFeedback({
+      note: this.note,
+      commentaire: this.commentaire.trim(),
+      watchPartyId: this.watchPartyId
+    }).subscribe({
+      next: () => {
+        this.successMessage = 'Feedback ajouté avec succès.';
+        this.note = null;
+        this.hoveredStar = 0;
+        this.commentaire = '';
+        form.resetForm();
+
+        this.watchPartyId = '';
+        this.selectedWatchParty = null;
+
+        this.loadAllFeedbacks();
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { stepSize: 1, color: '#9CA3AF' },
-            grid: { color: 'rgba(139,92,246,0.1)' }
-          },
-          x: {
-            ticks: { color: '#9CA3AF' },
-            grid: { display: false }
-          }
-        }
+      error: (err) => {
+        this.errorMessage =
+          err?.error?.error || err?.error?.message || 'Erreur lors de l’ajout.';
       }
     });
   }
@@ -358,47 +343,55 @@ export class FeedbackComponent implements OnInit, OnChanges, AfterViewChecked {
     this.successMessage = '';
     this.errorMessage = '';
 
-    if (this.editNote === null || this.editNote < 1 || this.editNote > 5) {
-      this.errorMessage = 'Rating must be between 1 and 5.';
+    if (!this.editNote || this.editNote < 1 || this.editNote > 5) {
+      this.errorMessage = 'La note doit être entre 1 et 5.';
       return;
     }
 
-    if (!this.editCommentaire || this.editCommentaire.trim().length < 5) {
-      this.errorMessage = 'Comment must be at least 5 characters.';
+    if (!this.editCommentaire || this.editCommentaire.trim().length < 3) {
+      this.errorMessage = 'Le commentaire doit faire au moins 3 caractères.';
       return;
     }
 
-    const payload = {
+    this.feedbackService.updateFeedback(id, {
       note: this.editNote,
       commentaire: this.editCommentaire.trim()
-    };
-
-    this.feedbackService.updateFeedback(id, payload).subscribe({
+    }).subscribe({
       next: () => {
-        this.successMessage = 'Feedback updated successfully.';
+        this.successMessage = 'Feedback modifié avec succès.';
         this.cancelEdit();
-        this.loadFeedbacks();
+        this.loadAllFeedbacks();
       },
-      error: () => {
-        this.errorMessage = 'Failed to update feedback.';
+      error: (err) => {
+        this.errorMessage =
+          err?.error?.error || err?.error?.message || 'Erreur lors de la modification.';
       }
     });
   }
 
   deleteFeedback(id: string): void {
-    this.successMessage = '';
-    this.errorMessage = '';
-
-    if (!confirm('Delete this feedback?')) return;
+    if (!confirm('Supprimer ce feedback ?')) {
+      return;
+    }
 
     this.feedbackService.deleteFeedback(id).subscribe({
       next: () => {
-        this.successMessage = 'Feedback deleted successfully.';
-        this.loadFeedbacks();
+        this.successMessage = 'Feedback supprimé avec succès.';
+        this.loadAllFeedbacks();
       },
-      error: () => {
-        this.errorMessage = 'Failed to delete feedback.';
+      error: (err) => {
+        this.errorMessage =
+          err?.error?.error || err?.error?.message || 'Erreur lors de la suppression.';
       }
     });
+  }
+
+  getWatchPartyTitle(watchPartyId: string): string {
+    const wp = this.watchParties.find((w) => w.id === watchPartyId);
+    return wp?.titre || watchPartyId;
+  }
+
+  isOwner(feedback: any): boolean {
+    return feedback?.clientId === this.currentUserId;
   }
 }

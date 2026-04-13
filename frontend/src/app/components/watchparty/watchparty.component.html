@@ -1,14 +1,12 @@
 <div class="w-full text-white">
 
+  <!-- ===== PENDING JOIN REQUESTS (host notifications) ===== -->
   <div *ngIf="mode === 'user' && pendingRequests.length > 0"
        class="fixed top-6 right-6 z-50 flex flex-col gap-3 max-w-sm">
     <div *ngFor="let req of pendingRequests"
-         class="bg-[#111827] border border-[#8B5CF6]/50 rounded-2xl p-4 shadow-2xl animate-pulse-once">
-
+         class="bg-[#111827] border border-[#8B5CF6]/50 rounded-2xl p-4 shadow-2xl">
       <div class="flex items-center gap-3 mb-3">
-        <div class="w-10 h-10 rounded-full bg-[#8B5CF6]/20 border border-[#8B5CF6] flex items-center justify-center text-lg shrink-0">
-          👤
-        </div>
+        <div class="w-10 h-10 rounded-full bg-[#8B5CF6]/20 border border-[#8B5CF6] flex items-center justify-center text-lg shrink-0">👤</div>
         <div>
           <p class="text-white font-semibold text-sm">Join request</p>
           <p class="text-gray-400 text-xs">
@@ -17,41 +15,76 @@
           </p>
         </div>
       </div>
-
       <div class="flex gap-2">
-        <button
-          (click)="approveRequest(req)"
-          class="flex-1 rounded-xl bg-green-600 hover:bg-green-700 px-3 py-2 text-white text-sm font-semibold transition flex items-center justify-center gap-1">
-          Approve
-        </button>
-        <button
-          (click)="rejectRequest(req)"
-          class="flex-1 rounded-xl bg-red-600 hover:bg-red-700 px-3 py-2 text-white text-sm font-semibold transition flex items-center justify-center gap-1">
-          Reject
-        </button>
+        <button (click)="approveRequest(req)" class="flex-1 rounded-xl bg-green-600 hover:bg-green-700 px-3 py-2 text-white text-sm font-semibold transition">✅ Approve</button>
+        <button (click)="rejectRequest(req)" class="flex-1 rounded-xl bg-red-600 hover:bg-red-700 px-3 py-2 text-white text-sm font-semibold transition">❌ Reject</button>
       </div>
+    </div>
+    <div *ngIf="newRequestToast" class="bg-[#111827] border border-[#34d399]/50 rounded-2xl p-4 shadow-2xl text-sm text-[#a7f3d0]">
+      New join request received. Check the list to approve or reject.
     </div>
   </div>
 
+  <!-- ===== WAITING FOR APPROVAL OVERLAY ===== -->
+  <div *ngIf="waitingForApproval"
+       class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+    <div class="bg-[#111827] border border-[#8B5CF6]/30 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+      <div class="relative w-20 h-20 mx-auto mb-5">
+        <div class="absolute inset-0 rounded-full border-4 border-[#8B5CF6]/20"></div>
+        <div class="absolute inset-0 rounded-full border-4 border-t-[#8B5CF6] animate-spin"></div>
+        <div class="absolute inset-0 flex items-center justify-center text-3xl">⏳</div>
+      </div>
+      <h2 class="text-xl font-bold text-white mb-2">Waiting for approval</h2>
+      <p class="text-gray-400 text-sm mb-5">Your join request was sent to the session host. Please wait…</p>
+      <div *ngIf="waitingWatchParty" class="bg-[#0B0E14] border border-[#8B5CF6]/20 rounded-xl p-4 mb-5 text-left">
+        <p class="font-semibold text-white text-sm mb-1">{{ waitingWatchParty.titre }}</p>
+        <p class="text-xs text-gray-500 font-mono">{{ waitingWatchParty.contenuId }}</p>
+        <div class="flex items-center gap-2 mt-2 text-xs text-gray-400">
+          <span>👥</span>
+          <span>{{ waitingWatchParty.participantIds?.length || 0 }} participant(s)</span>
+        </div>
+      </div>
+      <div class="flex items-center justify-center gap-2 text-sm mb-5">
+        <span class="w-2 h-2 rounded-full bg-[#8B5CF6] animate-pulse"></span>
+        <span class="w-2 h-2 rounded-full bg-[#8B5CF6] animate-pulse" style="animation-delay: 0.2s"></span>
+        <span class="w-2 h-2 rounded-full bg-[#8B5CF6] animate-pulse" style="animation-delay: 0.4s"></span>
+        <span class="ml-2 text-gray-400">Awaiting host response...</span>
+      </div>
+      <button (click)="cancelJoinRequest()"
+        class="w-full rounded-xl bg-[#1C1F35] border border-[#8B5CF6]/20 px-6 py-3 text-gray-300 font-semibold hover:bg-[#252847] transition text-sm">
+        Cancel Request
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== REJECTED TOAST ===== -->
+  <div *ngIf="joinRejected"
+       class="fixed bottom-6 right-6 z-50 bg-red-500/20 border border-red-500/30 rounded-2xl px-5 py-4 text-red-300 text-sm font-medium shadow-xl max-w-xs">
+    🚫 Your join request was rejected by the host.
+  </div>
+
+  <!-- ===== SUCCESS TOAST ===== -->
+  <div *ngIf="successMessage"
+       class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-green-500/20 border border-green-500/30 rounded-2xl px-6 py-3 text-green-300 text-sm font-medium shadow-xl">
+    ✅ {{ successMessage }}
+  </div>
+
+  <!-- ===== USER MODE ===== -->
   <div *ngIf="mode === 'user'" class="max-w-5xl mx-auto mt-8">
+
+    <!-- CREATE FORM -->
     <div class="bg-[#111827] border border-[#8B5CF6]/20 rounded-2xl shadow-lg p-8 mb-8">
       <h2 class="text-3xl font-bold mb-2 text-white">Create a WatchParty</h2>
       <p class="text-gray-400 mb-6">Start a new session and invite friends</p>
 
-      <div *ngIf="errorMessage"
-           class="mb-4 rounded-lg bg-red-500/20 border border-red-500/30 px-4 py-3 text-red-300 flex items-center gap-2">
-        {{ errorMessage }}
+      <div *ngIf="errorMessage" class="mb-4 rounded-lg bg-red-500/20 border border-red-500/30 px-4 py-3 text-red-300 flex items-center gap-2">
+        ⚠️ {{ errorMessage }}
       </div>
 
       <form #watchPartyForm="ngForm" (ngSubmit)="submit(watchPartyForm)" class="space-y-5" novalidate>
         <div>
           <label class="block mb-2 text-sm font-medium text-gray-300">Title</label>
-          <input
-            type="text"
-            [(ngModel)]="titre"
-            #titreCtrl="ngModel"
-            required
-            minlength="3"
+          <input type="text" name="titre" [(ngModel)]="titre" #titreCtrl="ngModel" required minlength="3"
             placeholder="e.g. Movie Night"
             class="w-full rounded-xl border border-[#8B5CF6]/20 bg-[#0B0E14] px-4 py-3 text-white outline-none focus:border-[#8B5CF6] transition" />
           <div *ngIf="titreCtrl.invalid && titreCtrl.touched" class="mt-2 text-sm text-red-400">
@@ -61,55 +94,62 @@
         </div>
 
         <div>
-          <label class="block mb-2 text-sm font-medium text-gray-300">Content ID</label>
-          <input
-            type="text"
-            [(ngModel)]="contenuId"
-            #contenuIdCtrl="ngModel"
-            required
-            placeholder="e.g. film113"
-            class="w-full rounded-xl border border-[#8B5CF6]/20 bg-[#0B0E14] px-4 py-3 text-white outline-none focus:border-[#8B5CF6] transition" />
-          <div *ngIf="contenuIdCtrl.invalid && contenuIdCtrl.touched" class="mt-2 text-sm text-red-400">
-            <div *ngIf="contenuIdCtrl.errors?.['required']">Content ID is required.</div>
+          <label class="block mb-2 text-sm font-medium text-gray-300">Content</label>
+          <div style="position: relative;">
+            <input type="text" name="contentSearch" [(ngModel)]="searchQuery" (input)="searchContents()" (blur)="hideDropdownDelayed()"
+              placeholder="Search content by name..." autocomplete="off"
+              class="w-full rounded-xl border border-[#8B5CF6]/20 bg-[#0B0E14] px-4 py-3 text-white outline-none focus:border-[#8B5CF6] transition" />
+            <ul *ngIf="showDropdown && filteredContents.length > 0"
+                class="absolute left-0 right-0 mt-1 rounded-xl border border-[#8B5CF6]/30 bg-[#111827] shadow-2xl z-50 overflow-hidden">
+              <li *ngFor="let c of filteredContents" (mousedown)="selectContent(c)"
+                  class="px-4 py-3 cursor-pointer hover:bg-[#8B5CF6]/20 transition flex items-center justify-between">
+                <span class="text-white font-medium">{{ c.title }}</span>
+                <span class="text-xs text-[#8B5CF6] bg-[#8B5CF6]/10 px-2 py-1 rounded-full">{{ c.contentType || 'Content' }}</span>
+              </li>
+            </ul>
+            <div *ngIf="showDropdown && filteredContents.length === 0 && searchQuery.length >= 2"
+                 class="absolute left-0 right-0 mt-1 rounded-xl border border-[#8B5CF6]/20 bg-[#111827] px-4 py-3 text-gray-400 text-sm z-50">
+              No content found for "{{ searchQuery }}"
+            </div>
           </div>
+          <div *ngIf="selectedContent" class="mt-2 flex items-center gap-2 text-green-400 text-sm">
+            <span>✅</span>
+            <span>Selected: <strong>{{ selectedContent.title }}</strong></span>
+            <button type="button" (click)="clearContent()" class="text-gray-500 hover:text-red-400 ml-2 transition">✕</button>
+          </div>
+          <input type="hidden" name="contenuId" [(ngModel)]="contenuId" required />
+          <div *ngIf="!selectedContent && watchPartyForm.submitted" class="mt-2 text-sm text-red-400">Please select a content.</div>
         </div>
 
-        <button
-          type="submit"
-          [disabled]="watchPartyForm.invalid"
+        <button type="submit" [disabled]="watchPartyForm.invalid || !selectedContent"
           class="rounded-xl bg-[#8B5CF6] px-8 py-3 font-semibold text-white transition hover:bg-[#7C3AED] disabled:opacity-40 disabled:cursor-not-allowed">
           Create WatchParty
         </button>
       </form>
     </div>
 
-    <div *ngIf="createdWatchPartyId"
-         class="mb-8 rounded-2xl border border-green-500/30 bg-green-500/10 p-6 shadow-lg">
-
+    <!-- INVITE LINK BANNER -->
+    <div *ngIf="createdWatchPartyId" class="mb-8 rounded-2xl border border-green-500/30 bg-green-500/10 p-6 shadow-lg">
       <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-3">
-          <div>
-            <h3 class="text-xl font-bold text-green-300">WatchParty created successfully</h3>
-            <p class="text-sm text-gray-400">Share this link, guests will wait for your approval.</p>
-          </div>
+        <div>
+          <h3 class="text-xl font-bold text-green-300">WatchParty created successfully</h3>
+          <p class="text-sm text-gray-400">Share this link, guests will wait for your approval.</p>
         </div>
         <button (click)="closeInvite()" class="text-gray-400 hover:text-white transition text-xl font-bold">✕</button>
       </div>
-
       <div class="flex items-center gap-3 bg-[#0B0E14] border border-[#8B5CF6]/30 rounded-xl px-4 py-3">
         <span class="text-[#8B5CF6] text-lg">🔗</span>
         <span class="flex-1 text-sm text-gray-300 font-mono break-all">{{ inviteLink }}</span>
-        <button
-          (click)="copyLink()"
+        <button (click)="copyLink()"
           [ngClass]="linkCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-[#8B5CF6] hover:bg-[#7C3AED]'"
           class="shrink-0 rounded-lg px-4 py-2 text-white text-sm font-semibold transition">
-          {{ linkCopied ? 'Copied' : 'Copy' }}
+          {{ linkCopied ? 'Copied ✓' : 'Copy' }}
         </button>
       </div>
-
       <p class="mt-3 text-xs text-gray-500">This message disappears in 30 seconds.</p>
     </div>
 
+    <!-- AVAILABLE WATCH PARTIES -->
     <div class="flex items-center justify-between mb-6">
       <div>
         <h2 class="text-3xl font-bold text-white">Available Watch Parties</h2>
@@ -138,29 +178,25 @@
                 {{ w.statut || 'Unknown' }}
               </span>
             </div>
-
             <div class="grid md:grid-cols-2 gap-2 text-sm text-gray-300">
               <div><span class="font-semibold text-white">Content:</span> {{ w.contenuId }}</div>
               <div><span class="font-semibold text-white">Participants:</span> {{ w.participantIds?.length || 0 }}</div>
-              <div *ngIf="w.dateCreation">
-                <span class="font-semibold text-white">Created:</span> {{ w.dateCreation | date:'dd/MM/yyyy HH:mm' }}
-              </div>
+              <div *ngIf="w.dateCreation"><span class="font-semibold text-white">Created:</span> {{ w.dateCreation | date:'dd/MM/yyyy HH:mm' }}</div>
             </div>
           </div>
-
           <div class="flex gap-3 shrink-0">
-            <button
-              type="button"
-              (click)="joinWatchParty(w)"
+            <button *ngIf="isHost(w)" type="button" (click)="openSession(w.id)"
+              class="rounded-lg bg-[#8B5CF6] px-5 py-2 text-white font-semibold hover:bg-[#7C3AED] transition">
+              Open
+            </button>
+            <button *ngIf="!isHost(w) && !isParticipant(w)" type="button" (click)="joinWatchParty(w)"
               class="rounded-lg bg-green-600 px-5 py-2 text-white font-semibold hover:bg-green-700 transition">
               Join
             </button>
-            <button
-              type="button"
-              (click)="leaveWatchParty(w.id)"
-              class="rounded-lg bg-yellow-600 px-5 py-2 text-white font-semibold hover:bg-yellow-700 transition">
-              Leave
-            </button>
+            <span *ngIf="!isHost(w) && isParticipant(w)"
+              class="inline-flex items-center gap-1 rounded-lg bg-[#8B5CF6]/20 border border-[#8B5CF6]/30 px-4 py-2 text-[#a78bfa] text-sm font-semibold">
+              ✓ Joined
+            </span>
           </div>
         </div>
       </div>
@@ -168,14 +204,21 @@
 
   </div>
 
+  <!-- ===== ADMIN MODE ===== -->
   <div *ngIf="mode === 'admin'" class="w-full">
-    <div class="mb-6">
-      <h2 class="text-3xl font-bold text-white">WatchParties List</h2>
-      <p class="text-gray-400 mt-2">{{ list.length }} watch party(ies) total</p>
+
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h2 class="text-3xl font-bold text-white">WatchParties List</h2>
+        <p class="text-gray-400 mt-2">{{ list.length }} watch party(ies) total</p>
+      </div>
+      <button (click)="load()"
+        class="flex items-center gap-2 rounded-xl bg-[#1C1F35] border border-[#8B5CF6]/20 px-4 py-2 text-sm text-gray-300 hover:bg-[#252847] transition">
+        🔄 Refresh
+      </button>
     </div>
 
-    <div *ngIf="errorMessage"
-         class="mb-4 rounded-lg bg-red-500/20 border border-red-500/30 px-4 py-3 text-red-300">
+    <div *ngIf="errorMessage" class="mb-4 rounded-lg bg-red-500/20 border border-red-500/30 px-4 py-3 text-red-300">
       {{ errorMessage }}
     </div>
 
@@ -186,11 +229,14 @@
 
     <div class="grid gap-4" *ngIf="list.length > 0">
       <div *ngFor="let w of list"
-           class="rounded-2xl border border-[#8B5CF6]/20 bg-[#111827] p-5 shadow-md hover:border-[#8B5CF6]/50 transition">
+           class="rounded-2xl border bg-[#111827] p-5 shadow-md transition"
+           [ngClass]="isBlocked(w) ? 'border-red-500/30 opacity-75' : 'border-[#8B5CF6]/20 hover:border-[#8B5CF6]/50'">
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
             <div class="flex items-center gap-3 mb-3 flex-wrap">
               <p class="text-xl font-bold text-white">{{ w.titre }}</p>
+
+              <!-- Statut badge -->
               <span [ngClass]="{
                 'bg-blue-500/20 text-blue-300 border-blue-500/30': w.statut === 'CREATED',
                 'bg-green-500/20 text-green-300 border-green-500/30': w.statut === 'OPEN',
@@ -199,29 +245,49 @@
               }" class="text-xs font-semibold px-3 py-1 rounded-full border">
                 {{ w.statut || 'Unknown' }}
               </span>
+
+              <!-- Blocked badge -->
+              <span *ngIf="isBlocked(w)"
+                class="text-xs font-bold px-3 py-1 rounded-full border bg-red-500/10 text-red-400 border-red-500/40 flex items-center gap-1">
+                🔒 Blocked
+              </span>
             </div>
 
-            <div class="grid md:grid-cols-2 gap-2 text-sm text-gray-300">
+            <div class="grid md:grid-cols-3 gap-2 text-sm text-gray-300">
               <div><span class="font-semibold text-white">ID:</span> <span class="text-xs text-gray-400 font-mono">{{ w.id }}</span></div>
               <div><span class="font-semibold text-white">Content ID:</span> {{ w.contenuId }}</div>
+              <div><span class="font-semibold text-white">Participants:</span> {{ w.participantIds?.length || 0 }}</div>
               <div><span class="font-semibold text-white">Client ID:</span> {{ w.clientId || 'Undefined' }}</div>
               <div><span class="font-semibold text-white">Admin ID:</span> {{ w.adminId || 'Undefined' }}</div>
-              <div><span class="font-semibold text-white">Participants:</span> {{ w.participantIds?.length || 0 }}</div>
               <div *ngIf="w.dateCreation">
                 <span class="font-semibold text-white">Created:</span> {{ w.dateCreation | date:'dd/MM/yyyy HH:mm' }}
               </div>
             </div>
           </div>
 
-          <button
-            type="button"
-            (click)="deleteWatchParty(w.id)"
-            class="shrink-0 rounded-lg bg-red-600 px-4 py-2 text-white font-semibold hover:bg-red-700 transition">
-            Delete
-          </button>
+          <div class="flex flex-col gap-2 shrink-0">
+            <!-- Block button (only if not already blocked) -->
+            <button *ngIf="!isBlocked(w)" type="button" (click)="blockWatchParty(w.id)"
+              class="rounded-lg bg-orange-600 hover:bg-orange-700 px-4 py-2 text-white font-semibold transition text-sm flex items-center gap-2">
+              🔒 Block
+            </button>
+
+            <!-- Already blocked indicator -->
+            <span *ngIf="isBlocked(w)"
+              class="rounded-lg bg-gray-700/50 border border-gray-600/30 px-4 py-2 text-gray-400 font-semibold text-sm text-center">
+              🔒 Blocked
+            </span>
+
+            <!-- Delete button -->
+            <button type="button" (click)="deleteWatchParty(w.id)"
+              class="rounded-lg bg-red-600 hover:bg-red-700 px-4 py-2 text-white font-semibold transition text-sm flex items-center gap-2">
+              🗑 Delete
+            </button>
+          </div>
         </div>
       </div>
     </div>
+
   </div>
 
 </div>

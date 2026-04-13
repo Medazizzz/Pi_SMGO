@@ -122,7 +122,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/commentaires", "/api/commentaires/**").permitAll()
                                 .requestMatchers("/api/promotions", "/api/promotions/**").permitAll()
                                 .requestMatchers("/watchparty/**").permitAll()
-                                .requestMatchers("/feedback/**").permitAll()
+                                .requestMatchers("/feedback/**").authenticated()
                                 // All other requests require authentication
                                 .anyRequest().authenticated()
                 )

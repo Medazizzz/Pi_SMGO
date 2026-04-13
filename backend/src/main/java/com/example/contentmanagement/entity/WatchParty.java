@@ -32,6 +32,9 @@ public class WatchParty {
     private String contenuId;
 
     @Builder.Default
+    private List<String> pendingUserIds = new ArrayList<>();
+
+    @Builder.Default
     private List<String> reservationIds = new ArrayList<>();
 
     @Builder.Default

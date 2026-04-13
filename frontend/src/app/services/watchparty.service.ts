@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -11,6 +11,14 @@ export class WatchpartyService {
 
   constructor(private http: HttpClient) {}
 
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken') || '';
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+  }
+
   getAll(): Observable<any[]> {
     return this.http.get<any[]>(this.apiUrl);
   }
@@ -20,17 +28,39 @@ export class WatchpartyService {
   }
 
   add(data: { titre: string; contenuId: string }): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/create`, data);
+    return this.http.post<any>(
+      `${this.apiUrl}/create`,
+      data,
+      { headers: this.getAuthHeaders() }
+    );
   }
 
-  join(id: string, userId?: string): Observable<any> {
-    const query = userId ? `?userId=${encodeURIComponent(userId)}` : '';
-    return this.http.post<any>(`${this.apiUrl}/${id}/join${query}`, {});
+  joinWatchParty(watchPartyId: string): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/${watchPartyId}/join`,
+      {},
+      { headers: this.getAuthHeaders() }
+    );
   }
 
-  leave(id: string, userId?: string): Observable<any> {
-    const query = userId ? `?userId=${encodeURIComponent(userId)}` : '';
-    return this.http.post<any>(`${this.apiUrl}/${id}/leave${query}`, {});
+  leaveWatchParty(watchPartyId: string): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/${watchPartyId}/leave`,
+      {},
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  /**
+   * Bloque une WatchParty (admin) → passe le statut à CANCELLED.
+   * Adapte l'endpoint si ton backend utilise une autre route.
+   */
+  blockWatchParty(watchPartyId: string): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/${watchPartyId}/cancel`,
+      {},
+      { headers: this.getAuthHeaders() }
+    );
   }
 
   getParticipants(id: string): Observable<string[]> {
@@ -39,5 +69,44 @@ export class WatchpartyService {
 
   delete(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${id}`);
+  }
+
+  addParticipant(watchPartyId: string, userId: string): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/${watchPartyId}/add-participant?userId=${userId}`,
+      {},
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  createJoinRequest(watchPartyId: string): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/${watchPartyId}/join-request`,
+      {},
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  getJoinRequests(watchPartyId: string): Observable<any[]> {
+    return this.http.get<any[]>(
+      `${this.apiUrl}/${watchPartyId}/join-requests`,
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  approveJoinRequest(watchPartyId: string, userId: string): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/${watchPartyId}/approve-join?userId=${userId}`,
+      {},
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  rejectJoinRequest(watchPartyId: string, userId: string): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/${watchPartyId}/reject-join?userId=${userId}`,
+      {},
+      { headers: this.getAuthHeaders() }
+    );
   }
 }

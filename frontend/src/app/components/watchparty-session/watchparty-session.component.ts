@@ -12,6 +12,14 @@ interface ChatMessage {
   isMe: boolean;
 }
 
+interface JoinRequest {
+  userId: string;
+  watchPartyId: string;
+  watchPartyTitre: string;
+  timestamp: number;
+  status: string;
+}
+
 @Component({
   selector: 'app-watchparty-session',
   standalone: true,
@@ -20,7 +28,7 @@ interface ChatMessage {
   styleUrls: ['./watchparty-session.component.css']
 })
 export class WatchpartySessionComponent implements OnInit, OnDestroy {
-  @ViewChild('chatContainer') chatContainer!: ElementRef;
+  @ViewChild('chatContainer') chatContainer!: ElementRef<HTMLDivElement>;
 
   session: any = null;
   loading = true;
@@ -31,8 +39,11 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   chatMessages: ChatMessage[] = [];
   sessionLinkCopied = false;
 
-  approvalStatus: 'waiting' | 'approved' | 'rejected' | 'host' = 'host';
-  pendingUserId: string | null = null;
+  approvalStatus: 'waiting' | 'approved' | 'rejected' | 'host' = 'waiting';
+  pendingJoinRequests: JoinRequest[] = [];
+
+  private readonly chatKeyPrefix = 'wp_chat_';
+  private chatStorageKey = '';
 
   memberColors = [
     { bg: 'rgba(124,92,252,0.25)', text: '#a78bfa' },
@@ -45,10 +56,9 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   private sessionId = '';
   private currentUserId = '';
   private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private notifPollTimer: ReturnType<typeof setInterval> | null = null;
   private successTimer: ReturnType<typeof setTimeout> | null = null;
-  private readonly responseKey = 'wp_join_responses';
-  private readonly requestKey = 'wp_join_requests';
-  private readonly userStorageKey = 'wp_current_user_id';
+  private storageListener = this.onStorageEvent.bind(this);
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -59,6 +69,10 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.sessionId = this.route.snapshot.paramMap.get('id') ?? '';
     this.currentUserId = this.resolveCurrentUserId();
+    this.chatStorageKey = `${this.chatKeyPrefix}${this.sessionId}`;
+
+    this.loadChat();
+    window.addEventListener('storage', this.storageListener);
 
     if (!this.sessionId) {
       this.loading = false;
@@ -70,34 +84,17 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
-    }
-    if (this.successTimer) {
-      clearTimeout(this.successTimer);
-      this.successTimer = null;
-    }
+    this.clearAllTimers();
+    window.removeEventListener('storage', this.storageListener);
   }
 
-  private loadSession(): void {
-    this.watchpartyService.getById(this.sessionId).subscribe({
-      next: (data: any) => {
-        this.session = data;
-        this.loading = false;
-
-        if (data.statut === 'CLOSED' || data.statut === 'CANCELLED') {
-          this.errorMessage = 'This WatchParty is closed or cancelled.';
-        }
-      },
-      error: (err: any) => {
-        this.loading = false;
-        this.errorMessage = err?.status === 404
-          ? 'This WatchParty no longer exists or has been deleted.'
-          : 'Unable to load watchparty session.';
-      }
-    });
+  private clearAllTimers(): void {
+    if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null; }
+    if (this.notifPollTimer) { clearInterval(this.notifPollTimer); this.notifPollTimer = null; }
+    if (this.successTimer) { clearTimeout(this.successTimer); this.successTimer = null; }
   }
+
+  // ─── Bootstrap ────────────────────────────────────────────────────────────
 
   private bootstrapSessionAccess(): void {
     this.watchpartyService.getById(this.sessionId).subscribe({
@@ -110,12 +107,13 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
           return;
         }
 
-        const creatorId = localStorage.getItem(`wp_creator_${this.sessionId}`);
         const participants: string[] = Array.isArray(data.participantIds) ? data.participantIds : [];
+        const hostId = data.clientId || data.adminId || '';
 
-        if (creatorId && creatorId === this.currentUserId) {
+        if (this.currentUserId === hostId) {
           this.approvalStatus = 'host';
           this.startSessionPolling();
+          this.startJoinRequestPolling();
           return;
         }
 
@@ -125,10 +123,13 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
           return;
         }
 
-        this.pendingUserId = this.currentUserId;
+        // Not in session yet → send join request and wait
         this.approvalStatus = 'waiting';
-        this.ensurePendingJoinRequest(data);
-        this.startPollingApproval();
+
+        this.watchpartyService.createJoinRequest(this.sessionId).subscribe({
+          next: () => { this.startPollingApproval(); },
+          error: () => { this.startPollingApproval(); }
+        });
       },
       error: (err: any) => {
         this.loading = false;
@@ -139,137 +140,170 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
     });
   }
 
-  private startPollingApproval(): void {
-    this.pollTimer = setInterval(() => {
-      try {
-        const responses = JSON.parse(localStorage.getItem(this.responseKey) || '[]');
-        const myResponse = responses.find(
-          (r: any) => r.userId === this.pendingUserId && r.watchPartyId === this.sessionId
-        );
+  // ─── Leave (removes current user from participants, does NOT delete) ──────
 
-        if (!myResponse) {
-          this.loadSession();
+  leaveSession(): void {
+    // Call your backend's "remove participant" or "leave" endpoint.
+    // Adjust the method name to match your WatchpartyService API.
+    this.watchpartyService.leaveWatchParty(this.sessionId).subscribe({
+      next: () => {
+        this.router.navigate(['/user/watchparty']);
+      },
+      error: () => {
+        // Navigate away even on error to avoid stuck state
+        this.router.navigate(['/user/watchparty']);
+      }
+    });
+  }
+
+  // ─── Host: approve / reject join requests ─────────────────────────────────
+
+  approveRequest(request: JoinRequest): void {
+    this.watchpartyService.approveJoinRequest(request.watchPartyId, request.userId).subscribe({
+      next: () => {
+        this.pendingJoinRequests = this.pendingJoinRequests.filter(
+          (r) => !(r.userId === request.userId && r.watchPartyId === request.watchPartyId)
+        );
+        this.loadSession();
+        this.showSuccess('✅ User approved and joined the session!');
+      },
+      error: () => { this.errorMessage = 'Failed to approve request.'; }
+    });
+  }
+
+  rejectRequest(request: JoinRequest): void {
+    this.watchpartyService.rejectJoinRequest(request.watchPartyId, request.userId).subscribe({
+      next: () => {
+        this.pendingJoinRequests = this.pendingJoinRequests.filter(
+          (r) => !(r.userId === request.userId && r.watchPartyId === request.watchPartyId)
+        );
+        this.showSuccess('❌ Request rejected.');
+      },
+      error: () => { this.errorMessage = 'Failed to reject request.'; }
+    });
+  }
+
+  // ─── Polling ──────────────────────────────────────────────────────────────
+
+  private startJoinRequestPolling(): void {
+    if (this.notifPollTimer) { clearInterval(this.notifPollTimer); this.notifPollTimer = null; }
+
+    this.notifPollTimer = setInterval(() => {
+      this.watchpartyService.getJoinRequests(this.sessionId).subscribe({
+        next: (requests: any[]) => {
+          this.pendingJoinRequests = (requests || []).filter((r) => r.status === 'pending');
+        },
+        error: () => { this.pendingJoinRequests = []; }
+      });
+    }, 2000);
+  }
+
+  private startPollingApproval(): void {
+    if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null; }
+
+    this.pollTimer = setInterval(() => {
+      this.checkApprovalStatus();
+    }, 2000);
+  }
+
+  private checkApprovalStatus(): void {
+    this.watchpartyService.getById(this.sessionId).subscribe({
+      next: (data: any) => {
+        const participants: string[] = Array.isArray(data.participantIds) ? data.participantIds : [];
+
+        if (participants.includes(this.currentUserId)) {
+          if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null; }
+          this.approvalStatus = 'approved';
+          this.session = data;
+          this.startSessionPolling();
+          this.showSuccess('You were approved and joined the session.');
           return;
         }
 
-        if (this.pollTimer) {
-          clearInterval(this.pollTimer);
-          this.pollTimer = null;
-        }
-
-        if (myResponse.status === 'approved') {
-          this.approvalStatus = 'approved';
-          this.watchpartyService.join(this.sessionId, this.pendingUserId ?? undefined).subscribe({
-            next: () => {
-              this.loadSession();
-              this.startSessionPolling();
-              this.showSuccess('You were approved and joined the session.');
-            },
-            error: () => {
-              this.errorMessage = 'Error while joining approved session.';
+        this.watchpartyService.getJoinRequests(this.sessionId).subscribe({
+          next: (requests: any[]) => {
+            const myRequest = (requests || []).find((r) => r.userId === this.currentUserId);
+            if (myRequest?.status === 'rejected') {
+              if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null; }
+              this.approvalStatus = 'rejected';
             }
-          });
-        } else {
+          },
+          error: () => {}
+        });
+      },
+      error: (err: any) => {
+        if (err?.status === 404) {
           this.approvalStatus = 'rejected';
-        }
-
-        const cleaned = responses.filter(
-          (r: any) => !(r.userId === this.pendingUserId && r.watchPartyId === this.sessionId)
-        );
-        localStorage.setItem(this.responseKey, JSON.stringify(cleaned));
-      } catch {
-        this.loadSession();
-      }
-    }, 3000);
-  }
-
-  private ensurePendingJoinRequest(session: any): void {
-    const request = {
-      userId: this.currentUserId,
-      watchPartyId: this.sessionId,
-      watchPartyTitre: session?.titre || 'WatchParty',
-      timestamp: Date.now(),
-      status: 'pending'
-    };
-
-    const requests = this.getStoredRequests();
-    const alreadyPending = requests.some(
-      (r: any) => r.userId === request.userId && r.watchPartyId === request.watchPartyId && r.status === 'pending'
-    );
-
-    if (!alreadyPending) {
-      requests.push(request);
-      localStorage.setItem(this.requestKey, JSON.stringify(requests));
-    }
-  }
-
-  private getStoredRequests(): any[] {
-    try {
-      return JSON.parse(localStorage.getItem(this.requestKey) || '[]');
-    } catch {
-      return [];
-    }
-  }
-
-  private resolveCurrentUserId(): string {
-    try {
-      const token = localStorage.getItem('token') || localStorage.getItem('authToken') || '';
-      if (token) {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const tokenUserId = payload.sub || payload.userId || payload.id;
-        if (tokenUserId) {
-          return String(tokenUserId);
+          setTimeout(() => { this.router.navigate(['/user/watchparty']); }, 3000);
         }
       }
-    } catch {
-      // Fallback handled below.
-    }
-
-    const existing = localStorage.getItem(this.userStorageKey);
-    if (existing && existing.trim()) {
-      return existing;
-    }
-
-    const generated = `user_${Math.random().toString(36).slice(2, 8)}`;
-    localStorage.setItem(this.userStorageKey, generated);
-    return generated;
+    });
   }
 
   private startSessionPolling(): void {
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
-    }
+    if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null; }
 
     this.pollTimer = setInterval(() => {
       this.watchpartyService.getById(this.sessionId).subscribe({
-        next: (data: any) => {
-          this.session = data;
-        },
-        error: () => {
-          // Keep the current screen stable if one refresh fails.
-        }
+        next: (data: any) => { this.session = data; },
+        error: () => {}
       });
     }, 10000);
   }
 
+  private loadSession(): void {
+    this.watchpartyService.getById(this.sessionId).subscribe({
+      next: (data: any) => {
+        this.session = data;
+        if (data.statut === 'CLOSED' || data.statut === 'CANCELLED') {
+          this.errorMessage = 'This WatchParty is closed or cancelled.';
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  // ─── Chat ─────────────────────────────────────────────────────────────────
+
   sendMessage(): void {
     const text = this.chatInput.trim();
-    if (!text) {
-      return;
-    }
+    if (!text) { return; }
 
     const now = new Date();
     const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
     this.chatMessages.push({
-      author: 'You',
-      initials: 'YO',
+      author: this.currentUserId || 'You',
+      initials: (this.currentUserId || 'YO').slice(0, 2).toUpperCase(),
       text,
       time,
       isMe: true
     });
-    this.chatInput = '';
 
+    this.saveChat();
+    this.chatInput = '';
+    this.scrollChatToBottom();
+  }
+
+  private getStoredChat(): ChatMessage[] {
+    try { return JSON.parse(localStorage.getItem(this.chatStorageKey) || '[]'); }
+    catch { return []; }
+  }
+
+  private saveChat(): void {
+    localStorage.setItem(this.chatStorageKey, JSON.stringify(this.chatMessages));
+  }
+
+  private loadChat(): void {
+    this.chatMessages = this.getStoredChat();
+    this.scrollChatToBottom();
+  }
+
+  private onStorageEvent(event: StorageEvent): void {
+    if (event.key === this.chatStorageKey) { this.loadChat(); }
+  }
+
+  private scrollChatToBottom(): void {
     setTimeout(() => {
       if (this.chatContainer?.nativeElement) {
         this.chatContainer.nativeElement.scrollTop = this.chatContainer.nativeElement.scrollHeight;
@@ -277,28 +311,35 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
     }, 50);
   }
 
+  // ─── Misc ─────────────────────────────────────────────────────────────────
+
   copySessionLink(): void {
     const link = `${window.location.origin}/watchparty/${this.sessionId}`;
     navigator.clipboard.writeText(link).then(() => {
       this.sessionLinkCopied = true;
-      setTimeout(() => {
-        this.sessionLinkCopied = false;
-      }, 3000);
+      setTimeout(() => { this.sessionLinkCopied = false; }, 3000);
     });
   }
 
+  /** Navigate away without touching the session data */
   close(): void {
     this.router.navigate(['/user/watchparty']);
   }
 
   private showSuccess(message: string): void {
     this.successMessage = message;
-    if (this.successTimer) {
-      clearTimeout(this.successTimer);
-      this.successTimer = null;
-    }
-    this.successTimer = setTimeout(() => {
-      this.successMessage = '';
-    }, 4000);
+    if (this.successTimer) { clearTimeout(this.successTimer); this.successTimer = null; }
+    this.successTimer = setTimeout(() => { this.successMessage = ''; }, 4000);
+  }
+
+  private resolveCurrentUserId(): string {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('authToken') || '';
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.sub) { return String(payload.sub); }
+      }
+    } catch {}
+    return '';
   }
 }

@@ -20,7 +20,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FeedbackServiceImpl implements FeedbackService {
 
-    private static final String DEFAULT_CLIENT_ID = "guest";
     private final FeedbackRepository feedbackRepository;
     private final WatchPartyRepository watchPartyRepository;
 
@@ -39,14 +38,28 @@ public class FeedbackServiceImpl implements FeedbackService {
         String resolvedClientId = resolveClientId(request.getClientId());
 
         WatchParty watchParty = watchPartyRepository.findById(request.getWatchPartyId())
-            .orElseThrow(() -> new ResourceNotFoundException("WatchParty not found with id: " + request.getWatchPartyId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "WatchParty not found with id: " + request.getWatchPartyId()
+                ));
 
         List<String> participants = watchParty.getParticipantIds() == null
-            ? new ArrayList<>()
-            : watchParty.getParticipantIds();
+                ? new ArrayList<>()
+                : watchParty.getParticipantIds();
 
-        if (!participants.contains(resolvedClientId)) {
-            throw new UnauthorizedException("Only participants can add feedback to this watchparty.");
+        boolean isParticipant = participants.contains(resolvedClientId);
+        boolean isHost = resolvedClientId.equals(watchParty.getClientId())
+                || resolvedClientId.equals(watchParty.getAdminId());
+
+        if (!isParticipant && !isHost) {
+            throw new UnauthorizedException("Only watch party members can add feedback to this watchparty.");
+        }
+
+        boolean alreadyExists = feedbackRepository.findByWatchPartyId(request.getWatchPartyId())
+                .stream()
+                .anyMatch(f -> resolvedClientId.equals(f.getClientId()));
+
+        if (alreadyExists) {
+            throw new UnauthorizedException("You have already added feedback for this watchparty.");
         }
 
         Feedback feedback = Feedback.builder()
@@ -54,12 +67,13 @@ public class FeedbackServiceImpl implements FeedbackService {
                 .commentaire(request.getCommentaire())
                 .watchPartyId(request.getWatchPartyId())
                 .dateFeedback(new Date())
-            .clientId(resolvedClientId)
+                .clientId(resolvedClientId)
                 .likes(0)
                 .dislikes(0)
                 .likedByUserIds(new ArrayList<>())
                 .dislikedByUserIds(new ArrayList<>())
                 .build();
+
         return feedbackRepository.save(feedback);
     }
 
@@ -67,8 +81,10 @@ public class FeedbackServiceImpl implements FeedbackService {
     public Feedback update(String id, FeedbackUpdateRequestDTO request) {
         Feedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feedback not found with id: " + id));
+
         feedback.setNote(request.getNote());
         feedback.setCommentaire(request.getCommentaire());
+
         return feedbackRepository.save(feedback);
     }
 
@@ -76,6 +92,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     public void delete(String id) {
         Feedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feedback not found with id: " + id));
+
         feedbackRepository.delete(feedback);
     }
 
@@ -83,11 +100,13 @@ public class FeedbackServiceImpl implements FeedbackService {
     public Feedback like(String id, String userId) {
         Feedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feedback not found with id: " + id));
+
         String resolvedClientId = resolveClientId(userId);
 
         List<String> likedBy = feedback.getLikedByUserIds() == null
                 ? new ArrayList<>()
                 : new ArrayList<>(feedback.getLikedByUserIds());
+
         List<String> dislikedBy = feedback.getDislikedByUserIds() == null
                 ? new ArrayList<>()
                 : new ArrayList<>(feedback.getDislikedByUserIds());
@@ -106,6 +125,7 @@ public class FeedbackServiceImpl implements FeedbackService {
 
         feedback.setLikedByUserIds(likedBy);
         feedback.setDislikedByUserIds(dislikedBy);
+
         return feedbackRepository.save(feedback);
     }
 
@@ -113,11 +133,13 @@ public class FeedbackServiceImpl implements FeedbackService {
     public Feedback dislike(String id, String userId) {
         Feedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feedback not found with id: " + id));
+
         String resolvedClientId = resolveClientId(userId);
 
         List<String> likedBy = feedback.getLikedByUserIds() == null
                 ? new ArrayList<>()
                 : new ArrayList<>(feedback.getLikedByUserIds());
+
         List<String> dislikedBy = feedback.getDislikedByUserIds() == null
                 ? new ArrayList<>()
                 : new ArrayList<>(feedback.getDislikedByUserIds());
@@ -136,12 +158,13 @@ public class FeedbackServiceImpl implements FeedbackService {
 
         feedback.setLikedByUserIds(likedBy);
         feedback.setDislikedByUserIds(dislikedBy);
+
         return feedbackRepository.save(feedback);
     }
 
     private String resolveClientId(String userId) {
         if (userId == null || userId.trim().isEmpty()) {
-            return DEFAULT_CLIENT_ID;
+            throw new UnauthorizedException("Authenticated user not found.");
         }
         return userId.trim();
     }
