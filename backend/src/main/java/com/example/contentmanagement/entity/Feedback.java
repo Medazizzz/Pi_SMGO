@@ -29,6 +29,7 @@ public class Feedback {
 
     private String clientId;
     private String watchPartyId;
+    private String sentiment;
 
     @Builder.Default
     private int likes = 0;

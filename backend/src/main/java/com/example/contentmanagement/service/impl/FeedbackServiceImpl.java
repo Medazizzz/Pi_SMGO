@@ -9,6 +9,7 @@ import com.example.contentmanagement.exception.UnauthorizedException;
 import com.example.contentmanagement.repository.FeedbackRepository;
 import com.example.contentmanagement.repository.WatchPartyRepository;
 import com.example.contentmanagement.service.FeedbackService;
+import com.example.contentmanagement.service.IA.SentimentApiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ public class FeedbackServiceImpl implements FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
     private final WatchPartyRepository watchPartyRepository;
+    private final SentimentApiService sentimentApiService;
 
     @Override
     public List<Feedback> getAll() {
@@ -54,13 +56,7 @@ public class FeedbackServiceImpl implements FeedbackService {
             throw new UnauthorizedException("Only watch party members can add feedback to this watchparty.");
         }
 
-        boolean alreadyExists = feedbackRepository.findByWatchPartyId(request.getWatchPartyId())
-                .stream()
-                .anyMatch(f -> resolvedClientId.equals(f.getClientId()));
-
-        if (alreadyExists) {
-            throw new UnauthorizedException("You have already added feedback for this watchparty.");
-        }
+        String predictedSentiment = sentimentApiService.predictSentiment(request.getCommentaire());
 
         Feedback feedback = Feedback.builder()
                 .note(request.getNote())
@@ -68,6 +64,7 @@ public class FeedbackServiceImpl implements FeedbackService {
                 .watchPartyId(request.getWatchPartyId())
                 .dateFeedback(new Date())
                 .clientId(resolvedClientId)
+                .sentiment(predictedSentiment)
                 .likes(0)
                 .dislikes(0)
                 .likedByUserIds(new ArrayList<>())
@@ -84,6 +81,9 @@ public class FeedbackServiceImpl implements FeedbackService {
 
         feedback.setNote(request.getNote());
         feedback.setCommentaire(request.getCommentaire());
+
+        String predictedSentiment = sentimentApiService.predictSentiment(request.getCommentaire());
+        feedback.setSentiment(predictedSentiment);
 
         return feedbackRepository.save(feedback);
     }

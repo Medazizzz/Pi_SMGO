@@ -203,18 +203,8 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     return !!this.watchPartyId && this.isParticipantOfSelectedWatchParty();
   }
 
-  hasUserAlreadyPosted(): boolean {
-    if (!this.watchPartyId) {
-      return false;
-    }
-
-    return this.allFeedbacks.some(
-      (f) => f.watchPartyId === this.watchPartyId && f.clientId === this.currentUserId
-    );
-  }
-
   canSubmitFeedback(): boolean {
-    return this.canCreateFeedback() && !this.hasUserAlreadyPosted();
+    return this.canCreateFeedback();
   }
 
   setNote(star: number): void {
@@ -284,12 +274,7 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     this.errorMessage = '';
 
     if (!this.canCreateFeedback()) {
-      this.errorMessage = 'Seuls les membres de cette WatchParty peuvent ajouter un feedback.';
-      return;
-    }
-
-    if (this.hasUserAlreadyPosted()) {
-      this.errorMessage = 'Vous avez déjà ajouté un feedback pour cette WatchParty.';
+      this.errorMessage = 'Seuls les participants ou le host de cette WatchParty peuvent ajouter un feedback.';
       return;
     }
 
@@ -309,10 +294,10 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
         this.note = null;
         this.hoveredStar = 0;
         this.commentaire = '';
-        form.resetForm();
 
-        this.watchPartyId = '';
-        this.selectedWatchParty = null;
+        form.resetForm({
+          watchPartyId: this.watchPartyId
+        });
 
         this.loadAllFeedbacks();
       },
@@ -393,5 +378,35 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
 
   isOwner(feedback: any): boolean {
     return feedback?.clientId === this.currentUserId;
+  }
+
+  getSentimentClass(sentiment: string | undefined): string {
+    switch ((sentiment || '').toUpperCase()) {
+      case 'POSITIF':
+        return 'bg-green-500/15 text-green-300 border border-green-500/30';
+      case 'NEGATIF':
+        return 'bg-red-500/15 text-red-300 border border-red-500/30';
+      case 'NEUTRE':
+        return 'bg-yellow-500/15 text-yellow-300 border border-yellow-500/30';
+      default:
+        return 'bg-gray-500/15 text-gray-300 border border-gray-500/30';
+    }
+  }
+
+  getSentimentEmoji(sentiment: string | undefined): string {
+    switch ((sentiment || '').toUpperCase()) {
+      case 'POSITIF':
+        return '😊';
+      case 'NEGATIF':
+        return '😞';
+      case 'NEUTRE':
+        return '😐';
+      default:
+        return '🤖';
+    }
+  }
+
+  getSentimentLabel(sentiment: string | undefined): string {
+    return (sentiment || 'UNKNOWN').toUpperCase();
   }
 }

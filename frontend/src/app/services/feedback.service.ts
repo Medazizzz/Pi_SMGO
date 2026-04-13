@@ -2,6 +2,20 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+export interface Feedback {
+  id?: string;
+  note: number;
+  commentaire: string;
+  watchPartyId: string;
+  clientId: string;
+  dateFeedback?: string;
+  sentiment?: string;
+  likes?: number;
+  dislikes?: number;
+  likedByUserIds?: string[];
+  dislikedByUserIds?: string[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -28,26 +42,26 @@ export class FeedbackService {
     });
   }
 
-  getAll(): Observable<any[]> {
-    return this.http.get<any[]>(this.apiUrl, {
+  getAll(): Observable<Feedback[]> {
+    return this.http.get<Feedback[]>(this.apiUrl, {
       headers: this.getAuthHeaders()
     });
   }
 
-  getByWatchParty(watchPartyId: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/watchparty/${watchPartyId}`, {
+  getByWatchParty(watchPartyId: string): Observable<Feedback[]> {
+    return this.http.get<Feedback[]>(`${this.apiUrl}/watchparty/${watchPartyId}`, {
       headers: this.getAuthHeaders()
     });
   }
 
-  addFeedback(data: { note: number; commentaire: string; watchPartyId: string }): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/add`, data, {
+  addFeedback(data: { note: number; commentaire: string; watchPartyId: string }): Observable<Feedback> {
+    return this.http.post<Feedback>(`${this.apiUrl}/add`, data, {
       headers: this.getAuthHeaders()
     });
   }
 
-  updateFeedback(id: string, data: { note: number; commentaire: string }): Observable<any> {
-    return this.http.put<any>(`${this.apiUrl}/${id}`, data, {
+  updateFeedback(id: string, data: { note: number; commentaire: string }): Observable<Feedback> {
+    return this.http.put<Feedback>(`${this.apiUrl}/${id}`, data, {
       headers: this.getAuthHeaders()
     });
   }
@@ -58,14 +72,14 @@ export class FeedbackService {
     });
   }
 
-  likeFeedback(id: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/${id}/like`, {}, {
+  likeFeedback(id: string): Observable<Feedback> {
+    return this.http.post<Feedback>(`${this.apiUrl}/${id}/like`, {}, {
       headers: this.getAuthHeaders()
     });
   }
 
-  dislikeFeedback(id: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/${id}/dislike`, {}, {
+  dislikeFeedback(id: string): Observable<Feedback> {
+    return this.http.post<Feedback>(`${this.apiUrl}/${id}/dislike`, {}, {
       headers: this.getAuthHeaders()
     });
   }
