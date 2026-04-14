@@ -56,7 +56,13 @@ public class FeedbackServiceImpl implements FeedbackService {
             throw new UnauthorizedException("Only watch party members can add feedback to this watchparty.");
         }
 
-        String predictedSentiment = sentimentApiService.predictSentiment(request.getCommentaire());
+        String predictedSentiment = null;
+        try {
+            predictedSentiment = sentimentApiService.predictSentiment(request.getCommentaire());
+        } catch (Exception e) {
+            predictedSentiment = "UNKNOWN";
+            System.err.println("Sentiment prediction failed: " + e.getMessage());
+        }
 
         Feedback feedback = Feedback.builder()
                 .note(request.getNote())
@@ -82,8 +88,13 @@ public class FeedbackServiceImpl implements FeedbackService {
         feedback.setNote(request.getNote());
         feedback.setCommentaire(request.getCommentaire());
 
-        String predictedSentiment = sentimentApiService.predictSentiment(request.getCommentaire());
-        feedback.setSentiment(predictedSentiment);
+        try {
+            String predictedSentiment = sentimentApiService.predictSentiment(request.getCommentaire());
+            feedback.setSentiment(predictedSentiment);
+        } catch (Exception e) {
+            feedback.setSentiment("UNKNOWN");
+            System.err.println("Sentiment prediction failed during update: " + e.getMessage());
+        }
 
         return feedbackRepository.save(feedback);
     }

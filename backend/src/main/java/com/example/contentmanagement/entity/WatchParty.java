@@ -25,6 +25,7 @@ public class WatchParty {
 
     private String titre;
     private Date dateCreation;
+    private Date updatedAt;
     private String statut;
 
     private String clientId;

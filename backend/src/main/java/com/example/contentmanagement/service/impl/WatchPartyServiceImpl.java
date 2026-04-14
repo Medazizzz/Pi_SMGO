@@ -41,10 +41,13 @@ public class WatchPartyServiceImpl implements WatchPartyService {
         List<String> participants = new ArrayList<>();
         participants.add(resolvedHostId);
 
+        Date now = new Date();
+
         WatchParty watchParty = WatchParty.builder()
                 .titre(request.getTitre())
                 .contenuId(request.getContenuId())
-                .dateCreation(new Date())
+                .dateCreation(now)
+                .updatedAt(now)
                 .statut("OPEN")
                 .clientId(resolvedHostId)
                 .adminId(resolvedHostId)
@@ -60,13 +63,18 @@ public class WatchPartyServiceImpl implements WatchPartyService {
     public WatchParty join(String id, String userId) {
         WatchParty watchParty = getById(id);
         String resolvedUserId = resolveUserId(userId);
+
         List<String> participants = watchParty.getParticipantIds() == null
                 ? new ArrayList<>()
                 : new ArrayList<>(watchParty.getParticipantIds());
+
         if (!participants.contains(resolvedUserId)) {
             participants.add(resolvedUserId);
         }
+
         watchParty.setParticipantIds(participants);
+        watchParty.setUpdatedAt(new Date());
+
         return watchPartyRepository.save(watchParty);
     }
 
@@ -74,11 +82,15 @@ public class WatchPartyServiceImpl implements WatchPartyService {
     public WatchParty leave(String id, String userId) {
         WatchParty watchParty = getById(id);
         String resolvedUserId = resolveUserId(userId);
+
         List<String> participants = watchParty.getParticipantIds() == null
                 ? new ArrayList<>()
                 : new ArrayList<>(watchParty.getParticipantIds());
+
         participants.remove(resolvedUserId);
         watchParty.setParticipantIds(participants);
+        watchParty.setUpdatedAt(new Date());
+
         return watchPartyRepository.save(watchParty);
     }
 
@@ -127,10 +139,8 @@ public class WatchPartyServiceImpl implements WatchPartyService {
 
     @Override
     public WatchParty approveJoinRequest(String watchPartyId, String userId) {
-        // ✅ Ajouter l'utilisateur aux participants
         WatchParty watchParty = join(watchPartyId, userId);
 
-        // ✅ Marquer la demande comme approuvée
         Optional<JoinRequest> request = joinRequestRepository.findByWatchPartyIdAndUserId(watchPartyId, userId);
         if (request.isPresent()) {
             JoinRequest jr = request.get();
@@ -139,12 +149,14 @@ public class WatchPartyServiceImpl implements WatchPartyService {
             joinRequestRepository.save(jr);
         }
 
-        return watchParty;
+        watchParty.setUpdatedAt(new Date());
+        return watchPartyRepository.save(watchParty);
     }
 
     @Override
     public WatchParty rejectJoinRequest(String watchPartyId, String userId) {
-        // ✅ Marquer la demande comme rejetée
+        WatchParty watchParty = getById(watchPartyId);
+
         Optional<JoinRequest> request = joinRequestRepository.findByWatchPartyIdAndUserId(watchPartyId, userId);
         if (request.isPresent()) {
             JoinRequest jr = request.get();
@@ -153,9 +165,9 @@ public class WatchPartyServiceImpl implements WatchPartyService {
             joinRequestRepository.save(jr);
         }
 
-        return getById(watchPartyId);
+        watchParty.setUpdatedAt(new Date());
+        return watchPartyRepository.save(watchParty);
     }
-
     private String resolveUserId(String userId) {
         if (userId == null || userId.trim().isEmpty()) {
             return DEFAULT_PARTICIPANT_ID;
@@ -165,10 +177,9 @@ public class WatchPartyServiceImpl implements WatchPartyService {
 
     @Override
     public WatchParty cancelWatchParty(String id) {
-        WatchParty watchParty = watchPartyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("WatchParty not found with id: " + id));
-
+        WatchParty watchParty = getById(id);
         watchParty.setStatut("CANCELLED");
+        watchParty.setUpdatedAt(new Date());
         return watchPartyRepository.save(watchParty);
     }
 
