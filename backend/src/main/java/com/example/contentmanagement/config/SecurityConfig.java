@@ -123,6 +123,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/promotions", "/api/promotions/**").permitAll()
                                 .requestMatchers("/watchparty/**").permitAll()
                                 .requestMatchers("/feedback/**").authenticated()
+                                .requestMatchers("/ws-watchparty/**").permitAll()
                                 // All other requests require authentication
                                 .anyRequest().authenticated()
                 )
@@ -130,6 +131,12 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring()
+                .requestMatchers("/ws-watchparty/**");
     }
 }
 
