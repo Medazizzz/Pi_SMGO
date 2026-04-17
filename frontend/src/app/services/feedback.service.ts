@@ -14,6 +14,13 @@ export interface Feedback {
   dislikes?: number;
   likedByUserIds?: string[];
   dislikedByUserIds?: string[];
+  emojiCounts?: { [key: string]: number };
+  emojiUserReactions?: { [key: string]: string };
+}
+
+export interface CommentCorrectionResponse {
+  originalText: string;
+  correctedText: string;
 }
 
 @Injectable({
@@ -37,7 +44,7 @@ export class FeedbackService {
     console.log('TOKEN ENVOYÉ =', token);
 
     return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json'
     });
   }
@@ -82,5 +89,15 @@ export class FeedbackService {
     return this.http.post<Feedback>(`${this.apiUrl}/${id}/dislike`, {}, {
       headers: this.getAuthHeaders()
     });
+  }
+
+  correctComment(text: string): Observable<CommentCorrectionResponse> {
+    return this.http.post<CommentCorrectionResponse>(
+      `${this.apiUrl}/correct`,
+      { text },
+      {
+        headers: this.getAuthHeaders()
+      }
+    );
   }
 }

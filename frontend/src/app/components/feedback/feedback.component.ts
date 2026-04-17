@@ -13,6 +13,9 @@ import { Router } from '@angular/router';
 import { FeedbackService } from '../../services/feedback.service';
 import { WatchpartyService } from '../../services/watchparty.service';
 
+type SentimentFilter = 'ALL' | 'POSITIF' | 'NEGATIF' | 'NEUTRE' | 'UNKNOWN';
+type SortOption = 'recent' | 'oldest' | 'mostLiked' | 'highestNote' | 'lowestNote';
+
 @Component({
   selector: 'app-feedback',
   standalone: true,
@@ -45,6 +48,19 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
 
   currentUserId: string = '';
 
+  searchTerm: string = '';
+  selectedNoteFilter: string = 'ALL';
+  selectedSentimentFilter: SentimentFilter = 'ALL';
+  sortOption: SortOption = 'recent';
+
+  availableEmojis: string[] = ['❤️', '😂', '😮', '😢', '😡', '🔥'];
+  private emojiStorageKey = 'feedback_emoji_reactions_v1';
+  emojiReactions: Record<string, Record<string, number>> = {};
+  userEmojiSelections: Record<string, string> = {};
+
+  isCheckingGrammar: boolean = false;
+  correctedPreview: string = '';
+
   private feedbackPollTimer: ReturnType<typeof setInterval> | null = null;
 
   private feedbackService = inject(FeedbackService);
@@ -54,6 +70,7 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
   ngOnInit(): void {
     this.resolveModeFromRoute();
     this.currentUserId = this.extractUserIdFromToken();
+    this.loadEmojiState();
     this.initializePage();
   }
 
@@ -115,6 +132,8 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
           this.selectedWatchParty =
             this.watchParties.find((w) => w.id === this.watchPartyId) || null;
         }
+
+        this.applyFilters();
       },
       error: () => {
         this.watchParties = [];
@@ -126,19 +145,7 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     this.feedbackService.getAll().subscribe({
       next: (data) => {
         this.allFeedbacks = data || [];
-
-        if (this.mode === 'admin') {
-          this.feedbacks = [...this.allFeedbacks];
-          return;
-        }
-
-        if (this.watchPartyId) {
-          this.feedbacks = this.allFeedbacks.filter(
-            (f) => f.watchPartyId === this.watchPartyId
-          );
-        } else {
-          this.feedbacks = [...this.allFeedbacks];
-        }
+        this.applyFilters();
       },
       error: () => {
         this.feedbacks = [];
@@ -153,18 +160,108 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     this.errorMessage = '';
     this.note = null;
     this.commentaire = '';
+    this.correctedPreview = '';
 
     this.selectedWatchParty =
       this.watchParties.find((w) => w.id === this.watchPartyId) || null;
 
-    if (!this.watchPartyId) {
-      this.feedbacks = [...this.allFeedbacks];
-      return;
+    this.applyFilters();
+  }
+
+  onSearchChange(): void {
+    this.applyFilters();
+  }
+
+  onFiltersChange(): void {
+    this.applyFilters();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.selectedNoteFilter = 'ALL';
+    this.selectedSentimentFilter = 'ALL';
+    this.sortOption = 'recent';
+    this.applyFilters();
+  }
+
+  private applyFilters(): void {
+    let result = [...this.allFeedbacks];
+
+    if (this.mode === 'user' && this.watchPartyId) {
+      result = result.filter((f) => f.watchPartyId === this.watchPartyId);
     }
 
-    this.feedbacks = this.allFeedbacks.filter(
-      (f) => f.watchPartyId === this.watchPartyId
-    );
+    const query = this.normalizeText(this.searchTerm);
+    if (query) {
+      result = result.filter((f) => {
+        const watchPartyTitle = this.getWatchPartyTitle(f.watchPartyId);
+        const searchable = [
+          f.commentaire || '',
+          f.clientId || '',
+          watchPartyTitle || '',
+          String(f.note ?? ''),
+          f.sentiment || ''
+        ]
+          .map((value) => this.normalizeText(String(value)))
+          .join(' ');
+
+        return searchable.includes(query);
+      });
+    }
+
+    if (this.selectedNoteFilter !== 'ALL') {
+      const note = Number(this.selectedNoteFilter);
+      result = result.filter((f) => Number(f.note) === note);
+    }
+
+    if (this.selectedSentimentFilter !== 'ALL') {
+      result = result.filter(
+        (f) => this.normalizeSentiment(f.sentiment) === this.selectedSentimentFilter
+      );
+    }
+
+    result.sort((a, b) => {
+      switch (this.sortOption) {
+        case 'oldest':
+          return this.getFeedbackDate(a) - this.getFeedbackDate(b);
+        case 'mostLiked':
+          return (Number(b.likes) || 0) - (Number(a.likes) || 0);
+        case 'highestNote':
+          return (Number(b.note) || 0) - (Number(a.note) || 0);
+        case 'lowestNote':
+          return (Number(a.note) || 0) - (Number(b.note) || 0);
+        case 'recent':
+        default:
+          return this.getFeedbackDate(b) - this.getFeedbackDate(a);
+      }
+    });
+
+    this.feedbacks = result;
+  }
+
+  private getFeedbackDate(feedback: any): number {
+    if (!feedback?.dateFeedback) {
+      return 0;
+    }
+
+    const timestamp = new Date(feedback.dateFeedback).getTime();
+    return Number.isNaN(timestamp) ? 0 : timestamp;
+  }
+
+  private normalizeSentiment(sentiment: string | undefined): SentimentFilter {
+    const value = (sentiment || 'UNKNOWN').toUpperCase();
+    if (value === 'POSITIF' || value === 'NEGATIF' || value === 'NEUTRE') {
+      return value;
+    }
+    return 'UNKNOWN';
+  }
+
+  private normalizeText(value: string): string {
+    return (value || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
   }
 
   private startFeedbackPolling(): void {
@@ -262,11 +359,54 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
         if (indexVisible !== -1) {
           this.feedbacks[indexVisible] = updated;
         }
+
+        this.applyFilters();
       },
       error: () => {
         this.errorMessage = 'Erreur lors du vote.';
       }
     });
+  }
+
+  checkGrammar(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const rawText = this.commentaire?.trim();
+
+    if (!rawText) {
+      this.errorMessage = 'Please write a comment first.';
+      return;
+    }
+
+    const token =
+      localStorage.getItem('token') ||
+      localStorage.getItem('authToken') ||
+      '';
+
+    if (!token) {
+      this.errorMessage = 'You must be logged in.';
+      return;
+    }
+
+    this.isCheckingGrammar = true;
+
+    this.feedbackService.correctComment(rawText).subscribe({
+      next: (response) => {
+        this.correctedPreview = response.correctedText || rawText;
+        this.isCheckingGrammar = false;
+      },
+      error: () => {
+        this.errorMessage = 'Grammar correction failed.';
+        this.isCheckingGrammar = false;
+      }
+    });
+  }
+
+  useCorrectedText(): void {
+    if (this.correctedPreview?.trim()) {
+      this.commentaire = this.correctedPreview.trim();
+    }
   }
 
   submit(form: NgForm): void {
@@ -284,9 +424,13 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
+    const correctedComment = this.correctedPreview?.trim()
+      ? this.correctedPreview.trim()
+      : this.commentaire.trim();
+
     this.feedbackService.addFeedback({
       note: this.note,
-      commentaire: this.commentaire.trim(),
+      commentaire: correctedComment,
       watchPartyId: this.watchPartyId
     }).subscribe({
       next: () => {
@@ -294,6 +438,7 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
         this.note = null;
         this.hoveredStar = 0;
         this.commentaire = '';
+        this.correctedPreview = '';
 
         form.resetForm({
           watchPartyId: this.watchPartyId
@@ -338,9 +483,11 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
+    const correctedComment = this.editCommentaire.trim();
+
     this.feedbackService.updateFeedback(id, {
       note: this.editNote,
-      commentaire: this.editCommentaire.trim()
+      commentaire: correctedComment
     }).subscribe({
       next: () => {
         this.successMessage = 'Feedback modifié avec succès.';
@@ -408,5 +555,84 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
 
   getSentimentLabel(sentiment: string | undefined): string {
     return (sentiment || 'UNKNOWN').toUpperCase();
+  }
+
+  previewCorrectedComment(): string {
+    return this.correctedPreview || '';
+  }
+
+  previewCorrectedEditComment(): string {
+    return this.editCommentaire || '';
+  }
+
+  private loadEmojiState(): void {
+    try {
+      const savedReactions = localStorage.getItem(this.emojiStorageKey);
+      const savedSelections = localStorage.getItem(`${this.emojiStorageKey}_user_${this.currentUserId || 'guest'}`);
+
+      this.emojiReactions = savedReactions ? JSON.parse(savedReactions) : {};
+      this.userEmojiSelections = savedSelections ? JSON.parse(savedSelections) : {};
+    } catch {
+      this.emojiReactions = {};
+      this.userEmojiSelections = {};
+    }
+  }
+
+  private saveEmojiState(): void {
+    localStorage.setItem(this.emojiStorageKey, JSON.stringify(this.emojiReactions));
+    localStorage.setItem(
+      `${this.emojiStorageKey}_user_${this.currentUserId || 'guest'}`,
+      JSON.stringify(this.userEmojiSelections)
+    );
+  }
+
+  reactWithEmoji(feedbackId: string, emoji: string): void {
+    if (!feedbackId) {
+      return;
+    }
+
+    if (!this.emojiReactions[feedbackId]) {
+      this.emojiReactions[feedbackId] = {};
+    }
+
+    const previousEmoji = this.userEmojiSelections[feedbackId];
+
+    if (previousEmoji === emoji) {
+      const currentCount = this.emojiReactions[feedbackId][emoji] || 0;
+      this.emojiReactions[feedbackId][emoji] = Math.max(0, currentCount - 1);
+
+      if (this.emojiReactions[feedbackId][emoji] === 0) {
+        delete this.emojiReactions[feedbackId][emoji];
+      }
+
+      delete this.userEmojiSelections[feedbackId];
+      this.saveEmojiState();
+      return;
+    }
+
+    if (previousEmoji) {
+      const previousCount = this.emojiReactions[feedbackId][previousEmoji] || 0;
+      this.emojiReactions[feedbackId][previousEmoji] = Math.max(0, previousCount - 1);
+
+      if (this.emojiReactions[feedbackId][previousEmoji] === 0) {
+        delete this.emojiReactions[feedbackId][previousEmoji];
+      }
+    }
+
+    this.emojiReactions[feedbackId][emoji] = (this.emojiReactions[feedbackId][emoji] || 0) + 1;
+    this.userEmojiSelections[feedbackId] = emoji;
+    this.saveEmojiState();
+  }
+
+  getEmojiCount(feedbackId: string, emoji: string): number {
+    return this.emojiReactions?.[feedbackId]?.[emoji] || 0;
+  }
+
+  hasUserSelectedEmoji(feedbackId: string, emoji: string): boolean {
+    return this.userEmojiSelections?.[feedbackId] === emoji;
+  }
+
+  getFilteredCountLabel(): string {
+    return `${this.feedbacks.length} feedback(s)`;
   }
 }

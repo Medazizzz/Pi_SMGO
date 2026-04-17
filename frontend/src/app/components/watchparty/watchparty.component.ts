@@ -29,6 +29,8 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
   showDropdown = false;
 
   list: any[] = [];
+  originalList: any[] = [];
+
   errorMessage = '';
   successMessage = '';
 
@@ -52,6 +54,11 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
   newRequestToast = false;
   private previousPendingCount = 0;
 
+  // Advanced search
+  advancedSearchKeyword = '';
+  isSearching = false;
+  isSearchMode = false;
+
   private service = inject(WatchpartyService);
   private http = inject(HttpClient);
   private router = inject(Router);
@@ -72,7 +79,9 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['mode']) { this.load(); }
+    if (changes['mode']) {
+      this.load();
+    }
   }
 
   ngOnDestroy(): void {
@@ -80,24 +89,45 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private clearAllTimers(): void {
-    if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null; }
-    if (this.approvalPollTimer) { clearInterval(this.approvalPollTimer); this.approvalPollTimer = null; }
-    if (this.dropdownTimer) { clearTimeout(this.dropdownTimer); this.dropdownTimer = null; }
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+    if (this.approvalPollTimer) {
+      clearInterval(this.approvalPollTimer);
+      this.approvalPollTimer = null;
+    }
+    if (this.dropdownTimer) {
+      clearTimeout(this.dropdownTimer);
+      this.dropdownTimer = null;
+    }
   }
 
   // ─── Content search ───────────────────────────────────────────────────────
 
   loadContents(): void {
     this.http.get<any[]>(this.contentApiUrl).subscribe({
-      next: (data) => { this.contents = data || []; },
-      error: () => { console.warn('Could not load contents list.'); }
+      next: (data) => {
+        this.contents = data || [];
+      },
+      error: () => {
+        console.warn('Could not load contents list.');
+      }
     });
   }
 
   searchContents(): void {
     const q = this.searchQuery.toLowerCase().trim();
-    if (q.length < 2) { this.filteredContents = []; this.showDropdown = false; return; }
-    this.filteredContents = this.contents.filter(c => c.title?.toLowerCase().includes(q));
+
+    if (q.length < 2) {
+      this.filteredContents = [];
+      this.showDropdown = false;
+      return;
+    }
+
+    this.filteredContents = this.contents.filter(
+      c => c.title?.toLowerCase().includes(q)
+    );
     this.showDropdown = true;
   }
 
@@ -116,24 +146,81 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   hideDropdownDelayed(): void {
-    this.dropdownTimer = setTimeout(() => { this.showDropdown = false; }, 200);
+    this.dropdownTimer = setTimeout(() => {
+      this.showDropdown = false;
+    }, 200);
   }
 
   // ─── Load list ────────────────────────────────────────────────────────────
-  // Admin → toutes les sessions sans filtre
-  // User  → uniquement sessions avec au moins 1 participant
 
   load(): void {
     this.service.getAll().subscribe({
       next: (data: any[]) => {
         const all = data || [];
-        this.list = this.mode === 'admin'
+
+        this.originalList = this.mode === 'admin'
           ? all
           : all.filter((wp: any) => (wp.participantIds?.length || 0) > 0);
+
+        if (!this.isSearchMode) {
+          this.list = [...this.originalList];
+        }
+
         this.errorMessage = '';
       },
-      error: () => { this.errorMessage = 'Unable to load watch parties.'; }
+      error: () => {
+        this.errorMessage = 'Unable to load watch parties.';
+      }
     });
+  }
+
+  // ─── Advanced search ──────────────────────────────────────────────────────
+
+  searchWatchParties(): void {
+    const keyword = this.advancedSearchKeyword.trim();
+
+    if (!keyword) {
+      this.clearAdvancedSearch();
+      return;
+    }
+
+    this.isSearching = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.service.searchWatchParties(keyword).subscribe({
+      next: (results: any[]) => {
+        this.isSearchMode = true;
+
+        this.list = (results || []).map((item: any) => ({
+          id: item.watchPartyId,
+          titre: item.titre,
+          statut: item.statut,
+          clientId: item.hostId,
+          adminId: item.hostId,
+          hostUsername: item.hostUsername,
+          participantIds: Array.from({ length: item.participantCount || 0 }, (_, i) => `p${i}`),
+          feedbackCount: item.feedbackCount || 0,
+          matchedFeedbackComment: item.matchedFeedbackComment || '',
+          matchedSentiment: item.matchedSentiment || '',
+          isSearchResult: true
+        }));
+
+        this.isSearching = false;
+      },
+      error: () => {
+        this.isSearching = false;
+        this.errorMessage = 'Advanced search failed.';
+      }
+    });
+  }
+
+  clearAdvancedSearch(): void {
+    this.advancedSearchKeyword = '';
+    this.isSearching = false;
+    this.isSearchMode = false;
+    this.list = [...this.originalList];
+    this.errorMessage = '';
   }
 
   // ─── Create ───────────────────────────────────────────────────────────────
@@ -146,26 +233,44 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
 
     if (form.invalid || !this.selectedContent) {
       form.control.markAllAsTouched();
-      if (!this.selectedContent) { this.errorMessage = 'Please select a content.'; }
+      if (!this.selectedContent) {
+        this.errorMessage = 'Please select a content.';
+      }
       return;
     }
 
-    const payload = { titre: this.titre.trim(), contenuId: this.contenuId };
+    const payload = {
+      titre: this.titre.trim(),
+      contenuId: this.contenuId
+    };
 
     this.service.add(payload).subscribe({
       next: (created) => {
         this.successMessage = 'WatchParty created successfully.';
         this.createdWatchPartyId = created?.id ?? null;
-        if (created?.id) { this.inviteLink = `${window.location.origin}/watchparty/${created.id}`; }
+
+        if (created?.id) {
+          this.inviteLink = `${window.location.origin}/watchparty/${created.id}`;
+        }
+
         form.resetForm();
         this.titre = '';
         this.contenuId = '';
         this.clearContent();
+
+        this.isSearchMode = false;
         this.load();
-        setTimeout(() => { this.createdWatchPartyId = null; this.linkCopied = false; }, 30000);
+
+        setTimeout(() => {
+          this.createdWatchPartyId = null;
+          this.linkCopied = false;
+        }, 30000);
       },
       error: (err) => {
-        this.errorMessage = err?.error?.message || err?.error?.error || 'Failed to create watch party.';
+        this.errorMessage =
+          err?.error?.message ||
+          err?.error?.error ||
+          'Failed to create watch party.';
       }
     });
   }
@@ -173,17 +278,23 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
   copyLink(): void {
     navigator.clipboard.writeText(this.inviteLink).then(() => {
       this.linkCopied = true;
-      setTimeout(() => { this.linkCopied = false; }, 3000);
+      setTimeout(() => {
+        this.linkCopied = false;
+      }, 3000);
     });
   }
 
-  closeInvite(): void { this.createdWatchPartyId = null; this.linkCopied = false; }
+  closeInvite(): void {
+    this.createdWatchPartyId = null;
+    this.linkCopied = false;
+  }
 
   // ─── Join flow ────────────────────────────────────────────────────────────
 
   joinWatchParty(watchParty: any): void {
     this.successMessage = '';
     this.errorMessage = '';
+
     this.service.createJoinRequest(watchParty.id).subscribe({
       next: () => {
         this.waitingForApproval = true;
@@ -191,16 +302,25 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
         this.waitingWatchPartyId = watchParty.id;
         this.startPollingApproval(watchParty.id);
       },
-      error: (err) => { this.errorMessage = err?.error?.error || 'Failed to send join request.'; }
+      error: (err) => {
+        this.errorMessage = err?.error?.error || 'Failed to send join request.';
+      }
     });
   }
 
   private startPollingApproval(watchPartyId: string): void {
-    if (this.approvalPollTimer) { clearInterval(this.approvalPollTimer); this.approvalPollTimer = null; }
+    if (this.approvalPollTimer) {
+      clearInterval(this.approvalPollTimer);
+      this.approvalPollTimer = null;
+    }
+
     this.approvalPollTimer = setInterval(() => {
       this.service.getById(watchPartyId).subscribe({
         next: (data: any) => {
-          const participants: string[] = Array.isArray(data.participantIds) ? data.participantIds : [];
+          const participants: string[] = Array.isArray(data.participantIds)
+            ? data.participantIds
+            : [];
+
           if (participants.includes(this.currentUserId)) {
             this.stopApprovalPolling();
             this.waitingForApproval = false;
@@ -209,16 +329,23 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
             this.router.navigate(['/watchparty', watchPartyId]);
             return;
           }
+
           this.service.getJoinRequests(watchPartyId).subscribe({
             next: (requests: any[]) => {
-              const mine = (requests || []).find(r => r.userId === this.currentUserId);
+              const mine = (requests || []).find(
+                r => r.userId === this.currentUserId
+              );
+
               if (mine?.status === 'rejected') {
                 this.stopApprovalPolling();
                 this.waitingForApproval = false;
                 this.waitingWatchParty = null;
                 this.waitingWatchPartyId = null;
                 this.joinRejected = true;
-                setTimeout(() => { this.joinRejected = false; }, 5000);
+
+                setTimeout(() => {
+                  this.joinRejected = false;
+                }, 5000);
               }
             },
             error: () => {}
@@ -237,7 +364,10 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private stopApprovalPolling(): void {
-    if (this.approvalPollTimer) { clearInterval(this.approvalPollTimer); this.approvalPollTimer = null; }
+    if (this.approvalPollTimer) {
+      clearInterval(this.approvalPollTimer);
+      this.approvalPollTimer = null;
+    }
   }
 
   cancelJoinRequest(): void {
@@ -250,18 +380,34 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
   // ─── Admin: block / delete ────────────────────────────────────────────────
 
   blockWatchParty(id: string): void {
-    if (!confirm('Block this WatchParty? It will be cancelled and users will be disconnected.')) { return; }
+    if (!confirm('Block this WatchParty? It will be cancelled and users will be disconnected.')) {
+      return;
+    }
+
     this.service.blockWatchParty(id).subscribe({
-      next: () => { this.successMessage = 'WatchParty blocked successfully.'; this.load(); },
-      error: (err) => { this.errorMessage = err?.error?.error || 'Failed to block watch party.'; }
+      next: () => {
+        this.successMessage = 'WatchParty blocked successfully.';
+        this.load();
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.error || 'Failed to block watch party.';
+      }
     });
   }
 
   deleteWatchParty(id: string): void {
-    if (!confirm('Delete this watch party?')) { return; }
+    if (!confirm('Delete this watch party?')) {
+      return;
+    }
+
     this.service.delete(id).subscribe({
-      next: () => { this.successMessage = 'WatchParty deleted successfully.'; this.load(); },
-      error: (err) => { this.errorMessage = err?.error?.error || 'Failed to delete watch party.'; }
+      next: () => {
+        this.successMessage = 'WatchParty deleted successfully.';
+        this.load();
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.error || 'Failed to delete watch party.';
+      }
     });
   }
 
@@ -276,7 +422,9 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
         );
         this.load();
       },
-      error: () => { this.errorMessage = 'Failed to approve request.'; }
+      error: () => {
+        this.errorMessage = 'Failed to approve request.';
+      }
     });
   }
 
@@ -288,7 +436,9 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
           r => !(r.userId === request.userId && r.watchPartyId === request.watchPartyId)
         );
       },
-      error: () => { this.errorMessage = 'Failed to reject request.'; }
+      error: () => {
+        this.errorMessage = 'Failed to reject request.';
+      }
     });
   }
 
@@ -305,8 +455,8 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   isParticipant(watchParty: any): boolean {
-    return Array.isArray(watchParty?.participantIds) &&
-      watchParty.participantIds.includes(this.currentUserId);
+    return Array.isArray(watchParty?.participantIds)
+      && watchParty.participantIds.includes(this.currentUserId);
   }
 
   canJoin(watchParty: any): boolean {
@@ -320,35 +470,57 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
   // ─── Polling: host join-request notifications ─────────────────────────────
 
   private startPollingRequests(): void {
-    if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null; }
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+
     this.pollTimer = setInterval(() => {
-      if (this.mode !== 'user') { this.pendingRequests = []; return; }
+      if (this.mode !== 'user') {
+        this.pendingRequests = [];
+        return;
+      }
+
       const myWatchParties = this.list.filter(
         (wp) => wp.clientId === this.currentUserId || wp.adminId === this.currentUserId
       );
-      if (myWatchParties.length === 0) { this.pendingRequests = []; return; }
+
+      if (myWatchParties.length === 0) {
+        this.pendingRequests = [];
+        return;
+      }
+
       const collected: any[] = [];
       let done = 0;
+
       myWatchParties.forEach((wp) => {
         this.service.getJoinRequests(wp.id).subscribe({
           next: (requests: any[]) => {
             const pending = (requests || [])
               .filter((r) => r.status === 'pending')
               .map((r) => ({ ...r, watchPartyTitre: wp.titre }));
+
             collected.push(...pending);
             done++;
+
             if (done === myWatchParties.length) {
               this.pendingRequests = collected;
+
               if (this.pendingRequests.length > this.previousPendingCount) {
                 this.newRequestToast = true;
-                setTimeout(() => { this.newRequestToast = false; }, 4000);
+                setTimeout(() => {
+                  this.newRequestToast = false;
+                }, 4000);
               }
+
               this.previousPendingCount = this.pendingRequests.length;
             }
           },
           error: () => {
             done++;
-            if (done === myWatchParties.length) { this.pendingRequests = collected; }
+            if (done === myWatchParties.length) {
+              this.pendingRequests = collected;
+            }
           }
         });
       });
@@ -360,9 +532,12 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
       const token = localStorage.getItem('token') || localStorage.getItem('authToken') || '';
       if (token) {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload.sub) { return String(payload.sub); }
+        if (payload.sub) {
+          return String(payload.sub);
+        }
       }
     } catch {}
+
     return '';
   }
 }

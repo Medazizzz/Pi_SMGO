@@ -2,6 +2,18 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+export interface WatchPartySearchResult {
+  watchPartyId: string;
+  titre: string;
+  statut: string;
+  hostId: string;
+  hostUsername: string;
+  participantCount: number;
+  feedbackCount: number;
+  matchedFeedbackComment: string;
+  matchedSentiment: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -51,10 +63,6 @@ export class WatchpartyService {
     );
   }
 
-  /**
-   * Bloque une WatchParty (admin) → passe le statut à CANCELLED.
-   * Adapte l'endpoint si ton backend utilise une autre route.
-   */
   blockWatchParty(watchPartyId: string): Observable<any> {
     return this.http.post(
       `${this.apiUrl}/${watchPartyId}/cancel`,
@@ -106,6 +114,13 @@ export class WatchpartyService {
     return this.http.post(
       `${this.apiUrl}/${watchPartyId}/reject-join?userId=${userId}`,
       {},
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  searchWatchParties(keyword: string): Observable<WatchPartySearchResult[]> {
+    return this.http.get<WatchPartySearchResult[]>(
+      `${this.apiUrl}/search?keyword=${encodeURIComponent(keyword)}`,
       { headers: this.getAuthHeaders() }
     );
   }
