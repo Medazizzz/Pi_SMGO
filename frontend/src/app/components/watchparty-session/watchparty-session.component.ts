@@ -52,6 +52,9 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   approvalStatus: 'waiting' | 'approved' | 'rejected' | 'host' = 'waiting';
   pendingJoinRequests: JoinRequest[] = [];
 
+  showHostLeaveModal = false;
+  leavingInProgress = false;
+
   memberColors = [
     { bg: 'rgba(124,92,252,0.25)', text: '#a78bfa' },
     { bg: 'rgba(34,211,160,0.2)', text: '#22d3a0' },
@@ -75,9 +78,7 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   private hasSentReadySignal = false;
 
   private readonly rtcConfig: RTCConfiguration = {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' }
-    ]
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
   };
 
   private pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -159,9 +160,7 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   }
 
   private connectRealtimeChat(): void {
-    if (!this.sessionId) {
-      return;
-    }
+    if (!this.sessionId) return;
     this.realtimeService.connect(this.sessionId);
   }
 
@@ -181,8 +180,6 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
       this.isCameraReady = true;
       this.tryAttachLocalStream();
       this.trySendReadySignal();
-
-      console.log('🎥 Camera + microphone ready');
     } catch (error) {
       console.error('❌ Error accessing camera/microphone:', error);
       this.isCameraReady = false;
@@ -199,41 +196,27 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   }
 
   toggleMic(): void {
-    if (!this.localStream) {
-      return;
-    }
+    if (!this.localStream) return;
 
     const audioTracks = this.localStream.getAudioTracks();
-    if (audioTracks.length === 0) {
-      return;
-    }
+    if (audioTracks.length === 0) return;
 
     this.isMicEnabled = !this.isMicEnabled;
-    audioTracks.forEach(track => {
-      track.enabled = this.isMicEnabled;
-    });
+    audioTracks.forEach(track => track.enabled = this.isMicEnabled);
   }
 
   toggleCamera(): void {
-    if (!this.localStream) {
-      return;
-    }
+    if (!this.localStream) return;
 
     const videoTracks = this.localStream.getVideoTracks();
-    if (videoTracks.length === 0) {
-      return;
-    }
+    if (videoTracks.length === 0) return;
 
     this.isCameraEnabled = !this.isCameraEnabled;
-    videoTracks.forEach(track => {
-      track.enabled = this.isCameraEnabled;
-    });
+    videoTracks.forEach(track => track.enabled = this.isCameraEnabled);
   }
 
   private stopLocalMedia(): void {
-    if (!this.localStream) {
-      return;
-    }
+    if (!this.localStream) return;
 
     this.localStream.getTracks().forEach(track => track.stop());
     this.localStream = null;
@@ -257,9 +240,7 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
         if (this.currentUserId === hostId) {
           this.approvalStatus = 'host';
           this.connectRealtimeChat();
-          setTimeout(() => {
-            this.initCamera();
-          }, 300);
+          setTimeout(() => this.initCamera(), 300);
           this.startSessionPolling();
           this.startJoinRequestPolling();
           return;
@@ -268,9 +249,7 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
         if (participants.includes(this.currentUserId)) {
           this.approvalStatus = 'approved';
           this.connectRealtimeChat();
-          setTimeout(() => {
-            this.initCamera();
-          }, 300);
+          setTimeout(() => this.initCamera(), 300);
           this.startSessionPolling();
           return;
         }
@@ -278,8 +257,8 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
         this.approvalStatus = 'waiting';
 
         this.watchpartyService.createJoinRequest(this.sessionId).subscribe({
-          next: () => { this.startPollingApproval(); },
-          error: () => { this.startPollingApproval(); }
+          next: () => this.startPollingApproval(),
+          error: () => this.startPollingApproval()
         });
       },
       error: (err: any) => {
@@ -292,15 +271,58 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   }
 
   leaveSession(): void {
+    if (this.approvalStatus === 'host') {
+      this.showHostLeaveModal = true;
+      return;
+    }
+
+    this.performLeaveOnlyMe();
+  }
+
+  closeHostLeaveModal(): void {
+    this.showHostLeaveModal = false;
+  }
+
+  leaveOnlyMeAsHost(): void {
+    this.showHostLeaveModal = false;
+    this.performLeaveOnlyMe();
+  }
+
+  closeForEveryoneAsHost(): void {
+    this.showHostLeaveModal = false;
+
+    if (this.realtimeConnected) {
+      this.sendSystemMessage('LEAVE', `${this.currentUserName} closed the session`);
+    }
+
+    this.leavingInProgress = true;
+
+    this.watchpartyService.closeSessionForAll(this.sessionId).subscribe({
+      next: () => {
+        this.leavingInProgress = false;
+        this.router.navigate(['/user/watchparty']);
+      },
+      error: () => {
+        this.leavingInProgress = false;
+        this.router.navigate(['/user/watchparty']);
+      }
+    });
+  }
+
+  private performLeaveOnlyMe(): void {
     if (this.realtimeConnected) {
       this.sendSystemMessage('LEAVE', `${this.currentUserName} left the session`);
     }
 
+    this.leavingInProgress = true;
+
     this.watchpartyService.leaveWatchParty(this.sessionId).subscribe({
       next: () => {
+        this.leavingInProgress = false;
         this.router.navigate(['/user/watchparty']);
       },
       error: () => {
+        this.leavingInProgress = false;
         this.router.navigate(['/user/watchparty']);
       }
     });
@@ -310,12 +332,14 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
     this.watchpartyService.approveJoinRequest(request.watchPartyId, request.userId).subscribe({
       next: () => {
         this.pendingJoinRequests = this.pendingJoinRequests.filter(
-          (r) => !(r.userId === request.userId && r.watchPartyId === request.watchPartyId)
+          r => !(r.userId === request.userId && r.watchPartyId === request.watchPartyId)
         );
         this.loadSession();
         this.showSuccess('✅ User approved and joined the session!');
       },
-      error: () => { this.errorMessage = 'Failed to approve request.'; }
+      error: () => {
+        this.errorMessage = 'Failed to approve request.';
+      }
     });
   }
 
@@ -323,11 +347,13 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
     this.watchpartyService.rejectJoinRequest(request.watchPartyId, request.userId).subscribe({
       next: () => {
         this.pendingJoinRequests = this.pendingJoinRequests.filter(
-          (r) => !(r.userId === request.userId && r.watchPartyId === request.watchPartyId)
+          r => !(r.userId === request.userId && r.watchPartyId === request.watchPartyId)
         );
         this.showSuccess('❌ Request rejected.');
       },
-      error: () => { this.errorMessage = 'Failed to reject request.'; }
+      error: () => {
+        this.errorMessage = 'Failed to reject request.';
+      }
     });
   }
 
@@ -340,9 +366,11 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
     this.notifPollTimer = setInterval(() => {
       this.watchpartyService.getJoinRequests(this.sessionId).subscribe({
         next: (requests: any[]) => {
-          this.pendingJoinRequests = (requests || []).filter((r) => r.status === 'pending');
+          this.pendingJoinRequests = (requests || []).filter(r => r.status === 'pending');
         },
-        error: () => { this.pendingJoinRequests = []; }
+        error: () => {
+          this.pendingJoinRequests = [];
+        }
       });
     }, 2000);
   }
@@ -363,17 +391,25 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
       next: (data: any) => {
         const participants: string[] = Array.isArray(data.participantIds) ? data.participantIds : [];
 
+        if (data.statut === 'CLOSED' || data.statut === 'CANCELLED') {
+          if (this.pollTimer) {
+            clearInterval(this.pollTimer);
+            this.pollTimer = null;
+          }
+          this.errorMessage = 'This WatchParty is closed or cancelled.';
+          return;
+        }
+
         if (participants.includes(this.currentUserId)) {
           if (this.pollTimer) {
             clearInterval(this.pollTimer);
             this.pollTimer = null;
           }
+
           this.approvalStatus = 'approved';
           this.session = data;
           this.connectRealtimeChat();
-          setTimeout(() => {
-            this.initCamera();
-          }, 300);
+          setTimeout(() => this.initCamera(), 300);
           this.startSessionPolling();
           this.showSuccess('You were approved and joined the session.');
           return;
@@ -396,7 +432,7 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
       error: (err: any) => {
         if (err?.status === 404) {
           this.approvalStatus = 'rejected';
-          setTimeout(() => { this.router.navigate(['/user/watchparty']); }, 3000);
+          setTimeout(() => this.router.navigate(['/user/watchparty']), 3000);
         }
       }
     });
@@ -410,10 +446,18 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
 
     this.pollTimer = setInterval(() => {
       this.watchpartyService.getById(this.sessionId).subscribe({
-        next: (data: any) => { this.session = data; },
+        next: (data: any) => {
+          this.session = data;
+
+          if (data.statut === 'CLOSED' || data.statut === 'CANCELLED') {
+            this.errorMessage = 'This WatchParty is closed or cancelled.';
+            this.clearAllTimers();
+            setTimeout(() => this.router.navigate(['/user/watchparty']), 2000);
+          }
+        },
         error: () => {}
       });
-    }, 10000);
+    }, 5000);
   }
 
   private loadSession(): void {
@@ -430,9 +474,7 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
 
   sendMessage(): void {
     const text = this.chatInput.trim();
-    if (!text || !this.realtimeConnected) {
-      return;
-    }
+    if (!text || !this.realtimeConnected) return;
 
     this.realtimeService.sendChatMessage({
       watchPartyId: this.sessionId,
@@ -446,9 +488,7 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   }
 
   private sendSystemMessage(type: 'JOIN' | 'LEAVE', content: string): void {
-    if (!this.realtimeConnected) {
-      return;
-    }
+    if (!this.realtimeConnected) return;
 
     this.realtimeService.sendChatMessage({
       watchPartyId: this.sessionId,
@@ -485,9 +525,7 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   }
 
   private trySendReadySignal(): void {
-    if (!this.realtimeConnected || !this.localStream || this.hasSentReadySignal) {
-      return;
-    }
+    if (!this.realtimeConnected || !this.localStream || this.hasSentReadySignal) return;
 
     this.hasSentReadySignal = true;
 
@@ -502,27 +540,19 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   }
 
   private async handleSignal(signal: SignalMessage): Promise<void> {
-    if (!signal || signal.senderId === this.currentUserId) {
-      return;
-    }
-
-    if (signal.receiverId && signal.receiverId !== this.currentUserId) {
-      return;
-    }
+    if (!signal || signal.senderId === this.currentUserId) return;
+    if (signal.receiverId && signal.receiverId !== this.currentUserId) return;
 
     switch (signal.type) {
       case 'READY':
         await this.handleReadySignal(signal);
         break;
-
       case 'OFFER':
         await this.handleOfferSignal(signal);
         break;
-
       case 'ANSWER':
         await this.handleAnswerSignal(signal);
         break;
-
       case 'ICE_CANDIDATE':
         await this.handleIceCandidateSignal(signal);
         break;
@@ -530,17 +560,9 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   }
 
   private async handleReadySignal(signal: SignalMessage): Promise<void> {
-    if (!this.localStream) {
-      return;
-    }
-
-    if (this.approvalStatus !== 'host') {
-      return;
-    }
-
-    if (this.peerConnection || this.peerUserId) {
-      return;
-    }
+    if (!this.localStream) return;
+    if (this.approvalStatus !== 'host') return;
+    if (this.peerConnection || this.peerUserId) return;
 
     this.peerUserId = signal.senderId;
     await this.createPeerConnection(signal.senderId);
@@ -582,9 +604,7 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   }
 
   private async handleAnswerSignal(signal: SignalMessage): Promise<void> {
-    if (!this.peerConnection) {
-      return;
-    }
+    if (!this.peerConnection) return;
 
     await this.peerConnection.setRemoteDescription(
       new RTCSessionDescription(signal.data)
@@ -592,9 +612,7 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   }
 
   private async handleIceCandidateSignal(signal: SignalMessage): Promise<void> {
-    if (!this.peerConnection || !signal.data) {
-      return;
-    }
+    if (!this.peerConnection || !signal.data) return;
 
     try {
       await this.peerConnection.addIceCandidate(new RTCIceCandidate(signal.data));
@@ -604,9 +622,7 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   }
 
   private async createPeerConnection(targetUserId: string): Promise<void> {
-    if (this.peerConnection) {
-      return;
-    }
+    if (this.peerConnection) return;
 
     this.peerConnection = new RTCPeerConnection(this.rtcConfig);
     this.peerUserId = targetUserId;

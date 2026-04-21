@@ -1,22 +1,15 @@
 package com.example.contentmanagement.controller;
 
 import com.example.contentmanagement.dto.WatchPartyRequestDTO;
-import com.example.contentmanagement.entity.WatchParty;
 import com.example.contentmanagement.entity.JoinRequest;
+import com.example.contentmanagement.entity.WatchParty;
 import com.example.contentmanagement.service.WatchPartyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -38,27 +31,58 @@ public class WatchPartyController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<WatchParty> create(
+    public ResponseEntity<?> create(
             @Valid @RequestBody WatchPartyRequestDTO request,
             Authentication authentication) {
-        return new ResponseEntity<>(
-                watchPartyService.create(request, authentication.getName()),
-                HttpStatus.CREATED
-        );
+        try {
+            if (authentication == null || authentication.getName() == null || authentication.getName().trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+            }
+
+            WatchParty created = watchPartyService.create(request, authentication.getName());
+            return new ResponseEntity<>(created, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/{id}/join")
-    public ResponseEntity<WatchParty> join(
+    public ResponseEntity<?> join(
             @PathVariable String id,
-            Authentication authentication) {
-        return ResponseEntity.ok(watchPartyService.join(id, authentication.getName()));
+            Authentication authentication,
+            @RequestParam(required = false) String userId) {
+        try {
+            String resolvedUserId = resolveUser(authentication, userId);
+            return ResponseEntity.ok(watchPartyService.join(id, resolvedUserId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/{id}/leave")
-    public ResponseEntity<WatchParty> leave(
+    public ResponseEntity<?> leave(
             @PathVariable String id,
-            Authentication authentication) {
-        return ResponseEntity.ok(watchPartyService.leave(id, authentication.getName()));
+            Authentication authentication,
+            @RequestParam(required = false) String userId) {
+        try {
+            String resolvedUserId = resolveUser(authentication, userId);
+            return ResponseEntity.ok(watchPartyService.leave(id, resolvedUserId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/close-for-all")
+    public ResponseEntity<?> closeForAll(
+            @PathVariable String id,
+            Authentication authentication,
+            @RequestParam(required = false) String userId) {
+        try {
+            String resolvedUserId = resolveUser(authentication, userId);
+            return ResponseEntity.ok(watchPartyService.closeSessionForAll(id, resolvedUserId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping("/{id}/participants")
@@ -73,26 +97,37 @@ public class WatchPartyController {
     }
 
     @PostMapping("/{id}/add-participant")
-    public ResponseEntity<WatchParty> addParticipant(
+    public ResponseEntity<?> addParticipant(
             @PathVariable String id,
             @RequestParam String userId) {
-        return ResponseEntity.ok(watchPartyService.join(id, userId));
+        try {
+            return ResponseEntity.ok(watchPartyService.join(id, userId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<WatchParty> cancelWatchParty(@PathVariable String id) {
-        return ResponseEntity.ok(watchPartyService.cancelWatchParty(id));
+    public ResponseEntity<?> cancelWatchParty(@PathVariable String id) {
+        try {
+            return ResponseEntity.ok(watchPartyService.cancelWatchParty(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
-    // ✅ Join request endpoints
     @PostMapping("/{id}/join-request")
-    public ResponseEntity<JoinRequest> createJoinRequest(
+    public ResponseEntity<?> createJoinRequest(
             @PathVariable String id,
-            Authentication authentication) {
-        return new ResponseEntity<>(
-                watchPartyService.createJoinRequest(id, authentication.getName()),
-                HttpStatus.CREATED
-        );
+            Authentication authentication,
+            @RequestParam(required = false) String userId) {
+        try {
+            String resolvedUserId = resolveUser(authentication, userId);
+            JoinRequest created = watchPartyService.createJoinRequest(id, resolvedUserId);
+            return new ResponseEntity<>(created, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping("/{id}/join-requests")
@@ -101,16 +136,36 @@ public class WatchPartyController {
     }
 
     @PostMapping("/{id}/approve-join")
-    public ResponseEntity<WatchParty> approveJoinRequest(
+    public ResponseEntity<?> approveJoinRequest(
             @PathVariable String id,
             @RequestParam String userId) {
-        return ResponseEntity.ok(watchPartyService.approveJoinRequest(id, userId));
+        try {
+            return ResponseEntity.ok(watchPartyService.approveJoinRequest(id, userId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/{id}/reject-join")
-    public ResponseEntity<WatchParty> rejectJoinRequest(
+    public ResponseEntity<?> rejectJoinRequest(
             @PathVariable String id,
             @RequestParam String userId) {
-        return ResponseEntity.ok(watchPartyService.rejectJoinRequest(id, userId));
+        try {
+            return ResponseEntity.ok(watchPartyService.rejectJoinRequest(id, userId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    private String resolveUser(Authentication authentication, String userId) {
+        if (authentication != null && authentication.getName() != null && !authentication.getName().trim().isEmpty()) {
+            return authentication.getName();
+        }
+
+        if (userId != null && !userId.trim().isEmpty()) {
+            return userId.trim();
+        }
+
+        throw new RuntimeException("User not authenticated and userId not provided");
     }
 }

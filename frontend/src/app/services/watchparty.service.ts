@@ -18,7 +18,6 @@ export interface WatchPartySearchResult {
   providedIn: 'root'
 })
 export class WatchpartyService {
-
   private apiUrl = 'http://localhost:8090/watchparty';
 
   constructor(private http: HttpClient) {}
@@ -58,6 +57,14 @@ export class WatchpartyService {
   leaveWatchParty(watchPartyId: string): Observable<any> {
     return this.http.post(
       `${this.apiUrl}/${watchPartyId}/leave`,
+      {},
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  closeSessionForAll(watchPartyId: string): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/${watchPartyId}/close-for-all`,
       {},
       { headers: this.getAuthHeaders() }
     );

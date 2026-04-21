@@ -1,11 +1,11 @@
 package com.example.contentmanagement.service.impl;
 
 import com.example.contentmanagement.dto.WatchPartyRequestDTO;
-import com.example.contentmanagement.entity.WatchParty;
 import com.example.contentmanagement.entity.JoinRequest;
+import com.example.contentmanagement.entity.WatchParty;
 import com.example.contentmanagement.exception.ResourceNotFoundException;
-import com.example.contentmanagement.repository.WatchPartyRepository;
 import com.example.contentmanagement.repository.JoinRequestRepository;
+import com.example.contentmanagement.repository.WatchPartyRepository;
 import com.example.contentmanagement.service.WatchPartyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +20,7 @@ import java.util.Optional;
 public class WatchPartyServiceImpl implements WatchPartyService {
 
     private static final String DEFAULT_PARTICIPANT_ID = "guest";
+
     private final WatchPartyRepository watchPartyRepository;
     private final JoinRequestRepository joinRequestRepository;
 
@@ -64,6 +65,8 @@ public class WatchPartyServiceImpl implements WatchPartyService {
         WatchParty watchParty = getById(id);
         String resolvedUserId = resolveUserId(userId);
 
+        validateJoinAllowed(watchParty, resolvedUserId);
+
         List<String> participants = watchParty.getParticipantIds() == null
                 ? new ArrayList<>()
                 : new ArrayList<>(watchParty.getParticipantIds());
@@ -72,7 +75,14 @@ public class WatchPartyServiceImpl implements WatchPartyService {
             participants.add(resolvedUserId);
         }
 
+        List<String> pendingUsers = watchParty.getPendingUserIds() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(watchParty.getPendingUserIds());
+
+        pendingUsers.remove(resolvedUserId);
+
         watchParty.setParticipantIds(participants);
+        watchParty.setPendingUserIds(pendingUsers);
         watchParty.setUpdatedAt(new Date());
 
         return watchPartyRepository.save(watchParty);
@@ -88,8 +98,57 @@ public class WatchPartyServiceImpl implements WatchPartyService {
                 : new ArrayList<>(watchParty.getParticipantIds());
 
         participants.remove(resolvedUserId);
+
+        List<String> pendingUsers = watchParty.getPendingUserIds() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(watchParty.getPendingUserIds());
+
+        pendingUsers.remove(resolvedUserId);
+
         watchParty.setParticipantIds(participants);
+        watchParty.setPendingUserIds(pendingUsers);
         watchParty.setUpdatedAt(new Date());
+
+        // Si plus aucun participant -> fermer la session
+        if (participants.isEmpty()) {
+            watchParty.setStatut("CLOSED");
+            joinRequestRepository.deleteByWatchPartyId(id);
+            return watchPartyRepository.save(watchParty);
+        }
+
+        // Si le host quitte seulement pour lui, transférer le host au premier participant restant
+        boolean isCurrentHost =
+                resolvedUserId.equals(resolveUserId(watchParty.getClientId())) ||
+                        resolvedUserId.equals(resolveUserId(watchParty.getAdminId()));
+
+        if (isCurrentHost) {
+            String newHost = participants.get(0);
+            watchParty.setClientId(newHost);
+            watchParty.setAdminId(newHost);
+        }
+
+        return watchPartyRepository.save(watchParty);
+    }
+
+    @Override
+    public WatchParty closeSessionForAll(String id, String userId) {
+        WatchParty watchParty = getById(id);
+        String resolvedUserId = resolveUserId(userId);
+
+        String hostId = resolveUserId(
+                watchParty.getClientId() != null ? watchParty.getClientId() : watchParty.getAdminId()
+        );
+
+        if (!resolvedUserId.equals(hostId)) {
+            throw new RuntimeException("Only the host can close the session for everyone");
+        }
+
+        watchParty.setStatut("CLOSED");
+        watchParty.setParticipantIds(new ArrayList<>());
+        watchParty.setPendingUserIds(new ArrayList<>());
+        watchParty.setUpdatedAt(new Date());
+
+        joinRequestRepository.deleteByWatchPartyId(id);
 
         return watchPartyRepository.save(watchParty);
     }
@@ -105,22 +164,42 @@ public class WatchPartyServiceImpl implements WatchPartyService {
     @Override
     public void delete(String id) {
         WatchParty watchParty = getById(id);
-        // ✅ Supprimer aussi les demandes de join associées
         joinRequestRepository.deleteByWatchPartyId(id);
         watchPartyRepository.delete(watchParty);
     }
 
-    // ✅ Join request management
     @Override
     public JoinRequest createJoinRequest(String watchPartyId, String userId) {
-        // ✅ Vérifier que la watchparty existe
-        getById(watchPartyId);
+        WatchParty watchParty = getById(watchPartyId);
         String resolvedUserId = resolveUserId(userId);
 
-        // ✅ Vérifier si une demande existe déjà (pending)
-        Optional<JoinRequest> existing = joinRequestRepository.findByWatchPartyIdAndUserId(watchPartyId, resolvedUserId);
-        if (existing.isPresent() && "pending".equals(existing.get().getStatus())) {
-            return existing.get(); // Retourner la demande existante
+        validateJoinAllowed(watchParty, resolvedUserId);
+
+        List<String> pendingUsers = watchParty.getPendingUserIds() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(watchParty.getPendingUserIds());
+
+        if (pendingUsers.contains(resolvedUserId)) {
+            Optional<JoinRequest> existingPending =
+                    joinRequestRepository.findByWatchPartyIdAndUserId(watchPartyId, resolvedUserId);
+
+            if (existingPending.isPresent() && "pending".equalsIgnoreCase(existingPending.get().getStatus())) {
+                return existingPending.get();
+            }
+
+            throw new RuntimeException("Join request already pending");
+        }
+
+        pendingUsers.add(resolvedUserId);
+        watchParty.setPendingUserIds(pendingUsers);
+        watchParty.setUpdatedAt(new Date());
+        watchPartyRepository.save(watchParty);
+
+        Optional<JoinRequest> existing =
+                joinRequestRepository.findByWatchPartyIdAndUserId(watchPartyId, resolvedUserId);
+
+        if (existing.isPresent() && "pending".equalsIgnoreCase(existing.get().getStatus())) {
+            return existing.get();
         }
 
         JoinRequest request = JoinRequest.builder()
@@ -129,6 +208,7 @@ public class WatchPartyServiceImpl implements WatchPartyService {
                 .status("pending")
                 .requestedAt(new Date())
                 .build();
+
         return joinRequestRepository.save(request);
     }
 
@@ -139,9 +219,32 @@ public class WatchPartyServiceImpl implements WatchPartyService {
 
     @Override
     public WatchParty approveJoinRequest(String watchPartyId, String userId) {
-        WatchParty watchParty = join(watchPartyId, userId);
+        WatchParty watchParty = getById(watchPartyId);
+        String resolvedUserId = resolveUserId(userId);
 
-        Optional<JoinRequest> request = joinRequestRepository.findByWatchPartyIdAndUserId(watchPartyId, userId);
+        String status = normalizeStatus(watchParty.getStatut());
+        if (!"OPEN".equals(status)) {
+            throw new RuntimeException("Cannot approve request because this WatchParty is closed");
+        }
+
+        List<String> pendingUsers = watchParty.getPendingUserIds() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(watchParty.getPendingUserIds());
+
+        if (!pendingUsers.contains(resolvedUserId)) {
+            throw new RuntimeException("No pending request found for this user");
+        }
+
+        pendingUsers.remove(resolvedUserId);
+        watchParty.setPendingUserIds(pendingUsers);
+        watchParty.setUpdatedAt(new Date());
+        watchPartyRepository.save(watchParty);
+
+        WatchParty updatedWatchParty = join(watchPartyId, resolvedUserId);
+
+        Optional<JoinRequest> request =
+                joinRequestRepository.findByWatchPartyIdAndUserId(watchPartyId, resolvedUserId);
+
         if (request.isPresent()) {
             JoinRequest jr = request.get();
             jr.setStatus("approved");
@@ -149,15 +252,26 @@ public class WatchPartyServiceImpl implements WatchPartyService {
             joinRequestRepository.save(jr);
         }
 
-        watchParty.setUpdatedAt(new Date());
-        return watchPartyRepository.save(watchParty);
+        updatedWatchParty.setUpdatedAt(new Date());
+        return watchPartyRepository.save(updatedWatchParty);
     }
 
     @Override
     public WatchParty rejectJoinRequest(String watchPartyId, String userId) {
         WatchParty watchParty = getById(watchPartyId);
+        String resolvedUserId = resolveUserId(userId);
 
-        Optional<JoinRequest> request = joinRequestRepository.findByWatchPartyIdAndUserId(watchPartyId, userId);
+        List<String> pendingUsers = watchParty.getPendingUserIds() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(watchParty.getPendingUserIds());
+
+        pendingUsers.remove(resolvedUserId);
+        watchParty.setPendingUserIds(pendingUsers);
+        watchParty.setUpdatedAt(new Date());
+
+        Optional<JoinRequest> request =
+                joinRequestRepository.findByWatchPartyIdAndUserId(watchPartyId, resolvedUserId);
+
         if (request.isPresent()) {
             JoinRequest jr = request.get();
             jr.setStatus("rejected");
@@ -165,14 +279,7 @@ public class WatchPartyServiceImpl implements WatchPartyService {
             joinRequestRepository.save(jr);
         }
 
-        watchParty.setUpdatedAt(new Date());
         return watchPartyRepository.save(watchParty);
-    }
-    private String resolveUserId(String userId) {
-        if (userId == null || userId.trim().isEmpty()) {
-            return DEFAULT_PARTICIPANT_ID;
-        }
-        return userId.trim();
     }
 
     @Override
@@ -183,5 +290,33 @@ public class WatchPartyServiceImpl implements WatchPartyService {
         return watchPartyRepository.save(watchParty);
     }
 
-}
+    private void validateJoinAllowed(WatchParty watchParty, String userId) {
+        String status = normalizeStatus(watchParty.getStatut());
 
+        if (!"OPEN".equals(status)) {
+            throw new RuntimeException("This WatchParty is closed. Join request is not allowed.");
+        }
+
+        List<String> participants = watchParty.getParticipantIds() == null
+                ? new ArrayList<>()
+                : watchParty.getParticipantIds();
+
+        if (participants.contains(userId)) {
+            throw new RuntimeException("User is already a participant");
+        }
+    }
+
+    private String normalizeStatus(String status) {
+        if (status == null || status.trim().isEmpty()) {
+            return "UNKNOWN";
+        }
+        return status.trim().toUpperCase();
+    }
+
+    private String resolveUserId(String userId) {
+        if (userId == null || userId.trim().isEmpty()) {
+            return DEFAULT_PARTICIPANT_ID;
+        }
+        return userId.trim();
+    }
+}

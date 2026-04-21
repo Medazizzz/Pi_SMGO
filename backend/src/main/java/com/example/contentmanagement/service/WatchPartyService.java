@@ -18,6 +18,8 @@ public interface WatchPartyService {
 
     WatchParty leave(String id, String userId);
 
+    WatchParty closeSessionForAll(String id, String userId);
+
     List<String> getParticipants(String id);
 
     void delete(String id);
