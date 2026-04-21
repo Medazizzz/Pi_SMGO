@@ -61,7 +61,11 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
   isCheckingGrammar: boolean = false;
   correctedPreview: string = '';
 
+  openedEmojiPickerId: string | null = null;
+
   private feedbackPollTimer: ReturnType<typeof setInterval> | null = null;
+  private blockedFeedbackStorageKey = 'blocked_feedback_ids_v1';
+  blockedFeedbackIds: string[] = [];
 
   private feedbackService = inject(FeedbackService);
   private watchPartyService = inject(WatchpartyService);
@@ -71,6 +75,7 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     this.resolveModeFromRoute();
     this.currentUserId = this.extractUserIdFromToken();
     this.loadEmojiState();
+    this.loadBlockedFeedbacks();
     this.initializePage();
   }
 
@@ -187,6 +192,8 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
   private applyFilters(): void {
     let result = [...this.allFeedbacks];
 
+    result = result.filter((f) => !this.blockedFeedbackIds.includes(f.id));
+
     if (this.mode === 'user' && this.watchPartyId) {
       result = result.filter((f) => f.watchPartyId === this.watchPartyId);
     }
@@ -195,10 +202,13 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     if (query) {
       result = result.filter((f) => {
         const watchPartyTitle = this.getWatchPartyTitle(f.watchPartyId);
+        const watchPartyHost = this.getWatchPartyHost(f.watchPartyId);
+
         const searchable = [
           f.commentaire || '',
           f.clientId || '',
           watchPartyTitle || '',
+          watchPartyHost || '',
           String(f.note ?? ''),
           f.sentiment || ''
         ]
@@ -523,6 +533,15 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     return wp?.titre || watchPartyId;
   }
 
+  getWatchPartyHost(watchPartyId: string): string {
+    const wp = this.watchParties.find((w) => w.id === watchPartyId);
+    if (!wp) {
+      return 'Unknown host';
+    }
+
+    return wp.clientId || wp.adminId || 'Unknown host';
+  }
+
   isOwner(feedback: any): boolean {
     return feedback?.clientId === this.currentUserId;
   }
@@ -568,7 +587,9 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
   private loadEmojiState(): void {
     try {
       const savedReactions = localStorage.getItem(this.emojiStorageKey);
-      const savedSelections = localStorage.getItem(`${this.emojiStorageKey}_user_${this.currentUserId || 'guest'}`);
+      const savedSelections = localStorage.getItem(
+        `${this.emojiStorageKey}_user_${this.currentUserId || 'guest'}`
+      );
 
       this.emojiReactions = savedReactions ? JSON.parse(savedReactions) : {};
       this.userEmojiSelections = savedSelections ? JSON.parse(savedSelections) : {};
@@ -619,7 +640,8 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
       }
     }
 
-    this.emojiReactions[feedbackId][emoji] = (this.emojiReactions[feedbackId][emoji] || 0) + 1;
+    this.emojiReactions[feedbackId][emoji] =
+      (this.emojiReactions[feedbackId][emoji] || 0) + 1;
     this.userEmojiSelections[feedbackId] = emoji;
     this.saveEmojiState();
   }
@@ -628,11 +650,57 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     return this.emojiReactions?.[feedbackId]?.[emoji] || 0;
   }
 
+  getTotalReactions(feedbackId: string): number {
+    const reactions = this.emojiReactions?.[feedbackId] || {};
+    return Object.values(reactions).reduce((sum, count) => sum + Number(count || 0), 0);
+  }
+
   hasUserSelectedEmoji(feedbackId: string, emoji: string): boolean {
     return this.userEmojiSelections?.[feedbackId] === emoji;
   }
 
   getFilteredCountLabel(): string {
     return `${this.feedbacks.length} feedback(s)`;
+  }
+
+  private loadBlockedFeedbacks(): void {
+    try {
+      const saved = localStorage.getItem(this.blockedFeedbackStorageKey);
+      this.blockedFeedbackIds = saved ? JSON.parse(saved) : [];
+    } catch {
+      this.blockedFeedbackIds = [];
+    }
+  }
+
+  private saveBlockedFeedbacks(): void {
+    localStorage.setItem(
+      this.blockedFeedbackStorageKey,
+      JSON.stringify(this.blockedFeedbackIds)
+    );
+  }
+
+  toggleBlockFeedback(feedbackId: string): void {
+    if (!feedbackId) {
+      return;
+    }
+
+    if (this.blockedFeedbackIds.includes(feedbackId)) {
+      return;
+    }
+
+    this.blockedFeedbackIds.push(feedbackId);
+    this.saveBlockedFeedbacks();
+    this.successMessage = 'Feedback blocked successfully.';
+    this.applyFilters();
+  }
+
+  toggleEmojiPicker(feedbackId: string): void {
+    this.openedEmojiPickerId =
+      this.openedEmojiPickerId === feedbackId ? null : feedbackId;
+  }
+
+  selectEmoji(feedbackId: string, emoji: string): void {
+    this.reactWithEmoji(feedbackId, emoji);
+    this.openedEmojiPickerId = null;
   }
 }
