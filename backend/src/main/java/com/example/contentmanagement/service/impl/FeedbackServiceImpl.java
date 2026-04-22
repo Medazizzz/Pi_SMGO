@@ -9,9 +9,12 @@ import com.example.contentmanagement.exception.UnauthorizedException;
 import com.example.contentmanagement.repository.FeedbackRepository;
 import com.example.contentmanagement.repository.WatchPartyRepository;
 import com.example.contentmanagement.service.FeedbackService;
+import com.example.contentmanagement.service.ModerationService;
 import com.example.contentmanagement.service.IA.SentimentApiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,6 +27,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     private final FeedbackRepository feedbackRepository;
     private final WatchPartyRepository watchPartyRepository;
     private final SentimentApiService sentimentApiService;
+    private final ModerationService moderationService;
 
     @Override
     public List<Feedback> getAll() {
@@ -56,6 +60,13 @@ public class FeedbackServiceImpl implements FeedbackService {
             throw new UnauthorizedException("Only watch party members can add feedback to this watchparty.");
         }
 
+        if (moderationService.containsBadWords(request.getCommentaire())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Feedback contains inappropriate language."
+            );
+        }
+
         String predictedSentiment = null;
         try {
             predictedSentiment = sentimentApiService.predictSentiment(request.getCommentaire());
@@ -84,6 +95,13 @@ public class FeedbackServiceImpl implements FeedbackService {
     public Feedback update(String id, FeedbackUpdateRequestDTO request) {
         Feedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feedback not found with id: " + id));
+
+        if (moderationService.containsBadWords(request.getCommentaire())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Feedback contains inappropriate language."
+            );
+        }
 
         feedback.setNote(request.getNote());
         feedback.setCommentaire(request.getCommentaire());

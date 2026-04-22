@@ -1,459 +1,855 @@
 <div class="w-full min-h-screen px-4 md:px-6 py-8 text-white">
 
   <!-- ================= USER MODE ================= -->
-<div *ngIf="mode === 'user'" class="max-w-6xl mx-auto">
+  <div *ngIf="mode === 'user'" class="max-w-6xl mx-auto">
 
-  <!-- HERO -->
-  <div class="text-center mb-12">
-    <div
-      class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-400/20 text-violet-300 text-xs font-bold tracking-[0.2em] uppercase mb-5"
-    >
-      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2l2.9 5.88 6.49.94-4.7 4.58 1.11 6.47L12 16.77 6.2 19.87l1.1-6.47-4.69-4.58 6.49-.94L12 2z"/>
-      </svg>
-      Community Feedback
-    </div>
-
-    <h1 class="text-4xl md:text-6xl font-black tracking-tight leading-tight text-white">
-      Share your <span class="text-violet-300">WatchParty</span><br />
-      experience
-    </h1>
-
-    <p class="text-gray-400 text-base md:text-lg mt-4 max-w-2xl mx-auto leading-8">
-      Rate sessions, leave comments and help the community discover the best watch parties.
-    </p>
-  </div>
-
-  <!-- FORM SHELL -->
-  <div
-    class="rounded-[28px] border border-violet-400/20 bg-[linear-gradient(155deg,rgba(17,24,39,.95),rgba(11,14,22,.9))] shadow-[0_24px_64px_rgba(0,0,0,.45)] overflow-hidden mb-14"
-  >
-    <div
-      class="px-6 md:px-10 py-7 border-b border-white/10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 bg-[linear-gradient(135deg,rgba(139,92,246,.08),transparent_60%)]"
-    >
-      <div class="flex items-center gap-4">
-        <div
-          class="w-14 h-14 rounded-[18px] flex items-center justify-center bg-[linear-gradient(135deg,rgba(139,92,246,.3),rgba(124,58,237,.2))] border border-violet-400/25 shadow-[0_10px_30px_rgba(139,92,246,.2)]"
-        >
-          <svg class="w-7 h-7 text-violet-300" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l2.9 5.88 6.49.94-4.7 4.58 1.11 6.47L12 16.77 6.2 19.87l1.1-6.47-4.69-4.58 6.49-.94L12 2z"/>
-          </svg>
-        </div>
-
-        <div>
-          <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
-            Share your feedback
-          </h2>
-          <p class="text-sm text-gray-400 mt-1">
-            Rate your WatchParty experience and help the community.
-          </p>
-        </div>
-      </div>
-
+    <!-- HERO -->
+    <div class="text-center mb-12">
       <div
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-gray-300 text-sm font-medium"
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-400/20 text-violet-300 text-xs font-bold tracking-[0.2em] uppercase mb-5"
       >
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        AI sentiment analysis
-      </div>
-    </div>
-
-    <div class="p-6 md:p-10">
-
-      <!-- ALERTS -->
-      <div *ngIf="successMessage"
-        class="mb-5 rounded-2xl bg-emerald-500/10 border border-emerald-400/20 px-4 py-3 text-sm text-emerald-300 flex items-center gap-2">
-        <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="20 6 9 17 4 12"/>
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l2.9 5.88 6.49.94-4.7 4.58 1.11 6.47L12 16.77 6.2 19.87l1.1-6.47-4.69-4.58 6.49-.94L12 2z"/>
         </svg>
-        {{ successMessage }}
+        Community Feedback
       </div>
 
-      <div *ngIf="errorMessage"
-        class="mb-5 rounded-2xl bg-red-500/10 border border-red-400/20 px-4 py-3 text-sm text-red-300 flex items-center gap-2">
-        <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="15" y1="9" x2="9" y2="15"/>
-          <line x1="9" y1="9" x2="15" y2="15"/>
-        </svg>
-        {{ errorMessage }}
-      </div>
+      <h1 class="text-4xl md:text-6xl font-black tracking-tight leading-tight text-white">
+        Share your <span class="text-violet-300">WatchParty</span><br />
+        experience
+      </h1>
 
-      <form #feedbackForm="ngForm" (ngSubmit)="submit(feedbackForm)" novalidate>
-        <div class="grid lg:grid-cols-2 gap-6">
-
-          <!-- LEFT -->
-          <div class="space-y-5">
-            <div class="rounded-[22px] bg-white/[0.025] border border-white/10 p-6">
-              <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">Step 1</div>
-              <h3 class="text-xl font-bold text-white mb-1">Select WatchParty</h3>
-              <p class="text-sm text-gray-400 mb-5">
-                Choose the session you want to review. Only members can publish.
-              </p>
-
-              <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">
-                WatchParty
-              </label>
-
-              <div class="relative">
-                <select
-                  [(ngModel)]="watchPartyId"
-                  name="watchPartyId"
-                  required
-                  (change)="onWatchPartyChange()"
-                  class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-12 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
-                >
-                  <option value="">Choose a WatchParty…</option>
-                  <option *ngFor="let w of watchParties" [value]="w.id">{{ w.titre }}</option>
-                </select>
-
-                <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
-                </div>
-              </div>
-
-              <div *ngIf="selectedWatchParty"
-                class="mt-4 rounded-2xl bg-white/[0.03] border border-white/10 p-4 flex items-center gap-3">
-                <div
-                  class="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-400/20 flex items-center justify-center text-violet-300 flex-shrink-0"
-                >
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="2" y="3" width="20" height="14" rx="2"/>
-                    <polyline points="8 21 12 17 16 21"/>
-                  </svg>
-                </div>
-
-                <div class="min-w-0">
-                  <p class="text-sm font-semibold text-white truncate">
-                    {{ selectedWatchParty.titre }}
-                  </p>
-                  <p class="text-xs text-gray-400 mt-1">
-                    Host:
-                    <span class="text-gray-300">{{ selectedWatchParty.clientId }}</span>
-                    ·
-                    <span class="text-gray-300">{{ selectedWatchParty.participantIds?.length || 0 }}</span>
-                    participants
-                  </p>
-                </div>
-              </div>
-
-              <div *ngIf="watchPartyId && canCreateFeedback()"
-                class="mt-4 rounded-2xl px-4 py-3 flex items-center gap-2 bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 text-sm font-medium">
-                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                You are a member — you can publish feedback.
-              </div>
-
-              <div *ngIf="watchPartyId && !canCreateFeedback()"
-                class="mt-4 rounded-2xl px-4 py-3 flex items-center gap-2 bg-amber-500/10 border border-amber-400/20 text-amber-300 text-sm font-medium">
-                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                Only participants or host can publish.
-              </div>
-            </div>
-          </div>
-
-          <!-- RIGHT -->
-          <div class="space-y-5">
-
-            <div class="rounded-[22px] bg-white/[0.025] border border-white/10 p-6">
-              <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">Step 2</div>
-              <h3 class="text-xl font-bold text-white mb-4">Your rating</h3>
-
-              <div class="flex gap-2 mb-3" (mouseleave)="resetHover()">
-                <button
-                  *ngFor="let star of stars"
-                  type="button"
-                  (mouseenter)="hoverStar(star)"
-                  (click)="setNote(star)"
-                  [disabled]="!canSubmitFeedback()"
-                  class="bg-transparent border-0 p-0 text-[2.2rem] leading-none transition duration-150 hover:scale-110 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <span
-                    [class.text-amber-400]="isStarActive(star)"
-                    [class.text-[#2d3748]]="!isStarActive(star)"
-                    [style.filter]="isStarActive(star) ? 'drop-shadow(0 0 8px rgba(245,158,11,.4))' : 'none'"
-                  >★</span>
-                </button>
-              </div>
-
-              <div class="text-sm text-gray-400 mb-3">
-                <span *ngIf="note" class="text-amber-300 font-semibold">
-                  {{ note }} star{{ note > 1 ? 's' : '' }} selected
-                </span>
-                <span *ngIf="!note">Click to select a rating</span>
-              </div>
-
-              <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
-                <div
-                  class="h-full rounded-full bg-[linear-gradient(90deg,#8b5cf6,#a855f7_50%,#f59e0b)] transition-all duration-300"
-                  [style.width]="note ? ((note / 5) * 100) + '%' : '0%'"
-                ></div>
-              </div>
-            </div>
-
-            <div class="rounded-[22px] bg-white/[0.025] border border-white/10 p-6">
-              <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">Step 3</div>
-              <h3 class="text-xl font-bold text-white mb-4">Your comment</h3>
-
-              <textarea
-                [(ngModel)]="commentaire"
-                name="commentaire"
-                rows="6"
-                [disabled]="!canSubmitFeedback()"
-                placeholder="Tell us about your WatchParty experience..."
-                class="w-full rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-4 text-sm text-white placeholder:text-gray-500 outline-none resize-none leading-7 focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10 disabled:opacity-40"
-              ></textarea>
-
-              <div class="flex items-center justify-between mt-3 text-xs text-gray-500">
-                <span>English only.</span>
-                <span>{{ commentaire?.length || 0 }} chars</span>
-              </div>
-
-              <div class="flex flex-wrap gap-3 mt-4">
-                <button
-                  type="button"
-                  (click)="checkGrammar()"
-                  [disabled]="!commentaire.trim() || isCheckingGrammar"
-                  class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[14px] bg-[linear-gradient(135deg,#8b5cf6,#7c3aed)] text-white text-sm font-semibold shadow-[0_12px_28px_rgba(139,92,246,.28)] hover:-translate-y-0.5 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {{ isCheckingGrammar ? 'Checking...' : 'Check grammar' }}
-                </button>
-
-                <button
-                  type="button"
-                  (click)="useCorrectedText()"
-                  [disabled]="!correctedPreview"
-                  class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[14px] bg-violet-500/10 border border-violet-400/20 text-violet-300 text-sm font-semibold hover:bg-violet-500/15 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Use correction
-                </button>
-              </div>
-
-              <div *ngIf="correctedPreview"
-                class="mt-4 rounded-2xl bg-violet-500/10 border border-violet-400/20 px-4 py-4">
-                <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2 flex items-center gap-2">
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
-                  AI corrected version
-                </div>
-                <p class="text-sm text-gray-300 whitespace-pre-line leading-7">
-                  {{ correctedPreview }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          [disabled]="!canSubmitFeedback() || !note || !commentaire.trim()"
-          class="w-full mt-8 rounded-[18px] px-6 py-4 bg-[linear-gradient(135deg,#8b5cf6_0%,#7c3aed_50%,#6d28d9_100%)] text-white text-lg font-extrabold tracking-wide shadow-[0_20px_48px_rgba(139,92,246,.32)] hover:-translate-y-0.5 transition disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Submit feedback →
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- COMMUNITY HEADER -->
-  <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-6">
-    <div>
-      <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">
-        Community zone
-      </div>
-      <h2 class="text-4xl font-extrabold tracking-tight text-white">Community Feedback</h2>
-      <p class="text-gray-400 text-base mt-2">
-        Discover what users think about each WatchParty experience.
+      <p class="text-gray-400 text-base md:text-lg mt-4 max-w-2xl mx-auto leading-8">
+        Rate sessions, leave comments and help the community discover the best watch parties.
       </p>
     </div>
 
+    <!-- FORM SHELL -->
     <div
-      class="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-violet-500/10 border border-violet-400/20 text-violet-200 text-sm font-bold w-fit"
+      class="rounded-[28px] border border-violet-400/20 bg-[linear-gradient(155deg,rgba(17,24,39,.95),rgba(11,14,22,.9))] shadow-[0_24px_64px_rgba(0,0,0,.45)] overflow-hidden mb-14"
     >
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div
+        class="px-6 md:px-10 py-7 border-b border-white/10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 bg-[linear-gradient(135deg,rgba(139,92,246,.08),transparent_60%)]"
+      >
+        <div class="flex items-center gap-4">
+          <div
+            class="w-14 h-14 rounded-[18px] flex items-center justify-center bg-[linear-gradient(135deg,rgba(139,92,246,.3),rgba(124,58,237,.2))] border border-violet-400/25 shadow-[0_10px_30px_rgba(139,92,246,.2)]"
+          >
+            <svg class="w-7 h-7 text-violet-300" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l2.9 5.88 6.49.94-4.7 4.58 1.11 6.47L12 16.77 6.2 19.87l1.1-6.47-4.69-4.58 6.49-.94L12 2z"/>
+            </svg>
+          </div>
+
+          <div>
+            <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
+              Share your feedback
+            </h2>
+            <p class="text-sm text-gray-400 mt-1">
+              Rate your WatchParty experience and help the community.
+            </p>
+          </div>
+        </div>
+
+        <div
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-gray-300 text-sm font-medium"
+        >
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          AI sentiment analysis
+        </div>
+      </div>
+
+      <div class="p-6 md:p-10">
+
+        <!-- ALERTS -->
+        <div *ngIf="successMessage"
+          class="mb-5 rounded-2xl bg-emerald-500/10 border border-emerald-400/20 px-4 py-3 text-sm text-emerald-300 flex items-center gap-2">
+          <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          {{ successMessage }}
+        </div>
+
+        <div *ngIf="errorMessage"
+          class="mb-5 rounded-2xl bg-red-500/10 border border-red-400/20 px-4 py-3 text-sm text-red-300 flex items-center gap-2">
+          <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          {{ errorMessage }}
+        </div>
+
+        <form #feedbackForm="ngForm" (ngSubmit)="submit(feedbackForm)" novalidate>
+          <div class="grid lg:grid-cols-2 gap-6">
+
+            <!-- LEFT -->
+            <div class="space-y-5">
+              <div class="rounded-[22px] bg-white/[0.025] border border-white/10 p-6">
+                <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">Step 1</div>
+                <h3 class="text-xl font-bold text-white mb-1">Select WatchParty</h3>
+                <p class="text-sm text-gray-400 mb-5">
+                  Choose the session you want to review. Only members can publish.
+                </p>
+
+                <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">
+                  WatchParty
+                </label>
+
+                <div class="relative">
+                  <select
+                    [(ngModel)]="watchPartyId"
+                    name="watchPartyId"
+                    required
+                    (change)="onWatchPartyChange()"
+                    class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-12 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
+                  >
+                    <option value="">Choose a WatchParty…</option>
+                    <option *ngFor="let w of watchParties" [value]="w.id">{{ w.titre }}</option>
+                  </select>
+
+                  <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <div *ngIf="selectedWatchParty"
+                  class="mt-4 rounded-2xl bg-white/[0.03] border border-white/10 p-4 flex items-center gap-3">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-400/20 flex items-center justify-center text-violet-300 flex-shrink-0"
+                  >
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="2" y="3" width="20" height="14" rx="2"/>
+                      <polyline points="8 21 12 17 16 21"/>
+                    </svg>
+                  </div>
+
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-white truncate">
+                      {{ selectedWatchParty.titre }}
+                    </p>
+                    <p class="text-xs text-gray-400 mt-1">
+                      Host:
+                      <span class="text-gray-300">{{ selectedWatchParty.clientId }}</span>
+                      ·
+                      <span class="text-gray-300">{{ selectedWatchParty.participantIds?.length || 0 }}</span>
+                      participants
+                    </p>
+                  </div>
+                </div>
+
+                <div *ngIf="watchPartyId && canCreateFeedback()"
+                  class="mt-4 rounded-2xl px-4 py-3 flex items-center gap-2 bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 text-sm font-medium">
+                  <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  You are a member — you can publish feedback.
+                </div>
+
+                <div *ngIf="watchPartyId && !canCreateFeedback()"
+                  class="mt-4 rounded-2xl px-4 py-3 flex items-center gap-2 bg-amber-500/10 border border-amber-400/20 text-amber-300 text-sm font-medium">
+                  <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  Only participants or host can publish.
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT -->
+            <div class="space-y-5">
+
+              <div class="rounded-[22px] bg-white/[0.025] border border-white/10 p-6">
+                <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">Step 2</div>
+                <h3 class="text-xl font-bold text-white mb-4">Your rating</h3>
+
+                <div class="flex gap-2 mb-3" (mouseleave)="resetHover()">
+                  <button
+                    *ngFor="let star of stars"
+                    type="button"
+                    (mouseenter)="hoverStar(star)"
+                    (click)="setNote(star)"
+                    [disabled]="!canSubmitFeedback()"
+                    class="bg-transparent border-0 p-0 text-[2.2rem] leading-none transition duration-150 hover:scale-110 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <span
+                      [class.text-amber-400]="isStarActive(star)"
+                      [class.text-[#2d3748]]="!isStarActive(star)"
+                      [style.filter]="isStarActive(star) ? 'drop-shadow(0 0 8px rgba(245,158,11,.4))' : 'none'"
+                    >★</span>
+                  </button>
+                </div>
+
+                <div class="text-sm text-gray-400 mb-3">
+                  <span *ngIf="note" class="text-amber-300 font-semibold">
+                    {{ note }} star{{ note > 1 ? 's' : '' }} selected
+                  </span>
+                  <span *ngIf="!note">Click to select a rating</span>
+                </div>
+
+                <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    class="h-full rounded-full bg-[linear-gradient(90deg,#8b5cf6,#a855f7_50%,#f59e0b)] transition-all duration-300"
+                    [style.width]="note ? ((note / 5) * 100) + '%' : '0%'"
+                  ></div>
+                </div>
+              </div>
+
+              <div class="rounded-[22px] bg-white/[0.025] border border-white/10 p-6">
+                <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">Step 3</div>
+                <h3 class="text-xl font-bold text-white mb-4">Your comment</h3>
+
+                <textarea
+                  [(ngModel)]="commentaire"
+                  name="commentaire"
+                  rows="6"
+                  [disabled]="!canSubmitFeedback()"
+                  (input)="checkBadWords()"
+                  placeholder="Tell us about your WatchParty experience..."
+                  class="w-full rounded-2xl bg-[#06080f]/80 border px-4 py-4 text-sm text-white placeholder:text-gray-500 outline-none resize-none leading-7 focus:ring-4 disabled:opacity-40"
+                  [ngClass]="badWordDetected
+                    ? 'border-red-400/60 focus:border-red-400/60 focus:ring-red-500/10'
+                    : 'border-white/10 focus:border-violet-400/60 focus:ring-violet-500/10'"
+                ></textarea>
+
+                <div class="flex items-center justify-between mt-3 text-xs text-gray-500">
+                  <span>English only.</span>
+                  <span>{{ commentaire?.length || 0 }} chars</span>
+                </div>
+
+                <div
+                  *ngIf="badWordDetected"
+                  class="mt-3 rounded-2xl bg-red-500/10 border border-red-400/20 px-4 py-3 text-sm text-red-300 flex items-center gap-2"
+                >
+                  <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                  </svg>
+                  {{ badWordMessage }}
+                </div>
+
+                <div class="flex flex-wrap gap-3 mt-4">
+                  <button
+                    type="button"
+                    (click)="checkGrammar()"
+                    [disabled]="!commentaire.trim() || isCheckingGrammar || badWordDetected"
+                    class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[14px] bg-[linear-gradient(135deg,#8b5cf6,#7c3aed)] text-white text-sm font-semibold shadow-[0_12px_28px_rgba(139,92,246,.28)] hover:-translate-y-0.5 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {{ isCheckingGrammar ? 'Checking...' : 'Check grammar' }}
+                  </button>
+
+                  <button
+                    type="button"
+                    (click)="useCorrectedText()"
+                    [disabled]="!correctedPreview"
+                    class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[14px] bg-violet-500/10 border border-violet-400/20 text-violet-300 text-sm font-semibold hover:bg-violet-500/15 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Use correction
+                  </button>
+                </div>
+
+                <div *ngIf="correctedPreview"
+                  class="mt-4 rounded-2xl bg-violet-500/10 border border-violet-400/20 px-4 py-4">
+                  <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2 flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    AI corrected version
+                  </div>
+                  <p class="text-sm text-gray-300 whitespace-pre-line leading-7">
+                    {{ correctedPreview }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            [disabled]="!canSubmitFeedback() || !note || !commentaire.trim() || badWordDetected"
+            class="w-full mt-8 rounded-[18px] px-6 py-4 bg-[linear-gradient(135deg,#8b5cf6_0%,#7c3aed_50%,#6d28d9_100%)] text-white text-lg font-extrabold tracking-wide shadow-[0_20px_48px_rgba(139,92,246,.32)] hover:-translate-y-0.5 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Submit feedback →
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- COMMUNITY HEADER -->
+    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-6">
+      <div>
+        <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">
+          Community zone
+        </div>
+        <h2 class="text-4xl font-extrabold tracking-tight text-white">Community Feedback</h2>
+        <p class="text-gray-400 text-base mt-2">
+          Discover what users think about each WatchParty experience.
+        </p>
+      </div>
+
+      <div
+        class="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-violet-500/10 border border-violet-400/20 text-violet-200 text-sm font-bold w-fit"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        {{ feedbacks.length }} feedback(s)
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="rounded-[22px] bg-white/[0.025] border border-white/10 p-5 mb-7">
+      <div class="grid lg:grid-cols-4 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">
+            Search
+          </label>
+          <div class="relative">
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              name="searchTerm"
+              (ngModelChange)="onSearchChange()"
+              placeholder="Search feedback, user, watchparty…"
+              class="w-full rounded-2xl bg-[#06080f]/80 border border-white/10 pl-11 pr-4 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
+            />
+            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">
+            Filter by note
+          </label>
+          <div class="relative">
+            <select
+              [(ngModel)]="selectedNoteFilter"
+              name="selectedNoteFilter"
+              (change)="onFiltersChange()"
+              class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-10 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
+            >
+              <option value="ALL">All notes</option>
+              <option value="5">5 stars</option>
+              <option value="4">4 stars</option>
+              <option value="3">3 stars</option>
+              <option value="2">2 stars</option>
+              <option value="1">1 star</option>
+            </select>
+            <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">
+            Filter by sentiment
+          </label>
+          <div class="relative">
+            <select
+              [(ngModel)]="selectedSentimentFilter"
+              name="selectedSentimentFilter"
+              (change)="onFiltersChange()"
+              class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-10 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
+            >
+              <option value="ALL">All sentiments</option>
+              <option value="POSITIF">Positive</option>
+              <option value="NEUTRE">Neutral</option>
+              <option value="NEGATIF">Negative</option>
+              <option value="UNKNOWN">Unknown</option>
+            </select>
+            <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">
+            Sort by
+          </label>
+          <div class="relative">
+            <select
+              [(ngModel)]="sortOption"
+              name="sortOption"
+              (change)="onFiltersChange()"
+              class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-10 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
+            >
+              <option value="recent">Most recent</option>
+              <option value="oldest">Oldest</option>
+              <option value="mostLiked">Most liked</option>
+              <option value="highestNote">Highest note</option>
+              <option value="lowestNote">Lowest note</option>
+            </select>
+            <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+        <span class="text-sm text-gray-400">{{ getFilteredCountLabel() }}</span>
+
+        <button
+          type="button"
+          (click)="clearFilters()"
+          class="inline-flex items-center justify-center px-4 py-2.5 rounded-[14px] bg-white/5 border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/10 transition w-fit"
+        >
+          Clear filters
+        </button>
+      </div>
+    </div>
+
+    <!-- EMPTY -->
+    <div *ngIf="feedbacks.length === 0"
+      class="rounded-[22px] bg-white/[0.02] border border-white/10 p-14 text-center">
+      <svg class="w-12 h-12 text-gray-600 mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
-      {{ feedbacks.length }} feedback(s)
-    </div>
-  </div>
-
-  <!-- FILTERS -->
-  <div class="rounded-[22px] bg-white/[0.025] border border-white/10 p-5 mb-7">
-    <div class="grid lg:grid-cols-4 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">
-          Search
-        </label>
-        <div class="relative">
-          <input
-            type="text"
-            [(ngModel)]="searchTerm"
-            name="searchTerm"
-            (ngModelChange)="onSearchChange()"
-            placeholder="Search feedback, user, watchparty…"
-            class="w-full rounded-2xl bg-[#06080f]/80 border border-white/10 pl-11 pr-4 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
-          />
-          <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">
-          Filter by note
-        </label>
-        <div class="relative">
-          <select
-            [(ngModel)]="selectedNoteFilter"
-            name="selectedNoteFilter"
-            (change)="onFiltersChange()"
-            class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-10 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
-          >
-            <option value="ALL">All notes</option>
-            <option value="5">5 stars</option>
-            <option value="4">4 stars</option>
-            <option value="3">3 stars</option>
-            <option value="2">2 stars</option>
-            <option value="1">1 star</option>
-          </select>
-          <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">
-          Filter by sentiment
-        </label>
-        <div class="relative">
-          <select
-            [(ngModel)]="selectedSentimentFilter"
-            name="selectedSentimentFilter"
-            (change)="onFiltersChange()"
-            class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-10 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
-          >
-            <option value="ALL">All sentiments</option>
-            <option value="POSITIF">Positive</option>
-            <option value="NEUTRE">Neutral</option>
-            <option value="NEGATIF">Negative</option>
-            <option value="UNKNOWN">Unknown</option>
-          </select>
-          <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">
-          Sort by
-        </label>
-        <div class="relative">
-          <select
-            [(ngModel)]="sortOption"
-            name="sortOption"
-            (change)="onFiltersChange()"
-            class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-10 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
-          >
-            <option value="recent">Most recent</option>
-            <option value="oldest">Oldest</option>
-            <option value="mostLiked">Most liked</option>
-            <option value="highestNote">Highest note</option>
-            <option value="lowestNote">Lowest note</option>
-          </select>
-          <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </div>
-        </div>
-      </div>
+      <p class="text-base text-gray-400">No feedback available yet.</p>
     </div>
 
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
-      <span class="text-sm text-gray-400">{{ getFilteredCountLabel() }}</span>
-
-      <button
-        type="button"
-        (click)="clearFilters()"
-        class="inline-flex items-center justify-center px-4 py-2.5 rounded-[14px] bg-white/5 border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/10 transition w-fit"
+    <!-- FEEDBACK LIST -->
+    <div class="flex flex-col gap-5" *ngIf="feedbacks.length > 0">
+      <div
+        *ngFor="let f of feedbacks"
+        class="rounded-[28px] bg-[linear-gradient(145deg,rgba(17,24,39,.94),rgba(11,14,22,.9))] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,.45)] overflow-hidden relative hover:-translate-y-1 hover:border-violet-400/25 transition"
       >
-        Clear filters
-      </button>
+        <div class="p-6 md:p-8">
+
+          <!-- ================= DISPLAY MODE ================= -->
+          <ng-container *ngIf="editingId !== f.id; else editModeBlock">
+
+            <!-- TOP -->
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5 mb-5">
+              <div class="flex items-center gap-4 min-w-0">
+                <div
+                  class="w-14 h-14 rounded-full flex items-center justify-center bg-[linear-gradient(135deg,#7c3aed,#a855f7)] text-white font-extrabold text-base shadow-[0_10px_24px_rgba(139,92,246,.3)] flex-shrink-0"
+                >
+                  {{ (f.clientId || 'U')[0].toUpperCase() }}{{ (f.clientId || 'U')[1]?.toUpperCase() || '' }}
+                </div>
+
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <div class="font-extrabold text-lg md:text-xl text-white truncate">
+                      {{ f.clientId || 'user' }}
+                    </div>
+
+                    <span *ngIf="isOwner(f)"
+                      class="inline-flex items-center px-3 py-1 rounded-full bg-violet-500/10 border border-violet-400/20 text-violet-300 text-xs font-semibold">
+                      Your feedback
+                    </span>
+                  </div>
+
+                  <div class="text-sm text-gray-500 mt-1">
+                    {{ f.dateFeedback | date:'dd/MM/yyyy' }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col lg:items-end gap-3">
+                <div class="flex gap-1">
+                  <span
+                    *ngFor="let star of stars"
+                    class="text-[1.35rem] leading-none"
+                    [class.text-amber-400]="star <= f.note"
+                    [class.text-[#1e2535]]="star > f.note"
+                  >
+                    ★
+                  </span>
+                </div>
+
+                <div class="flex flex-wrap gap-2 lg:justify-end">
+                  <span class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-violet-500/10 border border-violet-400/20 text-violet-200 text-xs font-semibold max-w-[220px] truncate">
+                    {{ getWatchPartyTitle(f.watchPartyId) }}
+                  </span>
+
+                  <span class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold"
+                    [ngClass]="getSentimentClass(f.sentiment)">
+                    {{ getSentimentEmoji(f.sentiment) }} {{ getSentimentLabel(f.sentiment) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- COMMENT -->
+            <div class="rounded-[18px] px-6 py-6 bg-white/[0.02] border border-white/10 relative mb-5">
+              <div class="absolute left-4 top-2 text-[3rem] leading-none text-violet-400/20 font-serif">“</div>
+              <p class="text-base md:text-[1rem] leading-8 text-gray-300 relative z-10 whitespace-pre-line break-words">
+                {{ f.commentaire }}
+              </p>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="border-t border-white/10 pt-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+
+              <!-- VOTES -->
+              <div class="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  (click)="vote(f.id, 'like')"
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-[16px] bg-white/5 border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/10 hover:border-violet-400/20 transition"
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
+                    <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+                  </svg>
+                  {{ f.likes || 0 }}
+                </button>
+
+                <button
+                  type="button"
+                  (click)="vote(f.id, 'dislike')"
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-[16px] bg-white/5 border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/10 hover:border-violet-400/20 transition"
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
+                    <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
+                  </svg>
+                  {{ f.dislikes || 0 }}
+                </button>
+              </div>
+
+              <!-- REACT -->
+              <div class="emoji-picker-wrapper">
+                <button
+                  type="button"
+                  (click)="toggleEmojiPicker(f.id)"
+                  class="emoji-react-btn"
+                >
+                  <span>React</span>
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+
+                <div *ngIf="openedEmojiPickerId === f.id" class="emoji-picker-box">
+                  <p class="emoji-picker-title">Choose reaction</p>
+
+                  <div class="emoji-picker-grid">
+                    <button
+                      type="button"
+                      *ngFor="let emoji of availableEmojis"
+                      (click)="selectEmoji(f.id, emoji)"
+                      class="emoji-picker-item"
+                    >
+                      <span class="text-2xl">{{ emoji }}</span>
+                      <span class="text-[11px] text-gray-400">{{ getEmojiCount(f.id, emoji) }}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- OWNER ACTIONS -->
+              <div *ngIf="isOwner(f)" class="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  (click)="startEdit(f)"
+                  class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-[14px] bg-violet-500/10 border border-violet-400/20 text-violet-300 text-sm font-semibold hover:bg-violet-500/15 transition"
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  Edit
+                </button>
+
+                <button
+                  type="button"
+                  (click)="deleteFeedback(f.id)"
+                  class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-[14px] bg-red-500/10 border border-red-400/20 text-red-300 text-sm font-semibold hover:bg-red-500/15 transition"
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ================= EDIT MODE ================= -->
+          <ng-template #editModeBlock>
+            <div class="space-y-5">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-white text-xl font-bold">Edit feedback</p>
+                  <p class="text-sm text-gray-400 mt-1">Update your note and comment.</p>
+                </div>
+
+                <span class="inline-flex items-center px-3 py-1 rounded-full bg-violet-500/10 border border-violet-400/20 text-violet-300 text-xs font-semibold">
+                  Editing mode
+                </span>
+              </div>
+
+              <!-- EDIT STARS -->
+              <div class="rounded-[18px] bg-white/[0.02] border border-white/10 p-5">
+                <p class="text-sm text-gray-400 mb-3">Rating</p>
+
+                <div class="flex gap-2 flex-wrap" (mouseleave)="resetEditHover()">
+                  <button
+                    type="button"
+                    *ngFor="let star of stars"
+                    (mouseenter)="hoverEditStar(star)"
+                    (click)="setEditNote(star)"
+                    class="bg-transparent border-0 p-0 text-[2rem] leading-none transition hover:scale-110"
+                  >
+                    <span
+                      [class.text-amber-400]="isEditStarActive(star)"
+                      [class.text-[#2d3748]]="!isEditStarActive(star)"
+                    >
+                      ★
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- EDIT COMMENT -->
+              <div class="rounded-[18px] bg-white/[0.02] border border-white/10 p-5">
+                <p class="text-sm text-gray-400 mb-3">Comment</p>
+
+                <textarea
+                  [(ngModel)]="editCommentaire"
+                  [ngModelOptions]="{ standalone: true }"
+                  rows="6"
+                  (input)="checkEditBadWords()"
+                  class="w-full rounded-2xl bg-[#06080f]/80 border px-4 py-4 text-sm text-white outline-none resize-none leading-7 focus:ring-4"
+                  [ngClass]="editBadWordDetected
+                    ? 'border-red-400/60 focus:border-red-400/60 focus:ring-red-500/10'
+                    : 'border-white/10 focus:border-violet-400/60 focus:ring-violet-500/10'"
+                  placeholder="Update your comment..."
+                ></textarea>
+
+                <div
+                  *ngIf="editBadWordDetected"
+                  class="mt-3 rounded-2xl bg-red-500/10 border border-red-400/20 px-4 py-3 text-sm text-red-300 flex items-center gap-2"
+                >
+                  <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                  </svg>
+                  {{ editBadWordMessage }}
+                </div>
+              </div>
+
+              <!-- ACTIONS -->
+              <div class="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  (click)="cancelEdit()"
+                  class="px-5 py-3 rounded-[14px] bg-white/5 border border-white/10 text-gray-300 text-sm font-bold hover:bg-white/10 transition"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  (click)="saveEdit(f.id)"
+                  [disabled]="editBadWordDetected"
+                  class="px-5 py-3 rounded-[14px] bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Save changes
+                </button>
+              </div>
+            </div>
+          </ng-template>
+
+        </div>
+      </div>
     </div>
+
   </div>
 
-  <!-- EMPTY -->
-  <div *ngIf="feedbacks.length === 0"
-    class="rounded-[22px] bg-white/[0.02] border border-white/10 p-14 text-center">
-    <svg class="w-12 h-12 text-gray-600 mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-    </svg>
-    <p class="text-base text-gray-400">No feedback available yet.</p>
-  </div>
+  <!-- ================= ADMIN MODE ================= -->
+  <div *ngIf="mode === 'admin'" class="max-w-7xl mx-auto px-6 py-8 text-white">
 
-  <!-- FEEDBACK LIST -->
-  <div class="flex flex-col gap-5" *ngIf="feedbacks.length > 0">
-    <div
-      *ngFor="let f of feedbacks"
-      class="rounded-[28px] bg-[linear-gradient(145deg,rgba(17,24,39,.94),rgba(11,14,22,.9))] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,.45)] overflow-hidden relative hover:-translate-y-1 hover:border-violet-400/25 transition"
-    >
-      <div class="p-6 md:p-8">
+    <div class="mb-8">
+      <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">
+        Administration
+      </div>
+      <h2 class="text-4xl font-extrabold tracking-tight text-white">Feedback moderation</h2>
+      <p class="text-sm text-gray-400 mt-2">
+        Read feedbacks, inspect reactions and block inappropriate content.
+      </p>
+    </div>
 
-        <!-- ================= DISPLAY MODE ================= -->
-        <ng-container *ngIf="editingId !== f.id; else editModeBlock">
+    <div *ngIf="successMessage"
+      class="mb-5 rounded-2xl bg-emerald-500/10 border border-emerald-400/20 px-4 py-3 text-sm text-emerald-300 flex items-center gap-2">
+      <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      {{ successMessage }}
+    </div>
 
-          <!-- TOP -->
-          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5 mb-5">
-            <div class="flex items-center gap-4 min-w-0">
+    <div *ngIf="errorMessage"
+      class="mb-5 rounded-2xl bg-red-500/10 border border-red-400/20 px-4 py-3 text-sm text-red-300 flex items-center gap-2">
+      <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/>
+        <line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+      {{ errorMessage }}
+    </div>
+
+    <!-- ADMIN FILTERS -->
+    <div class="rounded-[22px] bg-white/[0.025] border border-white/10 p-5 mb-7">
+      <div class="grid lg:grid-cols-4 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">Search</label>
+          <div class="relative">
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              name="adminSearchTerm"
+              (ngModelChange)="onSearchChange()"
+              placeholder="Search feedback, user, watchparty…"
+              class="w-full rounded-2xl bg-[#06080f]/80 border border-white/10 pl-11 pr-4 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
+            />
+            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">Filter by note</label>
+          <div class="relative">
+            <select
+              [(ngModel)]="selectedNoteFilter"
+              name="adminSelectedNoteFilter"
+              (change)="onFiltersChange()"
+              class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-10 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
+            >
+              <option value="ALL">All notes</option>
+              <option value="5">5 stars</option>
+              <option value="4">4 stars</option>
+              <option value="3">3 stars</option>
+              <option value="2">2 stars</option>
+              <option value="1">1 star</option>
+            </select>
+            <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">Filter by sentiment</label>
+          <div class="relative">
+            <select
+              [(ngModel)]="selectedSentimentFilter"
+              name="adminSelectedSentimentFilter"
+              (change)="onFiltersChange()"
+              class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-10 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
+            >
+              <option value="ALL">All sentiments</option>
+              <option value="POSITIF">Positive</option>
+              <option value="NEUTRE">Neutral</option>
+              <option value="NEGATIF">Negative</option>
+              <option value="UNKNOWN">Unknown</option>
+            </select>
+            <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">Sort by</label>
+          <div class="relative">
+            <select
+              [(ngModel)]="sortOption"
+              name="adminSortOption"
+              (change)="onFiltersChange()"
+              class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-10 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
+            >
+              <option value="recent">Most recent</option>
+              <option value="oldest">Oldest</option>
+              <option value="mostLiked">Most liked</option>
+              <option value="highestNote">Highest note</option>
+              <option value="lowestNote">Lowest note</option>
+            </select>
+            <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+        <span class="text-sm text-gray-400">{{ getFilteredCountLabel() }}</span>
+
+        <button
+          type="button"
+          (click)="clearFilters()"
+          class="inline-flex items-center justify-center px-4 py-2.5 rounded-[14px] bg-white/5 border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/10 transition w-fit"
+        >
+          Clear filters
+        </button>
+      </div>
+    </div>
+
+    <!-- EMPTY -->
+    <div *ngIf="feedbacks.length === 0"
+      class="rounded-[22px] bg-white/[0.02] border border-white/10 p-14 text-center">
+      <p class="text-base text-gray-400">No feedback available.</p>
+    </div>
+
+    <!-- ADMIN LIST -->
+    <div class="space-y-5" *ngIf="feedbacks.length > 0">
+      <div
+        *ngFor="let f of feedbacks"
+        class="rounded-[28px] bg-[linear-gradient(145deg,rgba(17,24,39,.94),rgba(11,14,22,.9))] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,.45)] overflow-hidden"
+      >
+        <div class="p-6 md:p-7">
+          <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-5 mb-5">
+            <div class="flex items-center gap-4">
               <div
-                class="w-14 h-14 rounded-full flex items-center justify-center bg-[linear-gradient(135deg,#7c3aed,#a855f7)] text-white font-extrabold text-base shadow-[0_10px_24px_rgba(139,92,246,.3)] flex-shrink-0"
+                class="w-14 h-14 rounded-full flex items-center justify-center bg-[linear-gradient(135deg,#7c3aed,#a855f7)] text-white font-extrabold text-base"
               >
                 {{ (f.clientId || 'U')[0].toUpperCase() }}{{ (f.clientId || 'U')[1]?.toUpperCase() || '' }}
               </div>
 
-              <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-2">
-                  <div class="font-extrabold text-lg md:text-xl text-white truncate">
-                    {{ f.clientId || 'user' }}
-                  </div>
-
-                  <span *ngIf="isOwner(f)"
-                    class="inline-flex items-center px-3 py-1 rounded-full bg-violet-500/10 border border-violet-400/20 text-violet-300 text-xs font-semibold">
-                    Your feedback
-                  </span>
-                </div>
-
-                <div class="text-sm text-gray-500 mt-1">
-                  {{ f.dateFeedback | date:'dd/MM/yyyy' }}
-                </div>
+              <div>
+                <p class="text-white text-lg font-bold">{{ f.clientId || 'Unknown user' }}</p>
+                <p class="text-sm text-gray-500">{{ f.dateFeedback | date:'dd/MM/yyyy' }}</p>
               </div>
             </div>
 
-            <div class="flex flex-col lg:items-end gap-3">
+            <div class="flex flex-col items-start xl:items-end gap-3">
               <div class="flex gap-1">
                 <span
                   *ngFor="let star of stars"
-                  class="text-[1.35rem] leading-none"
+                  class="text-xl leading-none"
                   [class.text-amber-400]="star <= f.note"
                   [class.text-[#1e2535]]="star > f.note"
                 >
@@ -461,436 +857,74 @@
                 </span>
               </div>
 
-              <div class="flex flex-wrap gap-2 lg:justify-end">
-                <span class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-violet-500/10 border border-violet-400/20 text-violet-200 text-xs font-semibold max-w-[220px] truncate">
-                  {{ getWatchPartyTitle(f.watchPartyId) }}
-                </span>
-
-                <span class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold"
-                  [ngClass]="getSentimentClass(f.sentiment)">
-                  {{ getSentimentEmoji(f.sentiment) }} {{ getSentimentLabel(f.sentiment) }}
-                </span>
-              </div>
+              <span
+                class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold"
+                [ngClass]="getSentimentClass(f.sentiment)"
+              >
+                {{ getSentimentEmoji(f.sentiment) }} {{ getSentimentLabel(f.sentiment) }}
+              </span>
             </div>
           </div>
 
-          <!-- COMMENT -->
-          <div class="rounded-[18px] px-6 py-6 bg-white/[0.02] border border-white/10 relative mb-5">
-            <div class="absolute left-4 top-2 text-[3rem] leading-none text-violet-400/20 font-serif">“</div>
-            <p class="text-base md:text-[1rem] leading-8 text-gray-300 relative z-10 whitespace-pre-line break-words">
+          <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
+            <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
+              <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-2">WatchParty</p>
+              <p class="text-sm text-white font-semibold break-words">{{ getWatchPartyTitle(f.watchPartyId) }}</p>
+            </div>
+
+            <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
+              <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-2">Host</p>
+              <p class="text-sm text-white font-semibold break-words">{{ getWatchPartyHost(f.watchPartyId) }}</p>
+            </div>
+
+            <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
+              <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-2">Likes / Dislikes</p>
+              <p class="text-sm text-white font-semibold">{{ f.likes || 0 }} 👍 · {{ f.dislikes || 0 }} 👎</p>
+            </div>
+
+            <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
+              <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-2">Total reactions</p>
+              <p class="text-sm text-white font-semibold">{{ getTotalReactions(f.id) }}</p>
+            </div>
+          </div>
+
+          <div class="rounded-[20px] bg-white/[0.02] border border-white/10 p-5 mb-5">
+            <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-3">Feedback content</p>
+            <p class="text-sm md:text-base leading-8 text-gray-300 whitespace-pre-line break-words">
               {{ f.commentaire }}
             </p>
           </div>
 
-          <!-- FOOTER -->
-          <div class="border-t border-white/10 pt-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+          <div class="rounded-[20px] bg-white/[0.02] border border-white/10 p-5 mb-5">
+            <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-3">Emoji reactions</p>
 
-            <!-- VOTES -->
             <div class="flex flex-wrap gap-2">
-              <button
-                type="button"
-                (click)="vote(f.id, 'like')"
-                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-[16px] bg-white/5 border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/10 hover:border-violet-400/20 transition"
+              <div
+                *ngFor="let emoji of availableEmojis"
+                class="inline-flex items-center gap-2 px-3 py-2 rounded-[14px] bg-white/5 border border-white/10 text-gray-300 text-sm font-semibold"
               >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
-                  <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
-                </svg>
-                {{ f.likes || 0 }}
-              </button>
-
-              <button
-                type="button"
-                (click)="vote(f.id, 'dislike')"
-                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-[16px] bg-white/5 border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/10 hover:border-violet-400/20 transition"
-              >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
-                  <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
-                </svg>
-                {{ f.dislikes || 0 }}
-              </button>
-            </div>
-
-            <!-- REACT -->
-            <div class="emoji-picker-wrapper">
-              <button
-                type="button"
-                (click)="toggleEmojiPicker(f.id)"
-                class="emoji-react-btn"
-              >
-                <span>React</span>
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </button>
-
-              <div *ngIf="openedEmojiPickerId === f.id" class="emoji-picker-box">
-                <p class="emoji-picker-title">Choose reaction</p>
-
-                <div class="emoji-picker-grid">
-                  <button
-                    type="button"
-                    *ngFor="let emoji of availableEmojis"
-                    (click)="selectEmoji(f.id, emoji)"
-                    class="emoji-picker-item"
-                  >
-                    <span class="text-2xl">{{ emoji }}</span>
-                    <span class="text-[11px] text-gray-400">{{ getEmojiCount(f.id, emoji) }}</span>
-                  </button>
-                </div>
+                <span>{{ emoji }}</span>
+                <span class="text-xs">{{ getEmojiCount(f.id, emoji) }}</span>
               </div>
             </div>
-
-            <!-- OWNER ACTIONS -->
-            <div *ngIf="isOwner(f)" class="flex flex-wrap gap-3">
-              <button
-                type="button"
-                (click)="startEdit(f)"
-                class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-[14px] bg-violet-500/10 border border-violet-400/20 text-violet-300 text-sm font-semibold hover:bg-violet-500/15 transition"
-              >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-                Edit
-              </button>
-
-              <button
-                type="button"
-                (click)="deleteFeedback(f.id)"
-                class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-[14px] bg-red-500/10 border border-red-400/20 text-red-300 text-sm font-semibold hover:bg-red-500/15 transition"
-              >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                </svg>
-                Delete
-              </button>
-            </div>
           </div>
-        </ng-container>
 
-        <!-- ================= EDIT MODE ================= -->
-        <ng-template #editModeBlock>
-          <div class="space-y-5">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <p class="text-white text-xl font-bold">Edit feedback</p>
-                <p class="text-sm text-gray-400 mt-1">Update your note and comment.</p>
-              </div>
-
-              <span class="inline-flex items-center px-3 py-1 rounded-full bg-violet-500/10 border border-violet-400/20 text-violet-300 text-xs font-semibold">
-                Editing mode
-              </span>
-            </div>
-
-            <!-- EDIT STARS -->
-            <div class="rounded-[18px] bg-white/[0.02] border border-white/10 p-5">
-              <p class="text-sm text-gray-400 mb-3">Rating</p>
-
-              <div class="flex gap-2 flex-wrap" (mouseleave)="resetEditHover()">
-                <button
-                  type="button"
-                  *ngFor="let star of stars"
-                  (mouseenter)="hoverEditStar(star)"
-                  (click)="setEditNote(star)"
-                  class="bg-transparent border-0 p-0 text-[2rem] leading-none transition hover:scale-110"
-                >
-                  <span
-                    [class.text-amber-400]="isEditStarActive(star)"
-                    [class.text-[#2d3748]]="!isEditStarActive(star)"
-                  >
-                    ★
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            <!-- EDIT COMMENT -->
-            <div class="rounded-[18px] bg-white/[0.02] border border-white/10 p-5">
-              <p class="text-sm text-gray-400 mb-3">Comment</p>
-
-              <textarea
-                [(ngModel)]="editCommentaire"
-                [ngModelOptions]="{ standalone: true }"
-                rows="6"
-                class="w-full rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-4 text-sm text-white outline-none resize-none leading-7 focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
-                placeholder="Update your comment..."
-              ></textarea>
-            </div>
-
-            <!-- ACTIONS -->
-            <div class="flex flex-wrap justify-end gap-3">
-              <button
-                type="button"
-                (click)="cancelEdit()"
-                class="px-5 py-3 rounded-[14px] bg-white/5 border border-white/10 text-gray-300 text-sm font-bold hover:bg-white/10 transition"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                (click)="saveEdit(f.id)"
-                class="px-5 py-3 rounded-[14px] bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition"
-              >
-                Save changes
-              </button>
-            </div>
-          </div>
-        </ng-template>
-
-      </div>
-    </div>
-  </div>
-
-</div> <!-- FIN USER MODE -->
-
-<!-- ================= ADMIN MODE ================= -->
-<div *ngIf="mode === 'admin'" class="max-w-7xl mx-auto px-6 py-8 text-white">
-
-  <div class="mb-8">
-    <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">
-      Administration
-    </div>
-    <h2 class="text-4xl font-extrabold tracking-tight text-white">Feedback moderation</h2>
-    <p class="text-sm text-gray-400 mt-2">
-      Read feedbacks, inspect reactions and block inappropriate content.
-    </p>
-  </div>
-
-  <div *ngIf="successMessage"
-    class="mb-5 rounded-2xl bg-emerald-500/10 border border-emerald-400/20 px-4 py-3 text-sm text-emerald-300 flex items-center gap-2">
-    <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <polyline points="20 6 9 17 4 12"/>
-    </svg>
-    {{ successMessage }}
-  </div>
-
-  <div *ngIf="errorMessage"
-    class="mb-5 rounded-2xl bg-red-500/10 border border-red-400/20 px-4 py-3 text-sm text-red-300 flex items-center gap-2">
-    <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="10"/>
-      <line x1="15" y1="9" x2="9" y2="15"/>
-      <line x1="9" y1="9" x2="15" y2="15"/>
-    </svg>
-    {{ errorMessage }}
-  </div>
-
-  <!-- ADMIN FILTERS -->
-  <div class="rounded-[22px] bg-white/[0.025] border border-white/10 p-5 mb-7">
-    <div class="grid lg:grid-cols-4 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">Search</label>
-        <div class="relative">
-          <input
-            type="text"
-            [(ngModel)]="searchTerm"
-            name="adminSearchTerm"
-            (ngModelChange)="onSearchChange()"
-            placeholder="Search feedback, user, watchparty…"
-            class="w-full rounded-2xl bg-[#06080f]/80 border border-white/10 pl-11 pr-4 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
-          />
-          <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">Filter by note</label>
-        <div class="relative">
-          <select
-            [(ngModel)]="selectedNoteFilter"
-            name="adminSelectedNoteFilter"
-            (change)="onFiltersChange()"
-            class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-10 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
-          >
-            <option value="ALL">All notes</option>
-            <option value="5">5 stars</option>
-            <option value="4">4 stars</option>
-            <option value="3">3 stars</option>
-            <option value="2">2 stars</option>
-            <option value="1">1 star</option>
-          </select>
-          <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">Filter by sentiment</label>
-        <div class="relative">
-          <select
-            [(ngModel)]="selectedSentimentFilter"
-            name="adminSelectedSentimentFilter"
-            (change)="onFiltersChange()"
-            class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-10 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
-          >
-            <option value="ALL">All sentiments</option>
-            <option value="POSITIF">Positive</option>
-            <option value="NEUTRE">Neutral</option>
-            <option value="NEGATIF">Negative</option>
-            <option value="UNKNOWN">Unknown</option>
-          </select>
-          <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-[11px] font-bold tracking-[0.18em] uppercase text-gray-500 mb-2">Sort by</label>
-        <div class="relative">
-          <select
-            [(ngModel)]="sortOption"
-            name="adminSortOption"
-            (change)="onFiltersChange()"
-            class="w-full appearance-none rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 pr-10 text-sm text-white outline-none focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10"
-          >
-            <option value="recent">Most recent</option>
-            <option value="oldest">Oldest</option>
-            <option value="mostLiked">Most liked</option>
-            <option value="highestNote">Highest note</option>
-            <option value="lowestNote">Lowest note</option>
-          </select>
-          <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
-      <span class="text-sm text-gray-400">{{ getFilteredCountLabel() }}</span>
-
-      <button
-        type="button"
-        (click)="clearFilters()"
-        class="inline-flex items-center justify-center px-4 py-2.5 rounded-[14px] bg-white/5 border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/10 transition w-fit"
-      >
-        Clear filters
-      </button>
-    </div>
-  </div>
-
-  <!-- EMPTY -->
-  <div *ngIf="feedbacks.length === 0"
-    class="rounded-[22px] bg-white/[0.02] border border-white/10 p-14 text-center">
-    <p class="text-base text-gray-400">No feedback available.</p>
-  </div>
-
-  <!-- ADMIN LIST -->
-  <div class="space-y-5" *ngIf="feedbacks.length > 0">
-    <div
-      *ngFor="let f of feedbacks"
-      class="rounded-[28px] bg-[linear-gradient(145deg,rgba(17,24,39,.94),rgba(11,14,22,.9))] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,.45)] overflow-hidden"
-    >
-      <div class="p-6 md:p-7">
-        <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-5 mb-5">
-          <div class="flex items-center gap-4">
-            <div
-              class="w-14 h-14 rounded-full flex items-center justify-center bg-[linear-gradient(135deg,#7c3aed,#a855f7)] text-white font-extrabold text-base"
+          <div class="flex justify-end">
+            <button
+              type="button"
+              (click)="deleteFeedback(f.id)"
+              class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[16px] bg-red-500/10 border border-red-400/20 text-red-300 text-sm font-semibold hover:bg-red-500/15 transition"
             >
-              {{ (f.clientId || 'U')[0].toUpperCase() }}{{ (f.clientId || 'U')[1]?.toUpperCase() || '' }}
-            </div>
-
-            <div>
-              <p class="text-white text-lg font-bold">{{ f.clientId || 'Unknown user' }}</p>
-              <p class="text-sm text-gray-500">{{ f.dateFeedback | date:'dd/MM/yyyy' }}</p>
-            </div>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+              Delete
+            </button>
           </div>
-
-          <div class="flex flex-col items-start xl:items-end gap-3">
-            <div class="flex gap-1">
-              <span
-                *ngFor="let star of stars"
-                class="text-xl leading-none"
-                [class.text-amber-400]="star <= f.note"
-                [class.text-[#1e2535]]="star > f.note"
-              >
-                ★
-              </span>
-            </div>
-
-            <span
-              class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold"
-              [ngClass]="getSentimentClass(f.sentiment)"
-            >
-              {{ getSentimentEmoji(f.sentiment) }} {{ getSentimentLabel(f.sentiment) }}
-            </span>
-          </div>
-        </div>
-
-        <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
-          <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
-            <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-2">WatchParty</p>
-            <p class="text-sm text-white font-semibold break-words">{{ getWatchPartyTitle(f.watchPartyId) }}</p>
-          </div>
-
-          <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
-            <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-2">Host</p>
-            <p class="text-sm text-white font-semibold break-words">{{ getWatchPartyHost(f.watchPartyId) }}</p>
-          </div>
-
-          <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
-            <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-2">Likes / Dislikes</p>
-            <p class="text-sm text-white font-semibold">{{ f.likes || 0 }} 👍 · {{ f.dislikes || 0 }} 👎</p>
-          </div>
-
-          <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
-            <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-2">Total reactions</p>
-            <p class="text-sm text-white font-semibold">{{ getTotalReactions(f.id) }}</p>
-          </div>
-        </div>
-
-        <div class="rounded-[20px] bg-white/[0.02] border border-white/10 p-5 mb-5">
-          <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-3">Feedback content</p>
-          <p class="text-sm md:text-base leading-8 text-gray-300 whitespace-pre-line break-words">
-            {{ f.commentaire }}
-          </p>
-        </div>
-
-        <div class="rounded-[20px] bg-white/[0.02] border border-white/10 p-5 mb-5">
-          <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-3">Emoji reactions</p>
-
-          <div class="flex flex-wrap gap-2">
-            <div
-              *ngFor="let emoji of availableEmojis"
-              class="inline-flex items-center gap-2 px-3 py-2 rounded-[14px] bg-white/5 border border-white/10 text-gray-300 text-sm font-semibold"
-            >
-              <span>{{ emoji }}</span>
-              <span class="text-xs">{{ getEmojiCount(f.id, emoji) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex justify-end">
-          <button
-  type="button"
-  (click)="deleteFeedback(f.id)"
-  class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[16px] bg-red-500/10 border border-red-400/20 text-red-300 text-sm font-semibold hover:bg-red-500/15 transition"
->
-  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <polyline points="3 6 5 6 21 6"/>
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-  </svg>
-  Delete feedback
-</button>
         </div>
       </div>
     </div>
+
   </div>
-</div>
 </div>

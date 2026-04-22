@@ -67,6 +67,23 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
   private blockedFeedbackStorageKey = 'blocked_feedback_ids_v1';
   blockedFeedbackIds: string[] = [];
 
+  bannedWords: string[] = [
+    'fuck',
+    'shit',
+    'bitch',
+    'idiot',
+    'asshole',
+    'stupid',
+    'dumb',
+    'moron'
+  ];
+
+  badWordDetected: boolean = false;
+  badWordMessage: string = '';
+
+  editBadWordDetected: boolean = false;
+  editBadWordMessage: string = '';
+
   private feedbackService = inject(FeedbackService);
   private watchPartyService = inject(WatchpartyService);
   private router = inject(Router);
@@ -166,6 +183,8 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     this.note = null;
     this.commentaire = '';
     this.correctedPreview = '';
+    this.badWordDetected = false;
+    this.badWordMessage = '';
 
     this.selectedWatchParty =
       this.watchParties.find((w) => w.id === this.watchPartyId) || null;
@@ -378,6 +397,50 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
+  private containsBannedWord(text: string): string | null {
+    const normalizedText = this.normalizeText(text || '');
+
+    if (!normalizedText) {
+      return null;
+    }
+
+    for (const word of this.bannedWords) {
+      const normalizedWord = this.normalizeText(word);
+      if (normalizedWord && normalizedText.includes(normalizedWord)) {
+        return word;
+      }
+    }
+
+    return null;
+  }
+
+  checkBadWords(): void {
+    const foundWord = this.containsBannedWord(this.commentaire);
+
+    if (foundWord) {
+      this.badWordDetected = true;
+      this.badWordMessage = `Inappropriate word detected: "${foundWord}". Please change your comment.`;
+      this.correctedPreview = '';
+      return;
+    }
+
+    this.badWordDetected = false;
+    this.badWordMessage = '';
+  }
+
+  checkEditBadWords(): void {
+    const foundWord = this.containsBannedWord(this.editCommentaire);
+
+    if (foundWord) {
+      this.editBadWordDetected = true;
+      this.editBadWordMessage = `Inappropriate word detected: "${foundWord}". Please change your comment.`;
+      return;
+    }
+
+    this.editBadWordDetected = false;
+    this.editBadWordMessage = '';
+  }
+
   checkGrammar(): void {
     this.errorMessage = '';
     this.successMessage = '';
@@ -416,6 +479,7 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
   useCorrectedText(): void {
     if (this.correctedPreview?.trim()) {
       this.commentaire = this.correctedPreview.trim();
+      this.checkBadWords();
     }
   }
 
@@ -425,6 +489,13 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
 
     if (!this.canCreateFeedback()) {
       this.errorMessage = 'Seuls les participants ou le host de cette WatchParty peuvent ajouter un feedback.';
+      return;
+    }
+
+    this.checkBadWords();
+
+    if (this.badWordDetected) {
+      this.errorMessage = this.badWordMessage || 'Inappropriate language detected.';
       return;
     }
 
@@ -449,6 +520,8 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
         this.hoveredStar = 0;
         this.commentaire = '';
         this.correctedPreview = '';
+        this.badWordDetected = false;
+        this.badWordMessage = '';
 
         form.resetForm({
           watchPartyId: this.watchPartyId
@@ -468,6 +541,8 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     this.editNote = feedback.note;
     this.editCommentaire = feedback.commentaire;
     this.editHoveredStar = 0;
+    this.editBadWordDetected = false;
+    this.editBadWordMessage = '';
     this.successMessage = '';
     this.errorMessage = '';
   }
@@ -477,6 +552,8 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     this.editNote = null;
     this.editCommentaire = '';
     this.editHoveredStar = 0;
+    this.editBadWordDetected = false;
+    this.editBadWordMessage = '';
   }
 
   saveEdit(id: string): void {
@@ -490,6 +567,13 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
 
     if (!this.editCommentaire || this.editCommentaire.trim().length < 3) {
       this.errorMessage = 'Le commentaire doit faire au moins 3 caractères.';
+      return;
+    }
+
+    this.checkEditBadWords();
+
+    if (this.editBadWordDetected) {
+      this.errorMessage = this.editBadWordMessage || 'Inappropriate language detected.';
       return;
     }
 
