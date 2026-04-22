@@ -16,7 +16,9 @@ interface ChatMessage {
   text: string;
   time: string;
   isMe: boolean;
-  type?: 'CHAT' | 'JOIN' | 'LEAVE';
+  type?: 'CHAT' | 'JOIN' | 'LEAVE' | 'REACTION' | 'GIF';
+  reaction?: string;
+  gifUrl?: string;
 }
 
 interface JoinRequest {
@@ -25,6 +27,12 @@ interface JoinRequest {
   watchPartyTitre: string;
   timestamp: number;
   status: string;
+}
+
+interface GifItem {
+  id: string;
+  label: string;
+  url: string;
 }
 
 @Component({
@@ -55,6 +63,48 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
   showHostLeaveModal = false;
   leavingInProgress = false;
 
+  isCameraReady = false;
+  isMicEnabled = true;
+  isCameraEnabled = true;
+
+  showReactionPicker = false;
+  showGifPicker = false;
+
+  readonly reactions: string[] = ['❤️', '😂', '👍', '🔥', '😮', '😢', '👏', '😍'];
+
+  readonly gifList: GifItem[] = [
+    {
+      id: 'gif-1',
+      label: 'Happy',
+      url: 'https://media.giphy.com/media/111ebonMs90YLu/giphy.gif'
+    },
+    {
+      id: 'gif-2',
+      label: 'Clap',
+      url: 'https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif'
+    },
+    {
+      id: 'gif-3',
+      label: 'Laugh',
+      url: 'https://media.giphy.com/media/3o6ozvv0zsJskzOCbu/giphy.gif'
+    },
+    {
+      id: 'gif-4',
+      label: 'Wow',
+      url: 'https://media.giphy.com/media/l3q2K5jinAlChoCLS/giphy.gif'
+    },
+    {
+      id: 'gif-5',
+      label: 'Love',
+      url: 'https://media.giphy.com/media/5GoVLqeAOo6PK/giphy.gif'
+    },
+    {
+      id: 'gif-6',
+      label: 'Party',
+      url: 'https://media.giphy.com/media/xT5LMHxhOfscxPfIfm/giphy.gif'
+    }
+  ];
+
   memberColors = [
     { bg: 'rgba(124,92,252,0.25)', text: '#a78bfa' },
     { bg: 'rgba(34,211,160,0.2)', text: '#22d3a0' },
@@ -62,10 +112,6 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
     { bg: 'rgba(239,68,68,0.2)', text: '#f87171' },
     { bg: 'rgba(59,130,246,0.2)', text: '#60a5fa' }
   ];
-
-  isCameraReady = false;
-  isMicEnabled = true;
-  isCameraEnabled = true;
 
   private sessionId = '';
   private currentUserId = '';
@@ -126,10 +172,12 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
       clearInterval(this.pollTimer);
       this.pollTimer = null;
     }
+
     if (this.notifPollTimer) {
       clearInterval(this.notifPollTimer);
       this.notifPollTimer = null;
     }
+
     if (this.successTimer) {
       clearTimeout(this.successTimer);
       this.successTimer = null;
@@ -482,9 +530,59 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
       senderName: this.currentUserName,
       content: text,
       type: 'CHAT'
-    });
+    } as any);
 
     this.chatInput = '';
+    this.closePickers();
+  }
+
+  sendReaction(reaction: string): void {
+    if (!reaction || !this.realtimeConnected) return;
+
+    this.realtimeService.sendChatMessage({
+      watchPartyId: this.sessionId,
+      senderId: this.currentUserId,
+      senderName: this.currentUserName,
+      content: reaction,
+      type: 'REACTION',
+      reaction
+    } as any);
+
+    this.showReactionPicker = false;
+  }
+
+  sendGif(gifUrl: string): void {
+    if (!gifUrl || !this.realtimeConnected) return;
+
+    this.realtimeService.sendChatMessage({
+      watchPartyId: this.sessionId,
+      senderId: this.currentUserId,
+      senderName: this.currentUserName,
+      content: gifUrl,
+      type: 'GIF',
+      gifUrl
+    } as any);
+
+    this.showGifPicker = false;
+  }
+
+  toggleReactionPicker(): void {
+    this.showReactionPicker = !this.showReactionPicker;
+    if (this.showReactionPicker) {
+      this.showGifPicker = false;
+    }
+  }
+
+  toggleGifPicker(): void {
+    this.showGifPicker = !this.showGifPicker;
+    if (this.showGifPicker) {
+      this.showReactionPicker = false;
+    }
+  }
+
+  closePickers(): void {
+    this.showReactionPicker = false;
+    this.showGifPicker = false;
   }
 
   private sendSystemMessage(type: 'JOIN' | 'LEAVE', content: string): void {
@@ -496,23 +594,28 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
       senderName: this.currentUserName,
       content,
       type
-    });
+    } as any);
   }
 
-  private mapRealtimeToUiMessage(msg: RealtimeChatMessage): ChatMessage {
+  private mapRealtimeToUiMessage(msg: RealtimeChatMessage | any): ChatMessage {
     const date = msg.timestamp ? new Date(msg.timestamp) : new Date();
     const time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
     const isMe = msg.senderId === this.currentUserId;
+    const messageType = (msg.type || 'CHAT') as 'CHAT' | 'JOIN' | 'LEAVE' | 'REACTION' | 'GIF';
 
     return {
-      author: msg.type === 'CHAT' ? (msg.senderName || msg.senderId || 'User') : 'System',
-      initials: msg.type === 'CHAT'
+      author: messageType === 'CHAT' || messageType === 'REACTION' || messageType === 'GIF'
+        ? (msg.senderName || msg.senderId || 'User')
+        : 'System',
+      initials: messageType === 'CHAT' || messageType === 'REACTION' || messageType === 'GIF'
         ? (msg.senderName || msg.senderId || 'US').slice(0, 2).toUpperCase()
         : 'SY',
-      text: msg.content,
+      text: msg.content || '',
       time,
       isMe,
-      type: msg.type
+      type: messageType,
+      reaction: msg.reaction || (messageType === 'REACTION' ? msg.content : ''),
+      gifUrl: msg.gifUrl || (messageType === 'GIF' ? msg.content : '')
     };
   }
 

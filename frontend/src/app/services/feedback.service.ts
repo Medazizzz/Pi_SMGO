@@ -10,6 +10,7 @@ export interface Feedback {
   clientId: string;
   dateFeedback?: string;
   sentiment?: string;
+  audioUrl?: string;
   likes?: number;
   dislikes?: number;
   likedByUserIds?: string[];
@@ -41,11 +42,17 @@ export class FeedbackService {
   private getAuthHeaders(): HttpHeaders {
     const token = this.getToken();
 
-    console.log('TOKEN ENVOYÉ =', token);
-
     return new HttpHeaders({
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json'
+    });
+  }
+
+  private getAuthHeadersWithoutContentType(): HttpHeaders {
+    const token = this.getToken();
+
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`
     });
   }
 
@@ -61,13 +68,44 @@ export class FeedbackService {
     });
   }
 
-  addFeedback(data: { note: number; commentaire: string; watchPartyId: string }): Observable<Feedback> {
+  addFeedback(data: {
+    note: number;
+    commentaire: string;
+    watchPartyId: string;
+  }): Observable<Feedback> {
     return this.http.post<Feedback>(`${this.apiUrl}/add`, data, {
       headers: this.getAuthHeaders()
     });
   }
 
-  updateFeedback(id: string, data: { note: number; commentaire: string }): Observable<Feedback> {
+  addFeedbackWithAudio(data: {
+    note: number;
+    commentaire?: string;
+    watchPartyId: string;
+    audioFile?: File | null;
+  }): Observable<Feedback> {
+    const formData = new FormData();
+
+    formData.append('note', String(data.note));
+    formData.append('watchPartyId', data.watchPartyId);
+
+    if (data.commentaire && data.commentaire.trim() !== '') {
+      formData.append('commentaire', data.commentaire.trim());
+    }
+
+    if (data.audioFile) {
+      formData.append('audioFile', data.audioFile);
+    }
+
+    return this.http.post<Feedback>(`${this.apiUrl}/add-with-audio`, formData, {
+      headers: this.getAuthHeadersWithoutContentType()
+    });
+  }
+
+  updateFeedback(id: string, data: {
+    note: number;
+    commentaire: string;
+  }): Observable<Feedback> {
     return this.http.put<Feedback>(`${this.apiUrl}/${id}`, data, {
       headers: this.getAuthHeaders()
     });

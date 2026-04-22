@@ -15,6 +15,7 @@ import { WatchpartyService } from '../../services/watchparty.service';
 
 type SentimentFilter = 'ALL' | 'POSITIF' | 'NEGATIF' | 'NEUTRE' | 'UNKNOWN';
 type SortOption = 'recent' | 'oldest' | 'mostLiked' | 'highestNote' | 'lowestNote';
+type FeedbackMode = 'text' | 'voice';
 
 @Component({
   selector: 'app-feedback',
@@ -29,6 +30,16 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
   note: number | null = null;
   commentaire: string = '';
   watchPartyId: string = '';
+
+  feedbackMode: FeedbackMode = 'text';
+
+  isRecording: boolean = false;
+  isPreparingRecorder: boolean = false;
+  mediaRecorder: MediaRecorder | null = null;
+  audioChunks: Blob[] = [];
+  recordedAudioFile: File | null = null;
+  recordedAudioUrl: string | null = null;
+  private mediaStream: MediaStream | null = null;
 
   feedbacks: any[] = [];
   allFeedbacks: any[] = [];
@@ -105,6 +116,8 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopFeedbackPolling();
+    this.stopRecordingTracks();
+    this.revokeRecordedAudioUrl();
   }
 
   private resolveModeFromRoute(): void {
@@ -185,6 +198,7 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     this.correctedPreview = '';
     this.badWordDetected = false;
     this.badWordMessage = '';
+    this.resetVoiceState();
 
     this.selectedWatchParty =
       this.watchParties.find((w) => w.id === this.watchPartyId) || null;
@@ -208,6 +222,149 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
     this.applyFilters();
   }
 
+  selectFeedbackMode(mode: FeedbackMode): void {
+    if (this.feedbackMode === mode) {
+      return;
+    }
+
+    this.feedbackMode = mode;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (mode === 'text') {
+      this.stopRecordingIfNeeded();
+      this.resetVoiceState();
+    } else {
+      this.commentaire = '';
+      this.correctedPreview = '';
+      this.badWordDetected = false;
+      this.badWordMessage = '';
+    }
+  }
+
+  async startRecording(): Promise<void> {
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (!this.canSubmitFeedback()) {
+      return;
+    }
+
+    if (
+      typeof navigator === 'undefined' ||
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
+      this.errorMessage = 'Votre navigateur ne supporte pas l’enregistrement audio.';
+      return;
+    }
+
+    if (typeof MediaRecorder === 'undefined') {
+      this.errorMessage = 'MediaRecorder non supporté dans ce navigateur.';
+      return;
+    }
+
+    try {
+      this.isPreparingRecorder = true;
+      this.revokeRecordedAudioUrl();
+      this.recordedAudioFile = null;
+      this.audioChunks = [];
+
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+
+      const options: MediaRecorderOptions = {};
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        options.mimeType = 'audio/webm;codecs=opus';
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        options.mimeType = 'audio/webm';
+      }
+
+      this.mediaRecorder = new MediaRecorder(this.mediaStream, options);
+
+      this.mediaRecorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data && event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
+      };
+
+      this.mediaRecorder.onstop = () => {
+        const mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
+        const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+
+        this.recordedAudioFile = new File(
+          [audioBlob],
+          `feedback-audio-${Date.now()}.${extension}`,
+          { type: mimeType }
+        );
+
+        this.revokeRecordedAudioUrl();
+        this.recordedAudioUrl = URL.createObjectURL(audioBlob);
+        this.audioChunks = [];
+        this.stopRecordingTracks();
+      };
+
+      this.mediaRecorder.start(250);
+      this.isRecording = true;
+    } catch (error) {
+      this.errorMessage = 'Impossible d’accéder au micro.';
+      this.stopRecordingTracks();
+    } finally {
+      this.isPreparingRecorder = false;
+    }
+  }
+
+  stopRecording(): void {
+    if (this.mediaRecorder && this.isRecording) {
+      this.mediaRecorder.stop();
+      this.isRecording = false;
+    }
+  }
+
+  removeRecordedAudio(): void {
+    this.stopRecordingIfNeeded();
+    this.resetVoiceState();
+  }
+
+  private stopRecordingIfNeeded(): void {
+    if (this.mediaRecorder && this.isRecording) {
+      this.mediaRecorder.stop();
+      this.isRecording = false;
+    } else {
+      this.stopRecordingTracks();
+    }
+  }
+
+  private stopRecordingTracks(): void {
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach((track) => track.stop());
+      this.mediaStream = null;
+    }
+  }
+
+  private revokeRecordedAudioUrl(): void {
+    if (this.recordedAudioUrl) {
+      URL.revokeObjectURL(this.recordedAudioUrl);
+      this.recordedAudioUrl = null;
+    }
+  }
+
+  private resetVoiceState(): void {
+    this.stopRecordingTracks();
+    this.mediaRecorder = null;
+    this.audioChunks = [];
+    this.recordedAudioFile = null;
+    this.isRecording = false;
+    this.isPreparingRecorder = false;
+    this.revokeRecordedAudioUrl();
+  }
+
   private applyFilters(): void {
     let result = [...this.allFeedbacks];
 
@@ -229,7 +386,8 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
           watchPartyTitle || '',
           watchPartyHost || '',
           String(f.note ?? ''),
-          f.sentiment || ''
+          f.sentiment || '',
+          f.audioUrl ? 'audio vocal voice message micro' : ''
         ]
           .map((value) => this.normalizeText(String(value)))
           .join(' ');
@@ -296,9 +454,10 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
   private startFeedbackPolling(): void {
     this.stopFeedbackPolling();
 
+    // Ralenti pour éviter de couper le lecteur audio dans le front office
     this.feedbackPollTimer = setInterval(() => {
       this.loadAllFeedbacks();
-    }, 3000);
+    }, 30000);
   }
 
   private stopFeedbackPolling(): void {
@@ -331,6 +490,18 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
 
   canSubmitFeedback(): boolean {
     return this.canCreateFeedback();
+  }
+
+  canSubmitCurrentMode(): boolean {
+    if (!this.canSubmitFeedback() || !this.note) {
+      return false;
+    }
+
+    if (this.feedbackMode === 'text') {
+      return !!this.commentaire.trim() && !this.badWordDetected;
+    }
+
+    return !!this.recordedAudioFile && !this.isRecording;
   }
 
   setNote(star: number): void {
@@ -492,36 +663,73 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
-    this.checkBadWords();
-
-    if (this.badWordDetected) {
-      this.errorMessage = this.badWordMessage || 'Inappropriate language detected.';
+    if (!this.note || !this.watchPartyId) {
+      this.errorMessage = 'Veuillez choisir une WatchParty et une note.';
       return;
     }
 
-    if (form.invalid || !this.note || !this.watchPartyId || !this.commentaire.trim()) {
-      form.control.markAllAsTouched();
-      this.errorMessage = 'Veuillez corriger les erreurs du formulaire.';
+    if (this.feedbackMode === 'text') {
+      this.checkBadWords();
+
+      if (this.badWordDetected) {
+        this.errorMessage = this.badWordMessage || 'Inappropriate language detected.';
+        return;
+      }
+
+      if (form.invalid || !this.commentaire.trim()) {
+        form.control.markAllAsTouched();
+        this.errorMessage = 'Veuillez écrire un commentaire.';
+        return;
+      }
+
+      const correctedComment = this.correctedPreview?.trim()
+        ? this.correctedPreview.trim()
+        : this.commentaire.trim();
+
+      this.feedbackService.addFeedback({
+        note: this.note,
+        commentaire: correctedComment,
+        watchPartyId: this.watchPartyId
+      }).subscribe({
+        next: () => {
+          this.successMessage = 'Feedback ajouté avec succès.';
+          this.note = null;
+          this.hoveredStar = 0;
+          this.commentaire = '';
+          this.correctedPreview = '';
+          this.badWordDetected = false;
+          this.badWordMessage = '';
+
+          form.resetForm({
+            watchPartyId: this.watchPartyId
+          });
+
+          this.loadAllFeedbacks();
+        },
+        error: (err) => {
+          this.errorMessage =
+            err?.error?.error || err?.error?.message || 'Erreur lors de l’ajout.';
+        }
+      });
+
       return;
     }
 
-    const correctedComment = this.correctedPreview?.trim()
-      ? this.correctedPreview.trim()
-      : this.commentaire.trim();
+    if (!this.recordedAudioFile) {
+      this.errorMessage = 'Veuillez enregistrer un message vocal.';
+      return;
+    }
 
-    this.feedbackService.addFeedback({
+    this.feedbackService.addFeedbackWithAudio({
       note: this.note,
-      commentaire: correctedComment,
-      watchPartyId: this.watchPartyId
+      watchPartyId: this.watchPartyId,
+      audioFile: this.recordedAudioFile
     }).subscribe({
       next: () => {
-        this.successMessage = 'Feedback ajouté avec succès.';
+        this.successMessage = 'Message vocal ajouté avec succès.';
         this.note = null;
         this.hoveredStar = 0;
-        this.commentaire = '';
-        this.correctedPreview = '';
-        this.badWordDetected = false;
-        this.badWordMessage = '';
+        this.resetVoiceState();
 
         form.resetForm({
           watchPartyId: this.watchPartyId
@@ -531,7 +739,7 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
       },
       error: (err) => {
         this.errorMessage =
-          err?.error?.error || err?.error?.message || 'Erreur lors de l’ajout.';
+          err?.error?.error || err?.error?.message || 'Erreur lors de l’ajout du vocal.';
       }
     });
   }
@@ -666,6 +874,22 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
 
   previewCorrectedEditComment(): string {
     return this.editCommentaire || '';
+  }
+
+  getAudioUrl(audioUrl: string | undefined): string {
+    if (!audioUrl) {
+      return '';
+    }
+
+    if (audioUrl.startsWith('http://') || audioUrl.startsWith('https://')) {
+      return audioUrl;
+    }
+
+    return `http://localhost:8090${audioUrl}`;
+  }
+
+  hasAudio(feedback: any): boolean {
+    return !!feedback?.audioUrl;
   }
 
   private loadEmojiState(): void {
