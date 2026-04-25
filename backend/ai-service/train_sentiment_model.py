@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 
-df = pd.read_csv("dataset.csv")
+df = pd.read_csv("dataset_sentiment.csv")
 
 X = df["comment"]
 y = df["label"]
