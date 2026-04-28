@@ -317,6 +317,7 @@
               <div>
                 <span class="font-semibold text-white">Participants:</span> {{ w.participantIds?.length || 0 }}
               </div>
+              
 
               <div *ngIf="w.dateCreation">
                 <span class="font-semibold text-white">Created:</span>
@@ -540,13 +541,26 @@
               class="rounded-lg bg-red-900/40 px-5 py-2 text-red-300 font-semibold cursor-not-allowed border border-red-500/20">
               Blocked
             </button>
+            <button
+      type="button"
+      (click)="showScore(w.id || w.watchPartyId)"
+      class="rounded-lg bg-[#8B5CF6] px-5 py-2 text-white font-semibold hover:bg-[#7C3AED] transition">
+      {{ loadingScore[w.id || w.watchPartyId] ? 'Loading...' : 'Score' }}
+    </button>
 
+        
             <button
               type="button"
               (click)="deleteWatchParty(w.id)"
               class="rounded-lg bg-gray-700 px-5 py-2 text-white font-semibold hover:bg-gray-800 transition">
               Delete
             </button>
+
+             <div
+    *ngIf="scores[w.id || w.watchPartyId] !== undefined"
+    class="rounded-xl bg-emerald-500/10 border border-emerald-400/20 px-5 py-2 text-emerald-300 text-sm font-bold">
+    Score: {{ scores[w.id || w.watchPartyId] | number:'1.0-2' }}
+  </div>
           </div>
         </div>
       </div>

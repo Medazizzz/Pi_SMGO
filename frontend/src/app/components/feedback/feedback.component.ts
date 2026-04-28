@@ -45,6 +45,9 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
   allFeedbacks: any[] = [];
   watchParties: any[] = [];
   selectedWatchParty: any = null;
+  riskList: any[] = [];
+selectedRiskLevel: 'SAFE' | 'MEDIUM_RISK' | 'HIGH_RISK' = 'SAFE';
+visibleRiskWatchParties: any[] = [];
 
   errorMessage: string = '';
   successMessage: string = '';
@@ -125,15 +128,19 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private initializePage(): void {
-    this.stopFeedbackPolling();
-    this.resetMessages();
-    this.loadWatchParties();
-    this.loadAllFeedbacks();
+  this.stopFeedbackPolling();
+  this.resetMessages();
+  this.loadWatchParties();
+  this.loadAllFeedbacks();
 
-    if (this.mode === 'user') {
-      this.startFeedbackPolling();
-    }
+  if (this.mode === 'admin') {
+    this.loadWatchPartyRisks();
   }
+
+  if (this.mode === 'user') {
+    this.startFeedbackPolling();
+  }
+}
 
   private resetMessages(): void {
     this.errorMessage = '';
@@ -189,6 +196,29 @@ export class FeedbackComponent implements OnInit, OnChanges, OnDestroy {
       }
     });
   }
+
+  loadWatchPartyRisks(): void {
+  this.watchPartyService.getAllRisks().subscribe({
+    next: (data: any[]) => {
+      this.riskList = data || [];
+      this.filterRiskWatchParties('SAFE');
+    },
+    error: () => {
+      this.errorMessage = 'Impossible de charger les WatchParty à risque.';
+    }
+  });
+}
+
+filterRiskWatchParties(level: 'SAFE' | 'MEDIUM_RISK' | 'HIGH_RISK'): void {
+  this.selectedRiskLevel = level;
+  this.visibleRiskWatchParties = this.riskList.filter(
+    r => r.riskLevel === level
+  );
+}
+
+countRisk(level: 'SAFE' | 'MEDIUM_RISK' | 'HIGH_RISK'): number {
+  return this.riskList.filter(r => r.riskLevel === level).length;
+}
 
   onWatchPartyChange(): void {
     this.successMessage = '';

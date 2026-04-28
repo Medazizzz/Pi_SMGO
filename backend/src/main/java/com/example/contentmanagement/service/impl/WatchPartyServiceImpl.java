@@ -1,14 +1,18 @@
 package com.example.contentmanagement.service.impl;
 
 import com.example.contentmanagement.dto.WatchPartyRequestDTO;
+import com.example.contentmanagement.dto.WatchPartyRiskDTO;
+import com.example.contentmanagement.entity.Feedback;
 import com.example.contentmanagement.entity.JoinRequest;
 import com.example.contentmanagement.entity.WatchParty;
 import com.example.contentmanagement.exception.ResourceNotFoundException;
+import com.example.contentmanagement.repository.FeedbackRepository;
 import com.example.contentmanagement.repository.JoinRequestRepository;
 import com.example.contentmanagement.repository.WatchPartyRepository;
 import com.example.contentmanagement.service.WatchPartyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -23,6 +27,7 @@ public class WatchPartyServiceImpl implements WatchPartyService {
 
     private final WatchPartyRepository watchPartyRepository;
     private final JoinRequestRepository joinRequestRepository;
+    private final FeedbackRepository feedbackRepository;
 
     @Override
     public List<WatchParty> getAll() {
@@ -318,5 +323,94 @@ public class WatchPartyServiceImpl implements WatchPartyService {
             return DEFAULT_PARTICIPANT_ID;
         }
         return userId.trim();
+    }
+    @Override
+    public double calculateScore(String watchPartyId) {
+
+        WatchParty watchParty = watchPartyRepository.findById(watchPartyId)
+                .orElseThrow(() -> new RuntimeException("WatchParty not found"));
+
+        int nombreParticipants = watchParty.getParticipantIds() != null
+                ? watchParty.getParticipantIds().size()
+                : 0;
+
+        List<Feedback> feedbacks = feedbackRepository.findByWatchPartyId(watchPartyId);
+
+        int nombreFeedbacks = feedbacks.size();
+
+        double moyenneNote = feedbacks.stream()
+                .mapToDouble(Feedback::getNote)
+                .average()
+                .orElse(0.0);
+
+        return (nombreParticipants * 2) + (nombreFeedbacks * 1) + (moyenneNote * 3);
+    }
+
+
+    @Override
+    public WatchPartyRiskDTO detectRisk(String watchPartyId) {
+
+        WatchParty wp = watchPartyRepository.findById(watchPartyId)
+                .orElseThrow(() -> new RuntimeException("WatchParty not found"));
+
+        List<Feedback> feedbacks = feedbackRepository.findByWatchPartyId(watchPartyId);
+
+        int participantCount = wp.getParticipantIds() != null
+                ? wp.getParticipantIds().size()
+                : 0;
+
+        int feedbackCount = feedbacks.size();
+
+        double averageNote = feedbacks.stream()
+                .mapToInt(Feedback::getNote)
+                .average()
+                .orElse(0.0);
+
+        int negativeFeedbackCount = (int) feedbacks.stream()
+                .filter(f -> f.getNote() <= 2)
+                .count();
+
+        int toxicFeedbackCount = (int) feedbacks.stream()
+                .filter(f ->
+                        f.getCommentaire() != null &&
+                                (
+                                        f.getCommentaire().toLowerCase().contains("fuck") ||
+                                                f.getCommentaire().toLowerCase().contains("shit") ||
+                                                f.getCommentaire().toLowerCase().contains("bad")
+                                )
+                )
+                .count();
+
+        String riskLevel = "SAFE";
+        String reason = "WatchParty stable";
+
+        if (toxicFeedbackCount >= 2 || negativeFeedbackCount >= 3 || averageNote > 0 && averageNote < 2) {
+            riskLevel = "HIGH_RISK";
+            reason = "High risk: toxic or negative feedback detected";
+        } else if (toxicFeedbackCount == 1 || negativeFeedbackCount >= 1 || participantCount == 0) {
+            riskLevel = "MEDIUM_RISK";
+            reason = "Medium risk: low participation or negative feedback";
+        }
+        double score = calculateScore(watchPartyId);
+
+        return new WatchPartyRiskDTO(
+                wp.getId(),
+                wp.getTitre(),
+                riskLevel,
+                participantCount,
+                feedbackCount,
+                negativeFeedbackCount,
+                toxicFeedbackCount,
+                averageNote,
+                reason
+        );
+    }
+
+    @Override
+    public List<WatchPartyRiskDTO> detectAllRisks() {
+        return watchPartyRepository.findAll()
+                .stream()
+                .map(wp -> detectRisk(wp.getId()))
+                .toList();
     }
 }

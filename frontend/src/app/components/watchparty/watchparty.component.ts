@@ -41,6 +41,7 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
 
   errorMessage = '';
   successMessage = '';
+  
 
   createdWatchPartyId: string | null = null;
   inviteLink = '';
@@ -60,6 +61,8 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
   advancedSearchKeyword = '';
   isSearching = false;
   isSearchMode = false;
+  scores: { [key: string]: number } = {};
+loadingScore: { [key: string]: boolean } = {};
 
   private service = inject(WatchpartyService);
   private http = inject(HttpClient);
@@ -758,4 +761,25 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
 
     return '';
   }
+
+ showScore(watchPartyId: string): void {
+  if (!watchPartyId) {
+    this.errorMessage = 'WatchParty id introuvable.';
+    return;
+  }
+
+  this.loadingScore[watchPartyId] = true;
+  this.errorMessage = '';
+
+  this.service.getScore(watchPartyId).subscribe({
+    next: (score: number) => {
+      this.scores[watchPartyId] = score;
+      this.loadingScore[watchPartyId] = false;
+    },
+    error: () => {
+      this.loadingScore[watchPartyId] = false;
+      this.errorMessage = 'Erreur lors du calcul du score.';
+    }
+  });
+}
 }

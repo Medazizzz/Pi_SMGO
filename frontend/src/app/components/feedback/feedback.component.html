@@ -807,16 +807,143 @@
 
   <!-- ================= ADMIN MODE ================= -->
   <div *ngIf="mode === 'admin'" class="max-w-7xl mx-auto px-6 py-8 text-white">
+    <!-- WATCHPARTY RISK FILTER -->
+<div class="mt-8 mb-6 rounded-[24px] bg-white/[0.025] border border-white/10 p-6">
 
-    <div class="mb-8">
-      <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">
-        Administration
-      </div>
-      <h2 class="text-4xl font-extrabold tracking-tight text-white">Feedback moderation</h2>
-      <p class="text-sm text-gray-400 mt-2">
-        Read feedbacks, inspect reactions and block inappropriate content.
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+    <div>
+      <h2 class="text-2xl font-extrabold text-white">
+        WatchParty Safety List
+      </h2>
+      <p class="text-sm text-gray-400 mt-1">
+        Afficher les WatchParty selon le niveau de sécurité.
       </p>
     </div>
+
+    <select
+      [(ngModel)]="selectedRiskLevel"
+      name="selectedRiskLevel"
+      (change)="filterRiskWatchParties(selectedRiskLevel)"
+      class="rounded-2xl bg-[#06080f]/80 border border-white/10 px-4 py-3 text-sm text-white outline-none"
+    >
+      <option value="SAFE">🟢 SAFE ({{ countRisk('SAFE') }})</option>
+      <option value="MEDIUM_RISK">🟠 MEDIUM RISK ({{ countRisk('MEDIUM_RISK') }})</option>
+      <option value="HIGH_RISK">🔴 HIGH RISK ({{ countRisk('HIGH_RISK') }})</option>
+    </select>
+  </div>
+
+  <div
+    *ngIf="visibleRiskWatchParties.length === 0"
+    class="rounded-2xl bg-[#06080f]/80 border border-white/10 p-5 text-gray-400 text-center"
+  >
+    Aucune WatchParty dans cette catégorie.
+  </div>
+
+  <div class="grid gap-4" *ngIf="visibleRiskWatchParties.length > 0">
+    <div
+      *ngFor="let r of visibleRiskWatchParties"
+      class="rounded-2xl bg-[#06080f]/80 border border-white/10 p-5"
+    >
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+        <div>
+          <h3 class="text-lg font-bold text-white">
+            {{ r.titre }}
+          </h3>
+
+          <p class="text-sm text-gray-400 mt-1">
+            {{ r.reason || 'No reason provided' }}
+          </p>
+        </div>
+
+        <span
+          class="px-4 py-2 rounded-full text-xs font-bold"
+          [ngClass]="{
+            'bg-emerald-500/10 text-emerald-300 border border-emerald-400/20': r.riskLevel === 'SAFE',
+            'bg-amber-500/10 text-amber-300 border border-amber-400/20': r.riskLevel === 'MEDIUM_RISK',
+            'bg-red-500/10 text-red-300 border border-red-400/20': r.riskLevel === 'HIGH_RISK'
+          }"
+        >
+          {{ r.riskLevel }}
+        </span>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
+        <div class="rounded-xl bg-white/[0.03] border border-white/10 p-3">
+          <p class="text-xs text-gray-500">Participants</p>
+          <p class="text-lg font-bold text-white">{{ r.participantCount || 0 }}</p>
+        </div>
+
+        <div class="rounded-xl bg-white/[0.03] border border-white/10 p-3">
+          <p class="text-xs text-gray-500">Feedbacks</p>
+          <p class="text-lg font-bold text-white">{{ r.feedbackCount || 0 }}</p>
+        </div>
+
+        <div class="rounded-xl bg-white/[0.03] border border-white/10 p-3">
+          <p class="text-xs text-gray-500">Average note</p>
+          <p class="text-lg font-bold text-white">
+            {{ r.averageNote || 0 | number:'1.1-1' }}
+          </p>
+        </div>
+
+        <div class="rounded-xl bg-white/[0.03] border border-white/10 p-3">
+          <p class="text-xs text-gray-500">Score</p>
+          <p class="text-lg font-bold text-white">
+            {{ r.score || 0 | number:'1.0-0' }}
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+    <div class="mb-8">
+  <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">
+    Administration
+  </div>
+
+  <h2 class="text-4xl font-extrabold tracking-tight text-white">
+    Feedback moderation
+  </h2>
+
+ 
+
+  
+
+   
+
+  <div *ngIf="visibleRiskWatchParties.length === 0"
+       class="rounded-2xl bg-[#06080f]/80 border border-white/10 p-5 text-gray-400">
+    No WatchParty in this category.
+  </div>
+
+  <div class="grid gap-3" *ngIf="visibleRiskWatchParties.length > 0">
+    <div
+      *ngFor="let r of visibleRiskWatchParties"
+      class="rounded-2xl bg-[#06080f]/80 border border-white/10 p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+      <div>
+        <h3 class="text-lg font-bold text-white">{{ r.titre }}</h3>
+        <p class="text-sm text-gray-400 mt-1">{{ r.reason }}</p>
+      </div>
+
+      <div class="flex flex-wrap gap-2 text-sm font-semibold">
+        <span class="px-3 py-1 rounded-full bg-violet-500/10 text-violet-300">
+          👥 {{ r.participantCount }} participants
+        </span>
+
+        <span class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-300">
+          💬 {{ r.feedbackCount }} feedbacks
+        </span>
+
+        <span class="px-3 py-1 rounded-full bg-amber-500/10 text-amber-300">
+          ⭐ {{ r.averageNote | number:'1.1-1' }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
 
     <div *ngIf="successMessage"
       class="mb-5 rounded-2xl bg-emerald-500/10 border border-emerald-400/20 px-4 py-3 text-sm text-emerald-300 flex items-center gap-2">

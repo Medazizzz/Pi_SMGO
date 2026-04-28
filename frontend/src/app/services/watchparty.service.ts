@@ -131,4 +131,17 @@ export class WatchpartyService {
       { headers: this.getAuthHeaders() }
     );
   }
+
+  getAllRisks(): Observable<any[]> {
+  return this.http.get<any[]>(`${this.apiUrl}/risks`, {
+    headers: this.getAuthHeaders()
+  });
+}
+
+getScore(watchPartyId: string): Observable<number> {
+  return this.http.get<number>(
+    `${this.apiUrl}/${watchPartyId}/score`,
+    { headers: this.getAuthHeaders() }
+  );
+}
 }

@@ -1,6 +1,7 @@
 package com.example.contentmanagement.controller;
 
 import com.example.contentmanagement.dto.WatchPartyRequestDTO;
+import com.example.contentmanagement.dto.WatchPartyRiskDTO;
 import com.example.contentmanagement.entity.JoinRequest;
 import com.example.contentmanagement.entity.WatchParty;
 import com.example.contentmanagement.service.WatchPartyService;
@@ -167,5 +168,21 @@ public class WatchPartyController {
         }
 
         throw new RuntimeException("User not authenticated and userId not provided");
+    }
+
+    @GetMapping("/{id}/score")
+    public ResponseEntity<Double> getWatchPartyScore(@PathVariable String id) {
+        return ResponseEntity.ok(watchPartyService.calculateScore(id));
+    }
+
+
+    @GetMapping("/{id}/risk")
+    public ResponseEntity<WatchPartyRiskDTO> detectRisk(@PathVariable String id) {
+        return ResponseEntity.ok(watchPartyService.detectRisk(id));
+    }
+
+    @GetMapping("/risks")
+    public ResponseEntity<List<WatchPartyRiskDTO>> detectAllRisks() {
+        return ResponseEntity.ok(watchPartyService.detectAllRisks());
     }
 }

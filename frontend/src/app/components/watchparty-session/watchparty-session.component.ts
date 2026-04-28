@@ -69,6 +69,8 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
 
   showReactionPicker = false;
   showGifPicker = false;
+  
+ 
 
   readonly reactions: string[] = ['❤️', '😂', '👍', '🔥', '😮', '😢', '👏', '😍'];
 
@@ -848,10 +850,12 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
           payload.preferred_username ||
           payload.name ||
           payload.sub ||
-          'User'
+          'User' 
         );
       }
     } catch {}
     return this.currentUserId || 'User';
   }
+
+
 }
