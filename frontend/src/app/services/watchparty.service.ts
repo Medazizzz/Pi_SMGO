@@ -144,4 +144,10 @@ getScore(watchPartyId: string): Observable<number> {
     { headers: this.getAuthHeaders() }
   );
 }
+
+getRecommendations() {
+  return this.http.get<any[]>(
+    'http://localhost:8090/watchparty/recommendations'
+  );
+}
 }

@@ -1,5 +1,6 @@
 package com.example.contentmanagement.service;
 
+import com.example.contentmanagement.dto.WatchPartyRecommendationDTO;
 import com.example.contentmanagement.dto.WatchPartyRequestDTO;
 import com.example.contentmanagement.dto.WatchPartyRiskDTO;
 import com.example.contentmanagement.entity.JoinRequest;
@@ -38,4 +39,5 @@ public interface WatchPartyService {
     WatchPartyRiskDTO detectRisk(String watchPartyId);
 
     List<WatchPartyRiskDTO> detectAllRisks();
+    List<WatchPartyRecommendationDTO> getRecommendedWatchParties();
 }

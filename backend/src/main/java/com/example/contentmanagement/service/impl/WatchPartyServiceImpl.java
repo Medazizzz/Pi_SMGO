@@ -1,5 +1,6 @@
 package com.example.contentmanagement.service.impl;
 
+import com.example.contentmanagement.dto.WatchPartyRecommendationDTO;
 import com.example.contentmanagement.dto.WatchPartyRequestDTO;
 import com.example.contentmanagement.dto.WatchPartyRiskDTO;
 import com.example.contentmanagement.entity.Feedback;
@@ -411,6 +412,52 @@ public class WatchPartyServiceImpl implements WatchPartyService {
         return watchPartyRepository.findAll()
                 .stream()
                 .map(wp -> detectRisk(wp.getId()))
+                .toList();
+    }
+
+
+    @Override
+    public List<WatchPartyRecommendationDTO> getRecommendedWatchParties() {
+
+        List<WatchParty> watchParties = watchPartyRepository.findAll();
+
+        return watchParties.stream()
+                .filter(wp -> wp.getStatut() != null)
+                .filter(wp -> wp.getStatut().equalsIgnoreCase("OPEN"))
+                .map(wp -> {
+
+                    int nombreParticipants = wp.getParticipantIds() != null
+                            ? wp.getParticipantIds().size()
+                            : 0;
+
+                    List<Feedback> feedbacks = feedbackRepository.findByWatchPartyId(wp.getId());
+
+                    long nombreFeedbacks = feedbacks.size();
+
+                    double moyenneFeedback = feedbacks.stream()
+                            .mapToInt(Feedback::getNote)
+                            .average()
+                            .orElse(0.0);
+
+                    double score =
+                            (nombreParticipants * 2.0)
+                                    + (moyenneFeedback * 3.0)
+                                    + (nombreFeedbacks * 1.5);
+
+                    return new WatchPartyRecommendationDTO(
+                            wp.getId(),
+                            wp.getTitre(),
+                            wp.getStatut(),
+                            nombreParticipants,
+                            moyenneFeedback,
+                            nombreFeedbacks,
+                            score
+                    );
+                })
+                .sorted((a, b) -> Double.compare(
+                        b.getScoreRecommendation(),
+                        a.getScoreRecommendation()
+                ))
                 .toList();
     }
 }

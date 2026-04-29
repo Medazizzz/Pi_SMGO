@@ -1,5 +1,6 @@
 package com.example.contentmanagement.controller;
 
+import com.example.contentmanagement.dto.WatchPartyRecommendationDTO;
 import com.example.contentmanagement.dto.WatchPartyRequestDTO;
 import com.example.contentmanagement.dto.WatchPartyRiskDTO;
 import com.example.contentmanagement.entity.JoinRequest;
@@ -184,5 +185,10 @@ public class WatchPartyController {
     @GetMapping("/risks")
     public ResponseEntity<List<WatchPartyRiskDTO>> detectAllRisks() {
         return ResponseEntity.ok(watchPartyService.detectAllRisks());
+    }
+
+    @GetMapping("/recommendations")
+    public ResponseEntity<List<WatchPartyRecommendationDTO>> getRecommendations() {
+        return ResponseEntity.ok(watchPartyService.getRecommendedWatchParties());
     }
 }

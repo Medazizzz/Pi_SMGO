@@ -1,4 +1,38 @@
 <div class="w-full text-white">
+  <!-- RECOMMENDATION NOTIFICATION -->
+<div *ngIf="showRecommendationNotification && topRecommendation"
+     class="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-lg rounded-2xl border border-[#8B5CF6]/40 bg-[#111827] p-5 shadow-2xl">
+
+  <div class="flex items-start justify-between gap-4">
+    <div>
+      <p class="text-xs uppercase tracking-wider text-[#a78bfa] font-bold mb-1">
+        🎯 Recommendation for you
+      </p>
+
+      <h3 class="text-xl font-bold text-white">
+        {{ topRecommendation.titre }}
+      </h3>
+
+      <p class="text-sm text-gray-400 mt-2">
+        This WatchParty is recommended based on participants and feedback score.
+      </p>
+
+      <div class="mt-3 grid grid-cols-2 gap-2 text-sm text-gray-300">
+        <span>👥 {{ topRecommendation.nombreParticipants }} participants</span>
+        <span>⭐ {{ topRecommendation.moyenneFeedback | number:'1.0-2' }}</span>
+        <span>💬 {{ topRecommendation.nombreFeedbacks }} feedbacks</span>
+        <span>🔥 Score {{ topRecommendation.scoreRecommendation | number:'1.0-2' }}</span>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      (click)="closeRecommendationNotification()"
+      class="text-gray-400 hover:text-white text-xl font-bold">
+      ✕
+    </button>
+  </div>
+</div>
 
   <!-- ===== HOST PENDING REQUESTS ===== -->
   <div *ngIf="mode === 'user' && hostPendingRequests.length > 0"
@@ -259,7 +293,52 @@
         "<span class="text-white font-medium">{{ advancedSearchKeyword }}</span>"
       </div>
     </div>
+      <!-- RECOMMENDED WATCHPARTIES -->
+<div class="mb-8 rounded-2xl border border-[#8B5CF6]/20 bg-[#111827] p-6 shadow-lg">
+  <div class="flex items-center justify-between mb-5">
+    <div>
+      <h2 class="text-2xl font-bold text-white">Recommended WatchParties</h2>
+      <p class="text-gray-400 mt-1">Top sessions based on participants and feedback score</p>
+    </div>
 
+    <button
+      type="button"
+      (click)="loadRecommendations()"
+      class="rounded-xl bg-[#1C1F35] border border-[#8B5CF6]/20 px-4 py-2 text-sm text-gray-300 hover:bg-[#252847] transition">
+      🔄 Refresh
+    </button>
+  </div>
+
+  <p *ngIf="loadingRecommendations" class="text-[#8B5CF6] text-sm">
+    Loading recommendations...
+  </p>
+
+  <div *ngIf="!loadingRecommendations && recommendations.length === 0"
+       class="rounded-xl border border-gray-700 bg-[#0B0E14] p-4 text-gray-400 text-sm">
+    No recommendations available.
+  </div>
+
+  <div *ngIf="!loadingRecommendations && recommendations.length > 0"
+       class="grid gap-4 md:grid-cols-2">
+    <div *ngFor="let wp of recommendations"
+         class="rounded-2xl border border-[#8B5CF6]/20 bg-[#0B0E14] p-5 hover:border-[#8B5CF6]/50 transition">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-bold text-white">{{ wp.titre }}</h3>
+
+        <span class="text-xs font-semibold px-3 py-1 rounded-full border bg-green-500/20 text-green-300 border-green-500/30">
+          {{ wp.statut }}
+        </span>
+      </div>
+
+      <div class="grid gap-2 text-sm text-gray-300">
+        <p>👥 Participants: <span class="text-white font-semibold">{{ wp.nombreParticipants }}</span></p>
+        <p>⭐ Average feedback: <span class="text-white font-semibold">{{ wp.moyenneFeedback | number:'1.0-2' }}</span></p>
+        <p>💬 Feedbacks: <span class="text-white font-semibold">{{ wp.nombreFeedbacks }}</span></p>
+        <p>🔥 Score: <span class="text-[#8B5CF6] font-bold">{{ wp.scoreRecommendation | number:'1.0-2' }}</span></p>
+      </div>
+    </div>
+  </div>
+</div>
     <!-- LIST HEADER -->
     <div class="flex items-center justify-between mb-6">
       <div>

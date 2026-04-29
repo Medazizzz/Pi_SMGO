@@ -36,6 +36,12 @@ export class WatchPartyComponent implements OnInit, OnChanges, OnDestroy {
   selectedContent: any = null;
   showDropdown = false;
 
+  recommendations: any[] = [];
+loadingRecommendations = false;
+
+showRecommendationNotification = false;
+topRecommendation: any = null;
+
   list: any[] = [];
   originalList: any[] = [];
 
@@ -82,6 +88,7 @@ loadingScore: { [key: string]: boolean } = {};
     this.load();
     this.loadContents();
     this.startPollingRequests();
+    this.loadRecommendations();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -782,4 +789,34 @@ loadingScore: { [key: string]: boolean } = {};
     }
   });
 }
+loadRecommendations(): void {
+  this.loadingRecommendations = true;
+
+  this.service.getRecommendations().subscribe({
+    next: (data: any[]) => {
+      this.recommendations = data || [];
+      this.topRecommendation = this.recommendations.length > 0
+        ? this.recommendations[0]
+        : null;
+
+      if (this.topRecommendation && this.mode === 'user') {
+        this.showRecommendationNotification = true;
+
+        setTimeout(() => {
+          this.showRecommendationNotification = false;
+        }, 8000);
+      }
+
+      this.loadingRecommendations = false;
+    },
+    error: (err: any) => {
+      console.error('Erreur recommendations:', err);
+      this.loadingRecommendations = false;
+    }
+  });
+}
+closeRecommendationNotification(): void {
+  this.showRecommendationNotification = false;
+}
+
 }
