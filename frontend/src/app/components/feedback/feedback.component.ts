@@ -95,6 +95,10 @@ visibleRiskWatchParties: any[] = [];
   badWordDetected: boolean = false;
   badWordMessage: string = '';
 
+  showWatchPartyFeedbackModal = false;
+selectedModalWatchParty: any = null;
+modalFeedbacks: any[] = [];
+
   editBadWordDetected: boolean = false;
   editBadWordMessage: string = '';
 
@@ -851,18 +855,25 @@ countRisk(level: 'SAFE' | 'MEDIUM_RISK' | 'HIGH_RISK'): number {
   }
 
   getWatchPartyTitle(watchPartyId: string): string {
-    const wp = this.watchParties.find((w) => w.id === watchPartyId);
-    return wp?.titre || watchPartyId;
-  }
+  const wp = this.watchParties.find((w) => w.id === watchPartyId);
+  return wp?.titre || watchPartyId;
+}
 
-  getWatchPartyHost(watchPartyId: string): string {
-    const wp = this.watchParties.find((w) => w.id === watchPartyId);
-    if (!wp) {
-      return 'Unknown host';
-    }
-
-    return wp.clientId || wp.adminId || 'Unknown host';
+// Ajoute cette méthode juste après :
+getWatchPartyHost(watchPartyId: string): string {
+  const wp = this.watchParties.find((w) => w.id === watchPartyId);
+  if (!wp) {
+    return 'Unknown host';
   }
+  return wp.clientId || wp.adminId || 'Unknown host';
+}
+
+
+getFeedbackCountForWatchParty(watchPartyId: string): number {
+  if (!watchPartyId) return 0;
+  return this.allFeedbacks.filter(f => f.watchPartyId === watchPartyId).length;
+}
+
 
   isOwner(feedback: any): boolean {
     return feedback?.clientId === this.currentUserId;
@@ -1041,4 +1052,25 @@ countRisk(level: 'SAFE' | 'MEDIUM_RISK' | 'HIGH_RISK'): number {
     this.reactWithEmoji(feedbackId, emoji);
     this.openedEmojiPickerId = null;
   }
+
+  openWatchPartyFeedbackModal(watchParty: any): void {
+  this.selectedModalWatchParty = watchParty;
+  
+  // Cherche par toutes les clés possibles d'ID
+  const wpId = watchParty.id || watchParty.watchPartyId;
+  
+  this.modalFeedbacks = this.allFeedbacks.filter(f => 
+    f.watchPartyId === wpId || 
+    f.watchPartyId === watchParty.id || 
+    f.watchPartyId === watchParty.watchPartyId
+  );
+  
+  this.showWatchPartyFeedbackModal = true;
+}
+
+closeWatchPartyFeedbackModal(): void {
+  this.showWatchPartyFeedbackModal = false;
+  this.selectedModalWatchParty = null;
+  this.modalFeedbacks = [];
+}
 }

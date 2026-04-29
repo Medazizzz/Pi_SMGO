@@ -808,6 +808,9 @@
   <!-- ================= ADMIN MODE ================= -->
   <div *ngIf="mode === 'admin'" class="max-w-7xl mx-auto px-6 py-8 text-white">
     <!-- WATCHPARTY RISK FILTER -->
+     <h2 class="text-4xl font-extrabold tracking-tight text-white">
+    Feedback moderation
+  </h2>
 <div class="mt-8 mb-6 rounded-[24px] bg-white/[0.025] border border-white/10 p-6">
 
   <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
@@ -839,111 +842,38 @@
     Aucune WatchParty dans cette catégorie.
   </div>
 
-  <div class="grid gap-4" *ngIf="visibleRiskWatchParties.length > 0">
-    <div
-      *ngFor="let r of visibleRiskWatchParties"
-      class="rounded-2xl bg-[#06080f]/80 border border-white/10 p-5"
-    >
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+  <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3" *ngIf="visibleRiskWatchParties.length > 0">
+  <div *ngFor="let r of visibleRiskWatchParties"
+       class="rounded-2xl bg-[#06080f]/80 border border-white/10 px-5 py-4 flex items-center justify-between gap-3">
 
-        <div>
-          <h3 class="text-lg font-bold text-white">
-            {{ r.titre }}
-          </h3>
-
-          <p class="text-sm text-gray-400 mt-1">
-            {{ r.reason || 'No reason provided' }}
-          </p>
-        </div>
-
-        <span
-          class="px-4 py-2 rounded-full text-xs font-bold"
-          [ngClass]="{
-            'bg-emerald-500/10 text-emerald-300 border border-emerald-400/20': r.riskLevel === 'SAFE',
-            'bg-amber-500/10 text-amber-300 border border-amber-400/20': r.riskLevel === 'MEDIUM_RISK',
-            'bg-red-500/10 text-red-300 border border-red-400/20': r.riskLevel === 'HIGH_RISK'
-          }"
-        >
-          {{ r.riskLevel }}
-        </span>
-      </div>
-
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
-        <div class="rounded-xl bg-white/[0.03] border border-white/10 p-3">
-          <p class="text-xs text-gray-500">Participants</p>
-          <p class="text-lg font-bold text-white">{{ r.participantCount || 0 }}</p>
-        </div>
-
-        <div class="rounded-xl bg-white/[0.03] border border-white/10 p-3">
-          <p class="text-xs text-gray-500">Feedbacks</p>
-          <p class="text-lg font-bold text-white">{{ r.feedbackCount || 0 }}</p>
-        </div>
-
-        <div class="rounded-xl bg-white/[0.03] border border-white/10 p-3">
-          <p class="text-xs text-gray-500">Average note</p>
-          <p class="text-lg font-bold text-white">
-            {{ r.averageNote || 0 | number:'1.1-1' }}
-          </p>
-        </div>
-
-        <div class="rounded-xl bg-white/[0.03] border border-white/10 p-3">
-          <p class="text-xs text-gray-500">Score</p>
-          <p class="text-lg font-bold text-white">
-            {{ r.score || 0 | number:'1.0-0' }}
-          </p>
-        </div>
-      </div>
-
+    <div>
+      <h3 class="text-base font-bold text-white">
+        {{ r.titre }}
+      </h3>
+      <p class="text-xs text-gray-500 mt-1">
+        {{ r.reason || 'No reason provided' }}
+      </p>
     </div>
+
+    <span
+      class="px-3 py-1 rounded-full text-[11px] font-bold shrink-0"
+      [ngClass]="{
+        'bg-emerald-500/10 text-emerald-300 border border-emerald-400/20': r.riskLevel === 'SAFE',
+        'bg-amber-500/10 text-amber-300 border border-amber-400/20': r.riskLevel === 'MEDIUM_RISK',
+        'bg-red-500/10 text-red-300 border border-red-400/20': r.riskLevel === 'HIGH_RISK'
+      }"
+    >
+      {{ r.riskLevel }}
+  
+    </span>
   </div>
 </div>
 
-    <div class="mb-8">
+
+<div class="mb-8">
   <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">
     Administration
   </div>
-
-  <h2 class="text-4xl font-extrabold tracking-tight text-white">
-    Feedback moderation
-  </h2>
-
- 
-
-  
-
-   
-
-  <div *ngIf="visibleRiskWatchParties.length === 0"
-       class="rounded-2xl bg-[#06080f]/80 border border-white/10 p-5 text-gray-400">
-    No WatchParty in this category.
-  </div>
-
-  <div class="grid gap-3" *ngIf="visibleRiskWatchParties.length > 0">
-    <div
-      *ngFor="let r of visibleRiskWatchParties"
-      class="rounded-2xl bg-[#06080f]/80 border border-white/10 p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
-      <div>
-        <h3 class="text-lg font-bold text-white">{{ r.titre }}</h3>
-        <p class="text-sm text-gray-400 mt-1">{{ r.reason }}</p>
-      </div>
-
-      <div class="flex flex-wrap gap-2 text-sm font-semibold">
-        <span class="px-3 py-1 rounded-full bg-violet-500/10 text-violet-300">
-          👥 {{ r.participantCount }} participants
-        </span>
-
-        <span class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-300">
-          💬 {{ r.feedbackCount }} feedbacks
-        </span>
-
-        <span class="px-3 py-1 rounded-full bg-amber-500/10 text-amber-300">
-          ⭐ {{ r.averageNote | number:'1.1-1' }}
-        </span>
-      </div>
-    </div>
-  </div>
-</div>
 
     <div *ngIf="successMessage"
       class="mb-5 rounded-2xl bg-emerald-500/10 border border-emerald-400/20 px-4 py-3 text-sm text-emerald-300 flex items-center gap-2">
@@ -1077,122 +1007,162 @@
     </div>
 
     <!-- ADMIN LIST -->
-    <div class="space-y-5" *ngIf="feedbacks.length > 0">
-      <div
-        *ngFor="let f of feedbacks"
-        class="rounded-[28px] bg-[linear-gradient(145deg,rgba(17,24,39,.94),rgba(11,14,22,.9))] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,.45)] overflow-hidden"
-      >
-        <div class="p-6 md:p-7">
-          <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-5 mb-5">
-            <div class="flex items-center gap-4">
-              <div
-                class="w-14 h-14 rounded-full flex items-center justify-center bg-[linear-gradient(135deg,#7c3aed,#a855f7)] text-white font-extrabold text-base"
-              >
-                {{ (f.clientId || 'U')[0].toUpperCase() }}{{ (f.clientId || 'U')[1]?.toUpperCase() || '' }}
-              </div>
+    <!-- WATCHPARTY BUTTONS GROUP -->
+<div class="mb-6">
+  <p class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-3">
+    Filter by WatchParty
+  </p>
+  <div class="flex flex-wrap gap-3">
+    <button
+      *ngFor="let wp of watchParties"
+      type="button"
+      (click)="openWatchPartyFeedbackModal(wp)"
+      class="inline-flex items-center gap-2 px-4 py-2.5 rounded-[14px] bg-white/[0.03] border border-white/10 text-gray-300 text-sm font-semibold hover:bg-violet-500/10 hover:border-violet-400/20 hover:text-violet-200 transition">
+      <span class="w-2 h-2 rounded-full"
+            [ngClass]="{
+              'bg-green-400': wp.statut === 'OPEN',
+              'bg-red-400': wp.statut === 'CLOSED',
+              'bg-blue-400': wp.statut === 'CREATED',
+              'bg-gray-400': wp.statut === 'CANCELLED'
+            }"></span>
+      {{ wp.titre || wp.title || wp.name || 'WatchParty' }}
+      <span class="px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300 text-xs font-bold">
+        {{ getFeedbackCountForWatchParty(wp.id) }}
+      </span>
+    </button>
+  </div>
+</div>
 
-              <div>
-                <p class="text-white text-lg font-bold">{{ f.clientId || 'Unknown user' }}</p>
-                <p class="text-sm text-gray-500">{{ f.dateFeedback | date:'dd/MM/yyyy' }}</p>
-              </div>
+<!-- ADMIN LIST (existant, garde-le tel quel) -->
+<div class="space-y-5" *ngIf="feedbacks.length > 0">
+  <!-- ... ton code existant ... -->
+</div>
+<!-- MODAL FEEDBACKS PAR WATCHPARTY -->
+<div *ngIf="showWatchPartyFeedbackModal"
+     class="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+     (click)="closeWatchPartyFeedbackModal()">
+
+  <div class="relative w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-[28px] bg-[#0b0e14] border border-violet-400/20 shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
+       (click)="$event.stopPropagation()">
+
+    <!-- HEADER -->
+    <div class="sticky top-0 z-10 px-7 py-5 border-b border-white/10 bg-[#0b0e14]/95 backdrop-blur-sm flex items-start justify-between gap-4">
+      <div>
+        <p class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-1">
+          WatchParty Feedbacks
+        </p>
+        <h2 class="text-2xl font-extrabold text-white">
+          {{ selectedModalWatchParty?.titre }}
+        </h2>
+        <div class="flex items-center gap-3 mt-2">
+          <span class="text-sm text-gray-400">
+            {{ modalFeedbacks.length }} feedback(s)
+          </span>
+          <span class="px-2.5 py-1 rounded-full text-xs font-bold"
+                [ngClass]="{
+                  'bg-green-500/10 text-green-300 border border-green-400/20': selectedModalWatchParty?.statut === 'OPEN',
+                  'bg-red-500/10 text-red-300 border border-red-400/20': selectedModalWatchParty?.statut === 'CLOSED',
+                  'bg-blue-500/10 text-blue-300 border border-blue-400/20': selectedModalWatchParty?.statut === 'CREATED',
+                  'bg-gray-500/10 text-gray-300 border border-gray-400/20': selectedModalWatchParty?.statut === 'CANCELLED'
+                }">
+            {{ selectedModalWatchParty?.statut }}
+          </span>
+        </div>
+      </div>
+
+      <button type="button"
+              (click)="closeWatchPartyFeedbackModal()"
+              class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition shrink-0 mt-1">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- BODY -->
+    <div class="p-6 space-y-4">
+
+      <!-- EMPTY -->
+      <div *ngIf="modalFeedbacks.length === 0"
+           class="rounded-[20px] bg-white/[0.02] border border-white/10 p-10 text-center">
+        <svg class="w-10 h-10 text-gray-600 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <p class="text-gray-400 text-sm">No feedback for this WatchParty yet.</p>
+      </div>
+
+      <!-- FEEDBACK CARDS -->
+      <div *ngFor="let f of modalFeedbacks"
+           class="rounded-[22px] bg-white/[0.025] border border-white/10 p-5">
+
+        <!-- TOP ROW -->
+        <div class="flex items-start justify-between gap-4 mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-full flex items-center justify-center bg-gradient-to-br from-violet-600 to-purple-500 text-white font-extrabold text-sm shrink-0">
+              {{ (f.clientId || 'U')[0].toUpperCase() }}{{ (f.clientId || 'U')[1]?.toUpperCase() || '' }}
             </div>
-
-            <div class="flex flex-col items-start xl:items-end gap-3">
-              <div class="flex gap-1">
-                <span
-                  *ngFor="let star of stars"
-                  class="text-xl leading-none"
-                  [class.text-amber-400]="star <= f.note"
-                  [class.text-[#1e2535]]="star > f.note"
-                >
-                  ★
-                </span>
-              </div>
-
-              <span
-                class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold"
-                [ngClass]="getSentimentClass(f.sentiment)"
-              >
-                {{ getSentimentEmoji(f.sentiment) }} {{ getSentimentLabel(f.sentiment) }}
-              </span>
+            <div>
+              <p class="text-white font-bold text-sm">{{ f.clientId || 'Unknown user' }}</p>
+              <p class="text-xs text-gray-500">{{ f.dateFeedback | date:'dd/MM/yyyy' }}</p>
             </div>
           </div>
 
-          <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
-            <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
-              <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-2">WatchParty</p>
-              <p class="text-sm text-white font-semibold break-words">{{ getWatchPartyTitle(f.watchPartyId) }}</p>
+          <div class="flex flex-col items-end gap-2">
+            <div class="flex gap-0.5">
+              <span *ngFor="let star of stars"
+                    class="text-lg leading-none"
+                    [class.text-amber-400]="star <= f.note"
+                    [class.text-gray-700]="star > f.note">★</span>
             </div>
-
-            <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
-              <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-2">Host</p>
-              <p class="text-sm text-white font-semibold break-words">{{ getWatchPartyHost(f.watchPartyId) }}</p>
-            </div>
-
-            <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
-              <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-2">Likes / Dislikes</p>
-              <p class="text-sm text-white font-semibold">{{ f.likes || 0 }} 👍 · {{ f.dislikes || 0 }} 👎</p>
-            </div>
-
-            <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
-              <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-2">Total reactions</p>
-              <p class="text-sm text-white font-semibold">{{ getTotalReactions(f.id) }}</p>
-            </div>
+            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
+                  [ngClass]="getSentimentClass(f.sentiment)">
+              {{ getSentimentEmoji(f.sentiment) }} {{ getSentimentLabel(f.sentiment) }}
+            </span>
           </div>
+        </div>
 
-          <div class="rounded-[20px] bg-white/[0.02] border border-white/10 p-5 mb-5">
-            <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-3">Feedback content</p>
-
-            <p *ngIf="f.commentaire"
-              class="text-sm md:text-base leading-8 text-gray-300 whitespace-pre-line break-words">
-              {{ f.commentaire }}
-            </p>
-
-            <p *ngIf="!f.commentaire && f.audioUrl"
-              class="text-sm md:text-base leading-8 text-gray-400 italic">
-              Voice-only feedback
-            </p>
-
-            <audio
-              *ngIf="f.audioUrl"
-              controls
-              class="mt-4 w-full rounded-xl bg-black/30 p-2"
-            >
-              <source [src]="getAudioUrl(f.audioUrl)" />
-              Your browser does not support audio.
-            </audio>
+        <!-- STATS -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-3">
+            <p class="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-1">Likes / Dislikes</p>
+            <p class="text-sm text-white font-semibold">{{ f.likes || 0 }} 👍 · {{ f.dislikes || 0 }} 👎</p>
           </div>
-
-          <div class="rounded-[20px] bg-white/[0.02] border border-white/10 p-5 mb-5">
-            <p class="text-[11px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-3">Emoji reactions</p>
-
-            <div class="flex flex-wrap gap-2">
-              <div
-                *ngFor="let emoji of availableEmojis"
-                class="inline-flex items-center gap-2 px-3 py-2 rounded-[14px] bg-white/5 border border-white/10 text-gray-300 text-sm font-semibold"
-              >
-                <span>{{ emoji }}</span>
-                <span class="text-xs">{{ getEmojiCount(f.id, emoji) }}</span>
-              </div>
-            </div>
+          <div class="rounded-2xl bg-white/[0.03] border border-white/10 p-3">
+            <p class="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-1">Total reactions</p>
+            <p class="text-sm text-white font-semibold">{{ getTotalReactions(f.id) }}</p>
           </div>
+        </div>
 
-          <div class="flex justify-end">
-            <button
-              type="button"
-              (click)="deleteFeedback(f.id)"
-              class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[16px] bg-red-500/10 border border-red-400/20 text-red-300 text-sm font-semibold hover:bg-red-500/15 transition"
-            >
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-              </svg>
-              Delete
-            </button>
-          </div>
+        <!-- COMMENT -->
+        <div class="rounded-[16px] bg-black/20 border border-white/[0.06] px-5 py-4 mb-4">
+          <p class="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-bold mb-2">Feedback content</p>
+          <p *ngIf="f.commentaire"
+             class="text-sm text-gray-300 leading-7 whitespace-pre-line break-words">
+            {{ f.commentaire }}
+          </p>
+          <p *ngIf="!f.commentaire && f.audioUrl"
+             class="text-sm text-gray-400 italic">Voice-only feedback</p>
+          <audio *ngIf="f.audioUrl" controls
+                 class="mt-3 w-full rounded-xl bg-black/30 p-1">
+            <source [src]="getAudioUrl(f.audioUrl)" />
+          </audio>
+        </div>
+
+        <!-- DELETE -->
+        <div class="flex justify-end">
+          <button type="button"
+                  (click)="deleteFeedback(f.id)"
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-[14px] bg-red-500/10 border border-red-400/20 text-red-300 text-sm font-semibold hover:bg-red-500/15 transition">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+            Delete
+          </button>
         </div>
       </div>
     </div>
-
   </div>
+</div>
 </div>

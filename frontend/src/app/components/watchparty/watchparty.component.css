@@ -23,3 +23,8 @@
 .watchparty-chat-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(139, 92, 246, 0.9);
 }
+.watchparty-card-img {
+  height: 190px;
+  object-fit: cover;
+  width: 100%;
+}

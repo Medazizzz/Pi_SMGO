@@ -537,112 +537,115 @@
       No WatchParty found.
     </div>
 
-    <div class="grid gap-4" *ngIf="list.length > 0">
-      <div *ngFor="let w of list"
-           class="rounded-2xl border bg-[#111827] p-5 shadow-md transition"
-           [ngClass]="isBlocked(w) ? 'border-red-500/30 opacity-75' : 'border-[#8B5CF6]/20 hover:border-[#8B5CF6]/50'">
-        <div class="flex items-start justify-between gap-4">
-          <div class="flex-1">
-            <div class="flex items-center gap-3 mb-3 flex-wrap">
-              <p class="text-xl font-bold text-white">{{ w.titre }}</p>
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4" *ngIf="list.length > 0">
+  <div *ngFor="let w of list"
+       class="group overflow-hidden rounded-[28px] bg-[#111827] border border-[#8B5CF6]/25 shadow-2xl hover:-translate-y-1 hover:border-[#8B5CF6]/60 transition">
 
-              <span
-                [ngClass]="{
-                  'bg-blue-500/20 text-blue-300 border-blue-500/30': getWatchPartyStatus(w) === 'CREATED',
-                  'bg-green-500/20 text-green-300 border-green-500/30': getWatchPartyStatus(w) === 'OPEN',
-                  'bg-red-500/20 text-red-300 border-red-500/30': getWatchPartyStatus(w) === 'CLOSED',
-                  'bg-gray-500/20 text-gray-300 border-gray-500/30': getWatchPartyStatus(w) === 'CANCELLED'
-                }"
-                class="text-xs font-semibold px-3 py-1 rounded-full border">
-                {{ getWatchPartyStatus(w) || 'UNKNOWN' }}
-              </span>
+    <!-- HEADER -->
+    <div class="relative h-34 bg-gradient-to-br from-[#13091f] via-[#3b1678] to-[#8B5CF6] flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/10"></div>
 
-              <span *ngIf="isBlocked(w)"
-                    class="text-xs font-bold px-3 py-1 rounded-full border bg-red-500/10 text-red-300 border-red-500/30">
-                BLOCKED
-              </span>
-            </div>
+      <span class="absolute top-5 left-5 rounded-full px-4 py-2 text-xs font-bold border bg-red-500/20 text-red-200 border-red-400/40">
+        {{ getWatchPartyStatus(w) || 'UNKNOWN' }}
+      </span>
 
-            <div class="grid md:grid-cols-2 gap-2 text-sm text-gray-300">
-              <div *ngIf="w.contenuId">
-                <span class="font-semibold text-white">Content:</span> {{ w.contenuId }}
-              </div>
+      <span *ngIf="isBlocked(w)"
+            class="absolute top-5 right-5 rounded-full px-4 py-2 text-xs font-bold bg-red-500 text-white shadow-lg">
+        BLOCKED
+      </span>
 
-              <div>
-                <span class="font-semibold text-white">Participants:</span> {{ w.participantIds?.length || 0 }}
-              </div>
-
-              <div *ngIf="w.dateCreation">
-                <span class="font-semibold text-white">Created:</span>
-                {{ w.dateCreation | date:'dd/MM/yyyy HH:mm' }}
-              </div>
-
-              <div *ngIf="w.hostUsername">
-                <span class="font-semibold text-white">Host:</span> {{ w.hostUsername }}
-              </div>
-
-              <div *ngIf="w.feedbackCount !== undefined">
-                <span class="font-semibold text-white">Feedback count:</span> {{ w.feedbackCount }}
-              </div>
-            </div>
-
-            <div *ngIf="w.matchedSentiment || w.matchedFeedbackComment"
-                 class="mt-4 rounded-xl border border-[#8B5CF6]/20 bg-[#0B0E14] p-4">
-              <p class="text-xs uppercase tracking-wider text-gray-500 mb-2 font-semibold">
-                Search match details
-              </p>
-
-              <p *ngIf="w.matchedSentiment" class="text-sm text-gray-300">
-                <span class="font-semibold text-white">Matched sentiment:</span>
-                <span class="text-yellow-300">{{ w.matchedSentiment }}</span>
-              </p>
-
-              <p *ngIf="w.matchedFeedbackComment" class="text-sm text-gray-300 mt-1 break-words">
-                <span class="font-semibold text-white">Matched feedback:</span>
-                {{ w.matchedFeedbackComment }}
-              </p>
-            </div>
-          </div>
-
-          <div class="flex gap-3 shrink-0 flex-wrap">
-            <button
-              *ngIf="!isBlocked(w)"
-              type="button"
-              (click)="blockWatchParty(w.id)"
-              class="rounded-lg bg-red-600 px-5 py-2 text-white font-semibold hover:bg-red-700 transition">
-              Block
-            </button>
-
-            <button
-              *ngIf="isBlocked(w)"
-              type="button"
-              disabled
-              class="rounded-lg bg-red-900/40 px-5 py-2 text-red-300 font-semibold cursor-not-allowed border border-red-500/20">
-              Blocked
-            </button>
-            <button
-      type="button"
-      (click)="showScore(w.id || w.watchPartyId)"
-      class="rounded-lg bg-[#8B5CF6] px-5 py-2 text-white font-semibold hover:bg-[#7C3AED] transition">
-      {{ loadingScore[w.id || w.watchPartyId] ? 'Loading...' : 'Score' }}
-    </button>
-
-        
-            <button
-              type="button"
-              (click)="deleteWatchParty(w.id)"
-              class="rounded-lg bg-gray-700 px-5 py-2 text-white font-semibold hover:bg-gray-800 transition">
-              Delete
-            </button>
-
-             <div
-    *ngIf="scores[w.id || w.watchPartyId] !== undefined"
-    class="rounded-xl bg-emerald-500/10 border border-emerald-400/20 px-5 py-2 text-emerald-300 text-sm font-bold">
-    Score: {{ scores[w.id || w.watchPartyId] | number:'1.0-2' }}
-  </div>
-          </div>
+      <div class="z-10 text-center px-6">
+        <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/15 border border-white/20 shadow-xl">
+          <span class="text-5xl">🍿</span>
         </div>
+
+        <h3 class="text-3xl font-extrabold text-white drop-shadow">
+          {{ w.titre }}
+        </h3>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="p-6 text-white">
+      <div class="flex items-start justify-between gap-4 mb-5">
+        <div>
+          <h3 class="text-2xl font-extrabold text-white">
+            {{ w.titre }}
+          </h3>
+          <p class="text-sm text-gray-400 mt-1 break-all">
+            Content: {{ w.contenuId || 'No content' }}
+          </p>
+        </div>
+
+        <div class="text-right shrink-0">
+          <div class="text-yellow-400 text-lg">★★★★★</div>
+          <p class="text-xs text-gray-500">WatchParty</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-5">
+        <div class="rounded-2xl bg-[#0B0E14] border border-[#8B5CF6]/15 p-4">
+          <p class="text-xs text-gray-400">Participants</p>
+          <p class="text-2xl font-extrabold text-white">
+            {{ w.participantIds?.length || 0 }}
+          </p>
+        </div>
+
+        <div class="rounded-2xl bg-[#0B0E14] border border-[#8B5CF6]/15 p-4">
+          <p class="text-xs text-gray-400">Feedbacks</p>
+          <p class="text-2xl font-extrabold text-white">
+            {{ w.feedbackCount || 0 }}
+          </p>
+        </div>
+
+        <div class="rounded-2xl bg-[#0B0E14] border border-[#8B5CF6]/15 p-4 col-span-2" *ngIf="w.dateCreation">
+          <p class="text-xs text-gray-400">Created</p>
+          <p class="text-sm font-bold text-white">
+            {{ w.dateCreation | date:'dd/MM/yyyy HH:mm' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="grid grid-cols-3 gap-3">
+        <button
+          *ngIf="!isBlocked(w)"
+          type="button"
+          (click)="blockWatchParty(w.id)"
+          class="rounded-2xl bg-red-500/20 border border-red-400/30 px-4 py-3 text-red-200 font-bold hover:bg-red-500 hover:text-white transition">
+          Block
+        </button>
+
+        <button
+          *ngIf="isBlocked(w)"
+          type="button"
+          disabled
+          class="rounded-2xl bg-red-500/10 border border-red-400/20 px-4 py-3 text-red-300 font-bold cursor-not-allowed">
+          Blocked
+        </button>
+
+        <button
+          type="button"
+          (click)="showScore(w.id || w.watchPartyId)"
+          class="rounded-2xl bg-[#8B5CF6] px-4 py-3 text-white font-bold hover:bg-[#7C3AED] transition">
+          {{ loadingScore[w.id || w.watchPartyId] ? 'Loading...' : 'Score' }}
+        </button>
+
+        <button
+          type="button"
+          (click)="deleteWatchParty(w.id)"
+          class="rounded-2xl bg-[#1f2937] px-4 py-3 text-white font-bold hover:bg-gray-900 transition">
+          Delete
+        </button>
+      </div>
+
+      <div
+        *ngIf="scores[w.id || w.watchPartyId] !== undefined"
+        class="mt-4 rounded-2xl bg-emerald-500/10 border border-emerald-400/30 px-4 py-3 text-emerald-300 text-sm font-bold text-center">
+        Score: {{ scores[w.id || w.watchPartyId] | number:'1.0-2' }}
       </div>
     </div>
   </div>
 </div>
+    </div>
+  </div>
