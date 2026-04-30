@@ -391,6 +391,19 @@
                     class="w-[150px] h-[120px] object-cover rounded-xl"
                   />
                 </div>
+                <!-- VOICE MESSAGE -->
+<div *ngIf="msg.type === 'VOICE'"
+     class="px-3 py-2 border"
+     [ngClass]="msg.isMe
+       ? 'bg-[#8B5CF6]/20 border-[#8B5CF6]/25 rounded-[12px_4px_12px_12px]'
+       : 'bg-[#1a1a2a] border-white/10 rounded-[4px_12px_12px_12px]'">
+  <div class="flex items-center gap-2 mb-1 text-xs text-gray-300">
+    <span>🎤</span>
+    <span>Voice message</span>
+  </div>
+
+  <audio controls [src]="msg.audioUrl || msg.text" class="w-[170px]"></audio>
+</div>
 
                 <p class="mt-1 text-[10px] font-mono text-gray-500" [ngClass]="{'text-right': msg.isMe}">
                   {{ msg.time }}
@@ -404,69 +417,84 @@
           </div>
         </div>
 
-        <!-- INPUT + PICKERS -->
-        <div class="relative p-3 border-t border-white/10 flex gap-2 items-center" (click)="$event.stopPropagation()">
+       <!-- INPUT + PICKERS -->
+<div class="relative p-3 border-t border-white/10" (click)="$event.stopPropagation()">
 
-          <!-- REACTION PICKER -->
-          <div *ngIf="showReactionPicker"
-               class="absolute bottom-[68px] left-3 z-30 w-[220px] rounded-2xl border border-[#8B5CF6]/25 bg-[#141420] p-3 shadow-2xl">
-            <div class="grid grid-cols-4 gap-2">
-              <button
-                *ngFor="let reaction of reactions"
-                type="button"
-                (click)="sendReaction(reaction)"
-                class="h-11 rounded-xl border border-white/10 bg-[#1a1a2a] text-2xl hover:border-[#8B5CF6]/35 hover:bg-[#221f3a] transition">
-                {{ reaction }}
-              </button>
-            </div>
-          </div>
-
-          <!-- GIF PICKER -->
-          <div *ngIf="showGifPicker"
-               class="absolute bottom-[68px] left-[58px] z-30 w-[230px] rounded-2xl border border-[#8B5CF6]/25 bg-[#141420] p-3 shadow-2xl">
-            <p class="text-[11px] font-mono text-gray-400 mb-2">Choose a GIF</p>
-            <div class="grid grid-cols-2 gap-2 max-h-[240px] overflow-y-auto watchparty-chat-scroll">
-              <button
-                *ngFor="let gif of gifList"
-                type="button"
-                (click)="sendGif(gif.url)"
-                class="rounded-xl overflow-hidden border border-white/10 bg-[#1a1a2a] hover:border-[#8B5CF6]/35 transition">
-                <img [src]="gif.url" [alt]="gif.label" class="w-full h-[72px] object-cover" />
-                <div class="px-2 py-1 text-[10px] text-gray-300 text-left">{{ gif.label }}</div>
-              </button>
-            </div>
-          </div>
-
-          <!-- REACTION BUTTON -->
-          <button
-            type="button"
-            (click)="toggleReactionPicker(); $event.stopPropagation()"
-            class="w-10 h-10 rounded-xl border border-white/10 bg-[#1a1a2a] text-white flex items-center justify-center hover:border-[#8B5CF6]/35 hover:bg-[#221f3a] transition shrink-0">
-            😊
-          </button>
-
-          <!-- GIF BUTTON -->
-          <button
-            type="button"
-            (click)="toggleGifPicker(); $event.stopPropagation()"
-            class="min-w-[48px] h-10 rounded-xl border border-white/10 bg-[#1a1a2a] px-3 text-xs font-bold text-white hover:border-[#8B5CF6]/35 hover:bg-[#221f3a] transition shrink-0">
-            GIF
-          </button>
-
-          <input
-            [(ngModel)]="chatInput"
-            (keydown.enter)="sendMessage()"
-            placeholder="Send a message..."
-            class="flex-1 rounded-xl border border-white/10 bg-[#1a1a2a] px-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-[#8B5CF6]/35 transition"
-          />
-
-          <button (click)="sendMessage()"
-            class="w-10 h-10 rounded-xl bg-[#8B5CF6] text-white flex items-center justify-center hover:bg-[#6844ee] transition shrink-0">
-            ➤
-          </button>
-        </div>
-      </div>
+  <div *ngIf="showReactionPicker"
+       class="absolute bottom-[68px] left-3 z-30 w-[220px] rounded-2xl border border-[#8B5CF6]/25 bg-[#141420] p-3 shadow-2xl">
+    <div class="grid grid-cols-4 gap-2">
+      <button *ngFor="let reaction of reactions" type="button" (click)="sendReaction(reaction)"
+        class="h-11 rounded-xl border border-white/10 bg-[#1a1a2a] text-2xl hover:border-[#8B5CF6]/35 hover:bg-[#221f3a] transition">
+        {{ reaction }}
+      </button>
     </div>
+  </div>
+
+  <div *ngIf="showGifPicker"
+       class="absolute bottom-[68px] left-[58px] z-30 w-[230px] rounded-2xl border border-[#8B5CF6]/25 bg-[#141420] p-3 shadow-2xl">
+    <p class="text-[11px] font-mono text-gray-400 mb-2">Choose a GIF</p>
+    <div class="grid grid-cols-2 gap-2 max-h-[240px] overflow-y-auto watchparty-chat-scroll">
+      <button *ngFor="let gif of gifList" type="button" (click)="sendGif(gif.url)"
+        class="rounded-xl overflow-hidden border border-white/10 bg-[#1a1a2a] hover:border-[#8B5CF6]/35 transition">
+        <img [src]="gif.url" [alt]="gif.label" class="w-full h-[72px] object-cover" />
+        <div class="px-2 py-1 text-[10px] text-gray-300 text-left">{{ gif.label }}</div>
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="pendingVoiceUrl"
+       class="mb-2 flex items-center gap-2 rounded-xl border border-[#8B5CF6]/25 bg-[#8B5CF6]/10 p-2">
+    <span class="text-xs text-gray-300">🎤 Voice ready</span>
+    <audio controls [src]="pendingVoiceUrl" class="flex-1 h-8 min-w-0"></audio>
+    <button type="button" (click)="cancelPendingVoice()" class="text-red-300 text-lg px-1">
+      ✕
+    </button>
+  </div>
+
+  <div class="flex gap-2 items-center">
+    <button type="button" (click)="toggleReactionPicker(); $event.stopPropagation()"
+      class="w-10 h-10 rounded-xl border border-white/10 bg-[#1a1a2a] text-white flex items-center justify-center hover:border-[#8B5CF6]/35 hover:bg-[#221f3a] transition shrink-0">
+      😊
+    </button>
+
+    <button type="button" (click)="toggleGifPicker(); $event.stopPropagation()"
+      class="w-10 h-10 rounded-xl border border-white/10 bg-[#1a1a2a] text-[11px] font-bold text-white flex items-center justify-center hover:border-[#8B5CF6]/35 hover:bg-[#221f3a] transition shrink-0">
+      GIF
+    </button>
+
+    <button type="button" (click)="toggleVoiceRecording()"
+      [ngClass]="isRecordingVoice
+        ? 'bg-red-500/20 border-red-500/40 text-red-300 animate-pulse'
+        : 'bg-[#1a1a2a] border-white/10 text-white hover:border-[#8B5CF6]/35 hover:bg-[#221f3a]'"
+      class="w-10 h-10 rounded-xl border flex items-center justify-center transition shrink-0">
+      {{ isRecordingVoice ? '■' : '🎤' }}
+    </button>
+
+    <input
+      [(ngModel)]="chatInput"
+      (keydown.enter)="sendMessage()"
+      placeholder="Send a message..."
+      class="flex-1 min-w-0 rounded-xl border border-white/10 bg-[#1a1a2a] px-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-[#8B5CF6]/35 transition"
+    />
+
+   <button
+  *ngIf="pendingVoiceBlob"
+  type="button"
+  (click)="sendPendingVoice()"
+  class="w-10 h-10 rounded-xl bg-[#8B5CF6] text-white flex items-center justify-center hover:bg-[#6844ee] transition shrink-0">
+  ➤
+</button>
+
+<button
+  *ngIf="!pendingVoiceBlob"
+  type="button"
+  (click)="sendMessage()"
+  [disabled]="!chatInput.trim()"
+  class="w-10 h-10 rounded-xl bg-[#8B5CF6] text-white flex items-center justify-center hover:bg-[#6844ee] transition shrink-0 disabled:opacity-40">
+  ➤
+</button>
+  </div>
+</div>
   </div>
 
   <!-- ===== SUCCESS TOAST ===== -->

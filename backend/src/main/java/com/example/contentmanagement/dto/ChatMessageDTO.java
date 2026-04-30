@@ -15,6 +15,6 @@ public class ChatMessageDTO {
     private String senderId;
     private String senderName;
     private String content;
-    private String type; // CHAT, JOIN, LEAVE
+    private String type; // CHAT, JOIN, LEAVE, REACTION, GIF, VOICE
     private LocalDateTime timestamp;
 }

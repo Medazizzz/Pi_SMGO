@@ -16,9 +16,10 @@ interface ChatMessage {
   text: string;
   time: string;
   isMe: boolean;
-  type?: 'CHAT' | 'JOIN' | 'LEAVE' | 'REACTION' | 'GIF';
+  type?: 'CHAT' | 'JOIN' | 'LEAVE' | 'REACTION' | 'GIF' | 'VOICE';
   reaction?: string;
   gifUrl?: string;
+  audioUrl?: string;
 }
 
 interface JoinRequest {
@@ -69,9 +70,75 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
 
   showReactionPicker = false;
   showGifPicker = false;
-  
- 
+ isRecordingVoice = false;
+pendingVoiceBlob: Blob | null = null;
+pendingVoiceUrl = '';
 
+private voiceRecorder: MediaRecorder | null = null;
+private voiceChunks: Blob[] = [];
+
+async startVoiceRecording(): Promise<void> {
+  if (!this.realtimeConnected || this.isRecordingVoice) return;
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    this.voiceChunks = [];
+    this.pendingVoiceBlob = null;
+    this.pendingVoiceUrl = '';
+
+    this.voiceRecorder = new MediaRecorder(stream);
+
+    this.voiceRecorder.ondataavailable = (event: BlobEvent) => {
+      if (event.data && event.data.size > 0) {
+        this.voiceChunks.push(event.data);
+      }
+    };
+
+    this.voiceRecorder.onstop = () => {
+      const audioBlob = new Blob(this.voiceChunks, { type: 'audio/webm' });
+
+      stream.getTracks().forEach(track => track.stop());
+
+      if (audioBlob.size > 0) {
+        this.pendingVoiceBlob = audioBlob;
+        this.pendingVoiceUrl = URL.createObjectURL(audioBlob);
+      }
+
+      this.voiceRecorder = null;
+      this.voiceChunks = [];
+    };
+
+    this.voiceRecorder.start();
+    this.isRecordingVoice = true;
+    this.closePickers();
+  } catch (error) {
+    console.error('Microphone error:', error);
+    this.showSuccess('Microphone not available.');
+  }
+}
+
+stopVoiceRecording(): void {
+  if (!this.voiceRecorder || !this.isRecordingVoice) return;
+
+  this.isRecordingVoice = false;
+  this.voiceRecorder.stop();
+}
+
+toggleVoiceRecording(): void {
+  if (this.isRecordingVoice) {
+    this.stopVoiceRecording();
+  } else {
+    this.startVoiceRecording();
+  }
+}
+
+cancelPendingVoice(): void {
+  this.pendingVoiceBlob = null;
+  this.pendingVoiceUrl = '';
+}
+
+ 
   readonly reactions: string[] = ['❤️', '😂', '👍', '🔥', '😮', '😢', '👏', '😍'];
 
   readonly gifList: GifItem[] = [
@@ -522,21 +589,79 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
     });
   }
 
-  sendMessage(): void {
-    const text = this.chatInput.trim();
-    if (!text || !this.realtimeConnected) return;
+ private sendVoiceMessage(audioBlob: Blob): void {
+  const reader = new FileReader();
 
-    this.realtimeService.sendChatMessage({
+  reader.onloadend = () => {
+    const audioBase64 = reader.result as string;
+
+    const voiceMessage = {
       watchPartyId: this.sessionId,
       senderId: this.currentUserId,
       senderName: this.currentUserName,
-      content: text,
-      type: 'CHAT'
-    } as any);
+      content: audioBase64,
+      type: 'VOICE'
+    };
 
-    this.chatInput = '';
-    this.closePickers();
+    // afficher d'abord localement
+    this.chatMessages.push(this.mapRealtimeToUiMessage(voiceMessage));
+    this.scrollChatToBottom();
+
+    // nettoyer l'aperçu
+    this.pendingVoiceBlob = null;
+    this.pendingVoiceUrl = '';
+
+    // envoyer ensuite via websocket
+    try {
+      this.realtimeService.sendChatMessage(voiceMessage as any);
+    } catch (error) {
+      console.error('Voice WebSocket send error:', error);
+      this.showSuccess('Voice displayed locally, but WebSocket send failed.');
+    }
+  };
+
+  reader.readAsDataURL(audioBlob);
+}
+sendMessage(): void {
+  // Prioritize voice message if exists
+  if (this.pendingVoiceBlob) {
+    console.log('=== SEND MESSAGE ===');
+    console.log('Voice pending detected, forwarding to sendVoiceMessage');
+    this.sendPendingVoice();
+    return;
   }
+
+  const text = this.chatInput.trim();
+
+  if (!text) {
+    console.log('❌ Empty message');
+    return;
+  }
+
+  if (!this.realtimeConnected) {
+    console.log('❌ WebSocket not connected');
+    return;
+  }
+
+  console.log('=== SEND TEXT MESSAGE ===');
+  console.log('Message:', text);
+
+  this.realtimeService.sendChatMessage({
+    watchPartyId: this.sessionId,
+    senderId: this.currentUserId,
+    senderName: this.currentUserName,
+    content: text,
+    type: 'CHAT'
+  } as any);
+
+  this.chatInput = '';
+  this.closePickers();
+}
+
+sendPendingVoice(): void {
+  if (!this.pendingVoiceBlob) return;
+  this.sendVoiceMessage(this.pendingVoiceBlob);
+}
 
   sendReaction(reaction: string): void {
     if (!reaction || !this.realtimeConnected) return;
@@ -603,13 +728,13 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
     const date = msg.timestamp ? new Date(msg.timestamp) : new Date();
     const time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
     const isMe = msg.senderId === this.currentUserId;
-    const messageType = (msg.type || 'CHAT') as 'CHAT' | 'JOIN' | 'LEAVE' | 'REACTION' | 'GIF';
+    const messageType = (msg.type || 'CHAT') as 'CHAT' | 'JOIN' | 'LEAVE' | 'REACTION' | 'GIF' | 'VOICE';
 
     return {
-      author: messageType === 'CHAT' || messageType === 'REACTION' || messageType === 'GIF'
+      author: messageType === 'CHAT' || messageType === 'REACTION' || messageType === 'GIF' || messageType === 'VOICE'
         ? (msg.senderName || msg.senderId || 'User')
         : 'System',
-      initials: messageType === 'CHAT' || messageType === 'REACTION' || messageType === 'GIF'
+      initials: messageType === 'CHAT' || messageType === 'REACTION' || messageType === 'GIF' || messageType === 'VOICE'
         ? (msg.senderName || msg.senderId || 'US').slice(0, 2).toUpperCase()
         : 'SY',
       text: msg.content || '',
@@ -617,7 +742,8 @@ export class WatchpartySessionComponent implements OnInit, OnDestroy {
       isMe,
       type: messageType,
       reaction: msg.reaction || (messageType === 'REACTION' ? msg.content : ''),
-      gifUrl: msg.gifUrl || (messageType === 'GIF' ? msg.content : '')
+      gifUrl: msg.gifUrl || (messageType === 'GIF' ? msg.content : ''),
+      audioUrl: messageType === 'VOICE' ? msg.content : ''
     };
   }
 

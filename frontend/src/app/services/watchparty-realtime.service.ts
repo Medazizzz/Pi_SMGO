@@ -7,7 +7,7 @@ export interface RealtimeChatMessage {
   senderId: string;
   senderName: string;
   content: string;
-  type: 'CHAT' | 'JOIN' | 'LEAVE';
+  type: 'CHAT' | 'JOIN' | 'LEAVE' | 'REACTION' | 'GIF' | 'VOICE';
   timestamp?: string;
 }
 
