@@ -1,6 +1,4 @@
 <div class="w-full min-h-screen px-4 md:px-6 py-8 text-white">
-
-  <!-- ================= USER MODE ================= -->
   <!-- ================= USER MODE ================= -->
 <div *ngIf="mode === 'user'" class="max-w-6xl mx-auto">
 
@@ -18,11 +16,11 @@
         <span class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></span>
       </div>
 
-      <h1 class="text-5xl md:text-7xl font-black tracking-tight leading-[1.05] text-white mb-6">
-        Your voice
+      <h1 class="text-5xl md:text-5xl font-black tracking-tight leading-[1.05] text-white mb-4">
+        
         <span class="block bg-clip-text text-transparent"
               style="background-image: linear-gradient(135deg, #a78bfa, #7c3aed, #ec4899)">
-          matters.
+               Your voice matters
         </span>
       </h1>
 
@@ -72,7 +70,7 @@
          style="background: linear-gradient(90deg, transparent, rgba(139,92,246,0.6), rgba(236,72,153,0.4), transparent)"></div>
 
     <!-- FORM HEADER -->
-    <div class="px-8 md:px-12 py-8 border-b border-white/[0.06]"
+    <div class="px-4 md:px-11 py-4 border-b border-white/[0.04]"
          style="background: linear-gradient(135deg, rgba(139,92,246,0.06), transparent 60%)">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div class="flex items-center gap-5">
@@ -495,6 +493,34 @@
         </div>
       </div>
     </div>
+<!-- USER FEEDBACK VIEW BUTTONS -->
+<div *ngIf="mode === 'user'" class="feedback-view-tabs">
+
+  <button type="button"
+          class="feedback-view-btn"
+          [class.active]="feedbackView === 'ALL'"
+          (click)="setFeedbackView('ALL')">
+    All feedbacks
+    <span>{{ allFeedbacks.length }}</span>
+  </button>
+
+  <button type="button"
+          class="feedback-view-btn"
+          [class.active]="feedbackView === 'MINE'"
+          (click)="setFeedbackView('MINE')">
+    My feedbacks
+    <span>{{ getMyFeedbackCount() }}</span>
+  </button>
+
+  <button type="button"
+          class="feedback-view-btn"
+          [class.active]="feedbackView === 'OTHERS'"
+          (click)="setFeedbackView('OTHERS')">
+    Other users feedbacks
+    <span>{{ getOtherFeedbackCount() }}</span>
+  </button>
+
+</div>
 
     <!-- FILTERS -->
     <div class="rounded-[22px] p-5 mb-7" style="background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08)">
@@ -690,47 +716,43 @@
               <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3"
                    style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem">
 
-                <!-- VOTES -->
-                <div class="flex gap-2">
-                  <button type="button" (click)="vote(f.id, 'like')"
-                          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-gray-400 text-sm font-semibold transition hover:text-white"
-                          style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08)">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
-                      <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
-                    </svg>
-                    {{ f.likes || 0 }}
-                  </button>
-                  <button type="button" (click)="vote(f.id, 'dislike')"
-                          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-gray-400 text-sm font-semibold transition hover:text-white"
-                          style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08)">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
-                      <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
-                    </svg>
-                    {{ f.dislikes || 0 }}
-                  </button>
-                </div>
+              <!-- FACEBOOK STYLE REACTION -->
+<div class="fb-reaction-wrapper">
 
-                <!-- EMOJI REACT -->
-                <div class="emoji-picker-wrapper">
-                  <button type="button" (click)="toggleEmojiPicker(f.id)" class="emoji-react-btn">
-                    <span>React</span>
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                  </button>
-                  <div *ngIf="openedEmojiPickerId === f.id" class="emoji-picker-box">
-                    <p class="emoji-picker-title">Choose reaction</p>
-                    <div class="emoji-picker-grid">
-                      <button type="button" *ngFor="let emoji of availableEmojis"
-                              (click)="selectEmoji(f.id, emoji)" class="emoji-picker-item">
-                        <span class="text-2xl">{{ emoji }}</span>
-                        <span class="text-[11px] text-gray-400">{{ getEmojiCount(f.id, emoji) }}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
+  <button type="button"
+          class="fb-main-reaction-btn"
+          (click)="toggleEmojiPicker(f.id)">
+    <span class="fb-main-icon">👍</span>
+    <span>React</span>
+    <strong>{{ (f.likes || 0) + (f.dislikes || 0) }}</strong>
+  </button>
+
+  <div *ngIf="openedEmojiPickerId === f.id" class="fb-reaction-popup">
+
+    <button type="button"
+            class="fb-reaction-item"
+            (click)="vote(f.id, 'like')">
+      <span>👍</span>
+      <small>{{ f.likes || 0 }}</small>
+    </button>
+
+    <button type="button"
+            class="fb-reaction-item"
+            (click)="vote(f.id, 'dislike')">
+      <span>👎</span>
+      <small>{{ f.dislikes || 0 }}</small>
+    </button>
+
+    <button type="button"
+            *ngFor="let emoji of availableEmojis"
+            class="fb-reaction-item"
+            (click)="selectEmoji(f.id, emoji)">
+      <span>{{ emoji }}</span>
+      <small>{{ getEmojiCount(f.id, emoji) }}</small>
+    </button>
+
+  </div>
+</div>
 
                 <!-- OWNER ACTIONS -->
                 <div *ngIf="isOwner(f)" class="flex gap-2">
@@ -1108,6 +1130,8 @@
       <!-- FEEDBACK CARDS -->
       <div *ngFor="let f of modalFeedbacks"
            class="rounded-[22px] bg-white/[0.025] border border-white/10 p-5">
+             <div class="card-accent" [ngClass]="getAccentClass(f.sentiment)"></div>
+
 
         <!-- TOP ROW -->
         <div class="flex items-start justify-between gap-4 mb-4">

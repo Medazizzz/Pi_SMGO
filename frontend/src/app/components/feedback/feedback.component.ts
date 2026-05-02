@@ -62,6 +62,8 @@ visibleRiskWatchParties: any[] = [];
 
   currentUserId: string = '';
 
+  feedbackView: 'ALL' | 'MINE' | 'OTHERS' = 'ALL';
+
   searchTerm: string = '';
   selectedNoteFilter: string = 'ALL';
   selectedSentimentFilter: SentimentFilter = 'ALL';
@@ -399,16 +401,26 @@ countRisk(level: 'SAFE' | 'MEDIUM_RISK' | 'HIGH_RISK'): number {
     this.revokeRecordedAudioUrl();
   }
 
-  private applyFilters(): void {
-    let result = [...this.allFeedbacks];
+ private applyFilters(): void {
+  let result = [...this.allFeedbacks];
 
-    result = result.filter((f) => !this.blockedFeedbackIds.includes(f.id));
+  result = result.filter((f) => !this.blockedFeedbackIds.includes(f.id));
 
-    if (this.mode === 'user' && this.watchPartyId) {
-      result = result.filter((f) => f.watchPartyId === this.watchPartyId);
+  if (this.mode === 'user' && this.watchPartyId) {
+    result = result.filter((f) => f.watchPartyId === this.watchPartyId);
+  }
+
+  if (this.mode === 'user') {
+    if (this.feedbackView === 'MINE') {
+      result = result.filter((f) => f.clientId === this.currentUserId);
     }
 
-    const query = this.normalizeText(this.searchTerm);
+    if (this.feedbackView === 'OTHERS') {
+      result = result.filter((f) => f.clientId !== this.currentUserId);
+    }
+  }
+
+  const query = this.normalizeText(this.searchTerm);
     if (query) {
       result = result.filter((f) => {
         const watchPartyTitle = this.getWatchPartyTitle(f.watchPartyId);
@@ -1008,6 +1020,19 @@ getFeedbackCountForWatchParty(watchPartyId: string): number {
     return this.userEmojiSelections?.[feedbackId] === emoji;
   }
 
+  setFeedbackView(view: 'ALL' | 'MINE' | 'OTHERS'): void {
+  this.feedbackView = view;
+  this.applyFilters();
+}
+
+getMyFeedbackCount(): number {
+  return this.allFeedbacks.filter((f) => f.clientId === this.currentUserId).length;
+}
+
+getOtherFeedbackCount(): number {
+  return this.allFeedbacks.filter((f) => f.clientId !== this.currentUserId).length;
+}
+
   getFilteredCountLabel(): string {
     return `${this.feedbacks.length} feedback(s)`;
   }
@@ -1072,5 +1097,14 @@ closeWatchPartyFeedbackModal(): void {
   this.showWatchPartyFeedbackModal = false;
   this.selectedModalWatchParty = null;
   this.modalFeedbacks = [];
+}
+
+getAccentClass(sentiment: string): string {
+  switch (sentiment) {
+    case 'POSITIF': return 'accent-positive';
+    case 'NEGATIF': return 'accent-negative';
+    case 'NEUTRE':  return 'accent-neutral';
+    default:        return 'accent-unknown';
+  }
 }
 }
