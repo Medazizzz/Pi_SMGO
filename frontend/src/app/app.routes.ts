@@ -171,7 +171,11 @@ export const routes: Routes = [
     loadComponent: () => import('./components/watchparty-session/watchparty-session.component').then(m => m.WatchpartySessionComponent),
     data: { title: 'WatchParty Session' }
   },
-
+  {
+  path: 'mode',
+  loadComponent: () =>
+    import('./pages/mode/mode').then(m => m.ModeComponent)
+  },
   {
     path: '',
     redirectTo: '/auth/login',
@@ -183,5 +187,6 @@ export const routes: Routes = [
     path: '**',
     redirectTo: '/auth/login'
   }
+
 ];
 

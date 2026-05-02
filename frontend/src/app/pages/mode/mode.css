@@ -1,0 +1,143 @@
+.mood-page {
+  min-height: 100vh;
+  background: #080b12;
+  color: white;
+  padding: 32px;
+}
+
+.mood-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(168, 85, 247, 0.25), transparent 35%),
+    radial-gradient(circle at 80% 10%, rgba(236, 72, 153, 0.22), transparent 35%);
+  pointer-events: none;
+}
+
+.mood-card {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+  border-radius: 28px;
+  padding: 55px 48px;
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(8, 11, 18, 0.96));
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+}
+
+.mood-header {
+  text-align: center;
+  margin-bottom: 42px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  color: white;
+  font-weight: 700;
+  margin-bottom: 22px;
+}
+
+.mood-header h1 {
+  margin: 0;
+  font-size: 52px;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.mood-header p {
+  margin: 16px auto 0;
+  max-width: 720px;
+  color: #a1a1aa;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.mood-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.mood-option {
+  min-height: 260px;
+  text-decoration: none;
+  color: white;
+  border-radius: 26px;
+  padding: 32px 22px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  transition: 0.25s ease;
+}
+
+.mood-option:hover {
+  transform: translateY(-8px);
+  border-color: rgba(236, 72, 153, 0.7);
+  box-shadow: 0 20px 45px rgba(236, 72, 153, 0.2);
+}
+
+.emoji {
+  font-size: 58px;
+}
+
+.mood-option h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.mood-option p {
+  margin: 0;
+  text-align: center;
+  color: #cbd5e1;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.happy {
+  background: linear-gradient(145deg, rgba(139, 92, 246, 0.25), rgba(236, 72, 153, 0.18));
+}
+
+.sad {
+  background: linear-gradient(145deg, rgba(59, 130, 246, 0.25), rgba(139, 92, 246, 0.18));
+}
+
+.scared {
+  background: linear-gradient(145deg, rgba(24, 24, 27, 0.95), rgba(127, 29, 29, 0.35));
+}
+
+.excited {
+  background: linear-gradient(145deg, rgba(236, 72, 153, 0.25), rgba(139, 92, 246, 0.25));
+}
+
+@media (max-width: 1000px) {
+  .mood-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mood-header h1 {
+    font-size: 40px;
+  }
+}
+
+@media (max-width: 600px) {
+  .mood-page {
+    padding: 18px;
+  }
+
+  .mood-card {
+    padding: 32px 20px;
+  }
+
+  .mood-grid {
+    grid-template-columns: 1fr;
+  }
+}

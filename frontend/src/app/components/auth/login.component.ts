@@ -14,69 +14,207 @@ import { CustomValidators } from '../../services/validators';
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
-  template: `
-    <div class="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
-      <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Login</h1>
-        <p class="text-gray-600 mb-6">Sign in to your account</p>
-
-        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-4">
-          <!-- Username -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-            <input
-              type="text"
-              formControlName="username"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              placeholder="Enter your username"
-            />
-            <div *ngIf="getFieldErrors('username')" class="text-red-500 text-sm mt-1">
-              {{ getFieldErrors('username') }}
-            </div>
-          </div>
-
-          <!-- Password -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-            <input
-              type="password"
-              formControlName="password"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              placeholder="Enter your password"
-            />
-            <div *ngIf="getFieldErrors('password')" class="text-red-500 text-sm mt-1">
-              {{ getFieldErrors('password') }}
-            </div>
-          </div>
-
-          <div class="text-right -mt-2">
-            <a routerLink="/auth/forgot-password" class="text-sm text-blue-500 hover:text-blue-700 font-medium">Forgot password?</a>
-          </div>
-
-          <!-- Error Message -->
-          <div *ngIf="errorMessage" class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {{ errorMessage }}
-          </div>
-
-          <!-- Submit Button -->
-          <button
-            type="submit"
-            [disabled]="!loginForm.valid || isLoading"
-            class="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded-lg transition"
-          >
-            {{ isLoading ? 'Signing in...' : 'Sign In' }}
-          </button>
-        </form>
-
-        <!-- Register Link -->
-        <p class="text-center text-gray-600 mt-6">
-          Don't have an account?
-          <a routerLink="/auth/register" class="text-blue-500 hover:text-blue-700 font-semibold">Register here</a>
-        </p>
+ template: `
+  <div class="login-page">
+    <div class="login-card">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h2>ShowMatchGoOn</h2>
+          <p>Your Entertainment Hub</p>
+        </div>
       </div>
+
+      <h1>Welcome Back</h1>
+      <p class="subtitle">Sign in to continue your movie experience</p>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <label>Username</label>
+        <input type="text" formControlName="username" placeholder="Enter your username" />
+        <div *ngIf="getFieldErrors('username')" class="error">
+          {{ getFieldErrors('username') }}
+        </div>
+
+        <label>Password</label>
+        <input type="password" formControlName="password" placeholder="Enter your password" />
+        <div *ngIf="getFieldErrors('password')" class="error">
+          {{ getFieldErrors('password') }}
+        </div>
+
+        <a routerLink="/auth/forgot-password" class="forgot">Forgot password?</a>
+
+        <div *ngIf="errorMessage" class="error-box">
+          {{ errorMessage }}
+        </div>
+
+        <button type="submit" [disabled]="!loginForm.valid || isLoading">
+          {{ isLoading ? 'Signing in...' : 'Sign In' }}
+        </button>
+      </form>
+
+      <p class="register">
+        Don't have an account?
+        <a routerLink="/auth/register">Register here</a>
+      </p>
     </div>
-  `,
-  styles: []
+  </div>
+`,
+styles: [`
+  .login-page {
+    min-height: 100vh;
+    background: #080b12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    color: white;
+  }
+
+  .login-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(168, 85, 247, 0.28), transparent 35%),
+      radial-gradient(circle at 80% 10%, rgba(236, 72, 153, 0.25), transparent 35%);
+  }
+
+  .login-card {
+    position: relative;
+    width: 460px;
+    max-width: 100%;
+    padding: 42px;
+    border-radius: 28px;
+    background: linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(8, 11, 18, 0.96));
+    border: 1px solid rgba(168, 85, 247, 0.28);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 34px;
+  }
+
+  .logo {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  }
+
+  .brand h2 {
+    margin: 0;
+    font-size: 25px;
+    color: #d946ef;
+  }
+
+  .brand p {
+    margin: 3px 0 0;
+    color: #a1a1aa;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 42px;
+    font-weight: 800;
+  }
+
+  .subtitle {
+    color: #a1a1aa;
+    margin: 10px 0 30px;
+    font-size: 16px;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  label {
+    color: #e5e7eb;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  input {
+    height: 54px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(15, 23, 42, 0.9);
+    color: white;
+    padding: 0 18px;
+    font-size: 16px;
+    margin-bottom: 18px;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: #ec4899;
+    box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.15);
+  }
+
+  .forgot {
+    align-self: flex-end;
+    color: #f472b6;
+    text-decoration: none;
+    margin-bottom: 22px;
+    font-weight: 600;
+  }
+
+  button {
+    height: 56px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    color: white;
+    font-size: 17px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.25s;
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(236, 72, 153, 0.25);
+  }
+
+  button:disabled {
+    background: #374151;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .register {
+    text-align: center;
+    color: #a1a1aa;
+    margin-top: 28px;
+  }
+
+  .register a {
+    color: #f472b6;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .error {
+    color: #fb7185;
+    margin-top: -10px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+
+  .error-box {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fecaca;
+    padding: 12px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+  }
+`]
 })
 export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
@@ -151,14 +289,18 @@ export class LoginComponent implements OnInit {
 
     this.authService.login(this.loginForm.value).subscribe({
       next: () => {
-        // Get user role and redirect accordingly
-        const role = (localStorage.getItem('userRole') || '').toUpperCase();
-        if (role.includes('ADMIN')) {
-          this.router.navigate(['/admin/content']);
-        } else {
-          this.router.navigate(['/user/home']);
-        }
-      },
+  const role = (localStorage.getItem('userRole') || '').toUpperCase();
+
+  // ADMIN : pas de page mode
+  if (role.includes('ADMIN')) {
+    this.router.navigate(['/admin/content']);
+  } 
+  
+  // USER : affiche page mode
+  else {
+    this.router.navigate(['/mode']);
+  }
+},
       error: (error) => {
         this.errorMessage = error.message || 'Login failed. Please try again.';
         this.isLoading = false;

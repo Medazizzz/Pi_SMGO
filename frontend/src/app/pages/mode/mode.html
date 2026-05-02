@@ -1,0 +1,35 @@
+<div class="mood-page">
+  <div class="mood-card">
+    <div class="mood-header">
+      <span class="badge">ShowMatchGoOn</span>
+      <h1>How are you feeling today?</h1>
+      <p>Choose your mood and we will recommend movies and series that match it.</p>
+    </div>
+
+    <div class="mood-grid">
+      <a routerLink="/user/home" [queryParams]="{ mood: 'HAPPY' }" class="mood-option happy">
+        <span class="emoji">😊</span>
+        <h2>Happy</h2>
+        <p>Comedy • Family • Fun</p>
+      </a>
+
+      <a routerLink="/user/home" [queryParams]="{ mood: 'SAD' }" class="mood-option sad">
+        <span class="emoji">😢</span>
+        <h2>Sad</h2>
+        <p>Drama • Romance • Emotional</p>
+      </a>
+
+      <a routerLink="/user/home" [queryParams]="{ mood: 'SCARED' }" class="mood-option scared">
+        <span class="emoji">😱</span>
+        <h2>Scared</h2>
+        <p>Horror • Thriller • Mystery</p>
+      </a>
+
+      <a routerLink="/user/home" [queryParams]="{ mood: 'EXCITED' }" class="mood-option excited">
+        <span class="emoji">🔥</span>
+        <h2>Excited</h2>
+        <p>Action • Adventure • Sci-Fi</p>
+      </a>
+    </div>
+  </div>
+</div>

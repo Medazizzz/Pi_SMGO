@@ -10,75 +10,206 @@ import { CustomValidators } from '../../services/validators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   template: `
-    <div class="min-h-screen bg-gradient-to-br from-indigo-500 to-cyan-600 flex items-center justify-center p-4">
-      <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Forgot Password</h1>
-        <p class="text-gray-600 mb-6">Reset your password with your account email</p>
-
-        <form [formGroup]="forgotForm" (ngSubmit)="onSubmit()" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-            <input
-              type="email"
-              formControlName="email"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              placeholder="Enter your account email"
-            />
-            <div *ngIf="getFieldErrors('email')" class="text-red-500 text-sm mt-1">
-              {{ getFieldErrors('email') }}
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-            <input
-              type="password"
-              formControlName="newPassword"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              placeholder="Enter a new password"
-            />
-            <div *ngIf="getFieldErrors('newPassword')" class="text-red-500 text-sm mt-1">
-              {{ getFieldErrors('newPassword') }}
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
-            <input
-              type="password"
-              formControlName="confirmPassword"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              placeholder="Confirm your new password"
-            />
-            <div *ngIf="getFieldErrors('confirmPassword')" class="text-red-500 text-sm mt-1">
-              {{ getFieldErrors('confirmPassword') }}
-            </div>
-          </div>
-
-          <div *ngIf="errorMessage" class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {{ errorMessage }}
-          </div>
-
-          <div *ngIf="successMessage" class="p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-            {{ successMessage }}
-          </div>
-
-          <button
-            type="submit"
-            [disabled]="!forgotForm.valid || isLoading"
-            class="w-full bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded-lg transition"
-          >
-            {{ isLoading ? 'Resetting...' : 'Reset Password' }}
-          </button>
-        </form>
-
-        <p class="text-center text-gray-600 mt-6">
-          Back to
-          <a routerLink="/auth/login" class="text-indigo-500 hover:text-indigo-700 font-semibold">Login</a>
-        </p>
+  <div class="login-page">
+    <div class="login-card">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h2>ShowMatchGoOn</h2>
+          <p>Your Entertainment Hub</p>
+        </div>
       </div>
+
+      <h1>Forgot Password</h1>
+      <p class="subtitle">Reset your password and continue your movie experience</p>
+
+      <form [formGroup]="forgotForm" (ngSubmit)="onSubmit()">
+        <label>Email</label>
+        <input type="email" formControlName="email" placeholder="Enter your account email" />
+        <div *ngIf="getFieldErrors('email')" class="error">
+          {{ getFieldErrors('email') }}
+        </div>
+
+        <label>New Password</label>
+        <input type="password" formControlName="newPassword" placeholder="Enter a new password" />
+        <div *ngIf="getFieldErrors('newPassword')" class="error">
+          {{ getFieldErrors('newPassword') }}
+        </div>
+
+        <label>Confirm Password</label>
+        <input type="password" formControlName="confirmPassword" placeholder="Confirm your new password" />
+        <div *ngIf="getFieldErrors('confirmPassword')" class="error">
+          {{ getFieldErrors('confirmPassword') }}
+        </div>
+
+        <div *ngIf="errorMessage" class="error-box">
+          {{ errorMessage }}
+        </div>
+
+        <div *ngIf="successMessage" class="success-box">
+          {{ successMessage }}
+        </div>
+
+        <button type="submit" [disabled]="!forgotForm.valid || isLoading">
+          {{ isLoading ? 'Resetting...' : 'Reset Password' }}
+        </button>
+      </form>
+
+      <p class="register">
+        Back to
+        <a routerLink="/auth/login">Login</a>
+      </p>
     </div>
-  `
+  </div>
+`,
+styles: [`
+  .login-page {
+    min-height: 100vh;
+    background: #080b12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    color: white;
+  }
+
+  .login-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(168, 85, 247, 0.28), transparent 35%),
+      radial-gradient(circle at 80% 10%, rgba(236, 72, 153, 0.25), transparent 35%);
+  }
+
+  .login-card {
+    position: relative;
+    width: 480px;
+    max-width: 100%;
+    padding: 42px;
+    border-radius: 28px;
+    background: linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(8, 11, 18, 0.96));
+    border: 1px solid rgba(168, 85, 247, 0.28);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 34px;
+  }
+
+  .logo {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  }
+
+  .brand h2 {
+    margin: 0;
+    font-size: 25px;
+    color: #d946ef;
+  }
+
+  .brand p,
+  .subtitle,
+  .register {
+    color: #a1a1aa;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 38px;
+    font-weight: 800;
+  }
+
+  .subtitle {
+    margin: 10px 0 30px;
+    font-size: 16px;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  label {
+    color: #e5e7eb;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  input {
+    height: 54px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(15, 23, 42, 0.9);
+    color: white;
+    padding: 0 18px;
+    font-size: 16px;
+    margin-bottom: 18px;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: #ec4899;
+    box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.15);
+  }
+
+  button {
+    height: 56px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    color: white;
+    font-size: 17px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    background: #374151;
+    cursor: not-allowed;
+  }
+
+  .register {
+    text-align: center;
+    margin-top: 28px;
+  }
+
+  .register a {
+    color: #f472b6;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .error {
+    color: #fb7185;
+    margin-top: -10px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+
+  .error-box {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fecaca;
+    padding: 12px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+  }
+
+  .success-box {
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    color: #bbf7d0;
+    padding: 12px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+  }
+`]
 })
 export class ForgotPasswordComponent implements OnInit {
   forgotForm!: FormGroup;

@@ -15,97 +15,220 @@ import { CustomValidators } from '../../services/validators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   template: `
-    <div class="min-h-screen bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center p-4">
-      <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Create Account</h1>
-        <p class="text-gray-600 mb-6">Register to get started</p>
-
-        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-4">
-          <!-- Username -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-            <input
-              type="text"
-              formControlName="username"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-              placeholder="Choose a username (letters, numbers, _ and - only)"
-            />
-            <div *ngIf="getFieldErrors('username')" class="text-red-500 text-sm mt-1">
-              {{ getFieldErrors('username') }}
-            </div>
-          </div>
-
-          <!-- Email -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-            <input
-              type="email"
-              formControlName="email"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-              placeholder="Enter your email"
-            />
-            <div *ngIf="getFieldErrors('email')" class="text-red-500 text-sm mt-1">
-              {{ getFieldErrors('email') }}
-            </div>
-          </div>
-
-          <!-- Password -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-            <input
-              type="password"
-              formControlName="password"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-              placeholder="Create a strong password"
-            />
-            <div *ngIf="getFieldErrors('password')" class="text-red-500 text-sm mt-1">
-              {{ getFieldErrors('password') }}
-            </div>
-          </div>
-
-          <!-- Confirm Password -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
-            <input
-              type="password"
-              formControlName="confirmPassword"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-              placeholder="Confirm your password"
-            />
-            <div *ngIf="getFieldErrors('confirmPassword')" class="text-red-500 text-sm mt-1">
-              {{ getFieldErrors('confirmPassword') }}
-            </div>
-          </div>
-
-          <!-- Error Message -->
-          <div *ngIf="errorMessage" class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {{ errorMessage }}
-          </div>
-
-          <!-- Success Message -->
-          <div *ngIf="successMessage" class="p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-            {{ successMessage }}
-          </div>
-
-          <!-- Submit Button -->
-          <button
-            type="submit"
-            [disabled]="!registerForm.valid || isLoading"
-            class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded-lg transition"
-          >
-            {{ isLoading ? 'Creating account...' : 'Register' }}
-          </button>
-        </form>
-
-        <!-- Login Link -->
-        <p class="text-center text-gray-600 mt-6">
-          Already have an account?
-          <a routerLink="/auth/login" class="text-green-500 hover:text-green-700 font-semibold">Login here</a>
-        </p>
+  <div class="login-page">
+    <div class="login-card">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h2>ShowMatchGoOn</h2>
+          <p>Your Entertainment Hub</p>
+        </div>
       </div>
+
+      <h1>Create Account</h1>
+      <p class="subtitle">Register to start your movie experience</p>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+        <label>Username</label>
+        <input type="text" formControlName="username" placeholder="Choose a username" />
+        <div *ngIf="getFieldErrors('username')" class="error">
+          {{ getFieldErrors('username') }}
+        </div>
+
+        <label>Email</label>
+        <input type="email" formControlName="email" placeholder="Enter your email" />
+        <div *ngIf="getFieldErrors('email')" class="error">
+          {{ getFieldErrors('email') }}
+        </div>
+
+        <label>Password</label>
+        <input type="password" formControlName="password" placeholder="Create a password" />
+        <div *ngIf="getFieldErrors('password')" class="error">
+          {{ getFieldErrors('password') }}
+        </div>
+
+        <label>Confirm Password</label>
+        <input type="password" formControlName="confirmPassword" placeholder="Confirm your password" />
+        <div *ngIf="getFieldErrors('confirmPassword')" class="error">
+          {{ getFieldErrors('confirmPassword') }}
+        </div>
+
+        <div *ngIf="errorMessage" class="error-box">
+          {{ errorMessage }}
+        </div>
+
+        <div *ngIf="successMessage" class="success-box">
+          {{ successMessage }}
+        </div>
+
+        <button type="submit" [disabled]="!registerForm.valid || isLoading">
+          {{ isLoading ? 'Creating account...' : 'Register' }}
+        </button>
+      </form>
+
+      <p class="register">
+        Already have an account?
+        <a routerLink="/auth/login">Login here</a>
+      </p>
     </div>
-  `,
-  styles: []
+  </div>
+`,
+styles: [`
+  .login-page {
+    min-height: 100vh;
+    background: #080b12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    color: white;
+  }
+
+  .login-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(168, 85, 247, 0.28), transparent 35%),
+      radial-gradient(circle at 80% 10%, rgba(236, 72, 153, 0.25), transparent 35%);
+  }
+
+  .login-card {
+    position: relative;
+    width: 460px;
+    max-width: 100%;
+    padding: 42px;
+    border-radius: 28px;
+    background: linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(8, 11, 18, 0.96));
+    border: 1px solid rgba(168, 85, 247, 0.28);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 34px;
+  }
+
+  .logo {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  }
+
+  .brand h2 {
+    margin: 0;
+    font-size: 25px;
+    color: #d946ef;
+  }
+
+  .brand p {
+    margin: 3px 0 0;
+    color: #a1a1aa;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 42px;
+    font-weight: 800;
+  }
+
+  .subtitle {
+    color: #a1a1aa;
+    margin: 10px 0 30px;
+    font-size: 16px;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  label {
+    color: #e5e7eb;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  input {
+    height: 54px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(15, 23, 42, 0.9);
+    color: white;
+    padding: 0 18px;
+    font-size: 16px;
+    margin-bottom: 18px;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: #ec4899;
+    box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.15);
+  }
+
+  .forgot {
+    align-self: flex-end;
+    color: #f472b6;
+    text-decoration: none;
+    margin-bottom: 22px;
+    font-weight: 600;
+  }
+
+  button {
+    height: 56px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    color: white;
+    font-size: 17px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.25s;
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(236, 72, 153, 0.25);
+  }
+
+  button:disabled {
+    background: #374151;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .register {
+    text-align: center;
+    color: #a1a1aa;
+    margin-top: 28px;
+  }
+
+  .register a {
+    color: #f472b6;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .error {
+    color: #fb7185;
+    margin-top: -10px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+
+  .error-box {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fecaca;
+    padding: 12px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+  }
+`]
 })
 export class RegisterComponent implements OnInit {
   registerForm!: FormGroup;
