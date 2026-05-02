@@ -86,6 +86,44 @@ export class UnifiedHomeComponent {
       image: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400',
       trending: true,
     },
+        {
+      id: '4',
+      title: 'Summer Dreams',
+      platform: 'Hulu',
+      genre: 'Romance',
+      rating: 4.5,
+      duration: '2h 5m',
+      image: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400',
+      trending: true,
+    },
+    {
+      id: '5',
+      title: 'Funny Weekend',
+      platform: 'Netflix',
+      genre: 'Comedy',
+      rating: 4.7,
+      duration: '1h 35m',
+      image: 'https://images.unsplash.com/photo-1527224857830-43a7acc85260?w=400',
+    },
+    {
+      id: '6',
+      title: 'Family Time',
+      platform: 'Disney+',
+      genre: 'Family',
+      rating: 4.4,
+      duration: '1h 50m',
+      image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400',
+    },
+    {
+      id: '7',
+      title: 'Action Storm',
+      platform: 'Prime Video',
+      genre: 'Action',
+      rating: 4.6,
+      duration: '2h 10m',
+      image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400',
+    },
+  
   ];
 
   cinemaData: CinemaShowtime[] = [
@@ -105,7 +143,43 @@ export class UnifiedHomeComponent {
       distance: '1.2 mi',
       image: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=400',
     },
+   
   ];
+  get selectedMood(): string | null {
+  return new URLSearchParams(window.location.search).get('mood');
+}
+
+get moodTitle(): string {
+  const mood = this.selectedMood;
+
+  if (mood === 'HAPPY') return 'Recommended for your happy mood';
+  if (mood === 'SAD') return 'Recommended for your emotional mood';
+  if (mood === 'SCARED') return 'Recommended for your scary mood';
+  if (mood === 'EXCITED') return 'Recommended for your excited mood';
+
+  return 'Streaming Libraries';
+}
+
+get recommendedStreamingData(): StreamingContent[] {
+  const mood = this.selectedMood;
+
+  const moodGenres: Record<string, string[]> = {
+    HAPPY: ['Comedy', 'Family', 'Fun'],
+    SAD: ['Drama', 'Romance'],
+    SCARED: ['Horror', 'Thriller', 'Mystery'],
+    EXCITED: ['Action', 'Adventure', 'Sci-Fi'],
+  };
+
+  const genres = moodGenres[mood || ''];
+
+  if (!genres) {
+    return this.streamingData;
+  }
+
+  return this.streamingData.filter(content =>
+    genres.includes(content.genre)
+  );
+}
 
   setHoveredStream(id: string | null) {
     this.hoveredStream.set(id);
