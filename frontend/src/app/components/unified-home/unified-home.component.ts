@@ -17,6 +17,7 @@ interface StreamingContent {
   rating: number;
   duration: string;
   image: string;
+  views: number;  
   trending?: boolean;
 }
 
@@ -56,6 +57,7 @@ export class UnifiedHomeComponent {
       rating: 4.8,
       duration: '2h 15m',
       image: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=400',
+      views: 15000,
       trending: true,
     },
     {
@@ -66,6 +68,7 @@ export class UnifiedHomeComponent {
       rating: 4.6,
       duration: '1h 45m',
       image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400',
+      views: 17000,
     },
     {
       id: '3',
@@ -75,6 +78,7 @@ export class UnifiedHomeComponent {
       rating: 4.3,
       duration: '1h 58m',
       image: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400',
+      views: 12000,
     },
     {
       id: '4',
@@ -85,16 +89,7 @@ export class UnifiedHomeComponent {
       duration: '2h 5m',
       image: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400',
       trending: true,
-    },
-        {
-      id: '4',
-      title: 'Summer Dreams',
-      platform: 'Hulu',
-      genre: 'Romance',
-      rating: 4.5,
-      duration: '2h 5m',
-      image: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400',
-      trending: true,
+      views: 18000, 
     },
     {
       id: '5',
@@ -104,6 +99,7 @@ export class UnifiedHomeComponent {
       rating: 4.7,
       duration: '1h 35m',
       image: 'https://images.unsplash.com/photo-1527224857830-43a7acc85260?w=400',
+      views: 16000, 
     },
     {
       id: '6',
@@ -113,6 +109,7 @@ export class UnifiedHomeComponent {
       rating: 4.4,
       duration: '1h 50m',
       image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400',
+      views: 14000,
     },
     {
       id: '7',
@@ -122,6 +119,7 @@ export class UnifiedHomeComponent {
       rating: 4.6,
       duration: '2h 10m',
       image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400',
+      views: 19000,
     },
   
   ];
@@ -161,6 +159,7 @@ get moodTitle(): string {
 }
 
 get recommendedStreamingData(): StreamingContent[] {
+  
   const mood = this.selectedMood;
 
   const moodGenres: Record<string, string[]> = {
@@ -179,6 +178,11 @@ get recommendedStreamingData(): StreamingContent[] {
   return this.streamingData.filter(content =>
     genres.includes(content.genre)
   );
+}
+get top5Movies(): StreamingContent[] {
+  return [...this.streamingData]
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 5);
 }
 
   setHoveredStream(id: string | null) {
