@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { WatchpartyService } from '../../services/watchparty.service';
+import { HttpClient } from '@angular/common/http';
 import {
   RealtimeChatMessage,
   SignalMessage,
@@ -202,12 +203,13 @@ cancelPendingVoice(): void {
   private subscriptions: Subscription[] = [];
   private hasSentJoinRealtime = false;
 
-  constructor(
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
-    private readonly watchpartyService: WatchpartyService,
-    private readonly realtimeService: WatchpartyRealtimeService
-  ) {}
+ constructor(
+  private readonly route: ActivatedRoute,
+  private readonly router: Router,
+  private readonly watchpartyService: WatchpartyService,
+  private readonly realtimeService: WatchpartyRealtimeService,
+  private readonly http: HttpClient
+) {}
 
   ngOnInit(): void {
     this.sessionId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -590,37 +592,42 @@ cancelPendingVoice(): void {
   }
 
  private sendVoiceMessage(audioBlob: Blob): void {
-  const reader = new FileReader();
+  if (!this.realtimeConnected) {
+    this.showSuccess('WebSocket not connected.');
+    return;
+  }
 
-  reader.onloadend = () => {
-    const audioBase64 = reader.result as string;
+  const file = new File(
+    [audioBlob],
+    `voice-${Date.now()}.webm`,
+    { type: 'audio/webm' }
+  );
 
-    const voiceMessage = {
-      watchPartyId: this.sessionId,
-      senderId: this.currentUserId,
-      senderName: this.currentUserName,
-      content: audioBase64,
-      type: 'VOICE'
-    };
+  const formData = new FormData();
+  formData.append('file', file);
 
-    // afficher d'abord localement
-    this.chatMessages.push(this.mapRealtimeToUiMessage(voiceMessage));
-    this.scrollChatToBottom();
+  this.http.post<{ url: string }>(
+    'http://localhost:8090/api/uploads/audio',
+    formData
+  ).subscribe({
+    next: (res) => {
+      const voiceMessage = {
+        watchPartyId: this.sessionId,
+        senderId: this.currentUserId,
+        senderName: this.currentUserName,
+        content: res.url,
+        type: 'VOICE'
+      };
 
-    // nettoyer l'aperçu
-    this.pendingVoiceBlob = null;
-    this.pendingVoiceUrl = '';
-
-    // envoyer ensuite via websocket
-    try {
       this.realtimeService.sendChatMessage(voiceMessage as any);
-    } catch (error) {
-      console.error('Voice WebSocket send error:', error);
-      this.showSuccess('Voice displayed locally, but WebSocket send failed.');
-    }
-  };
 
-  reader.readAsDataURL(audioBlob);
+      this.pendingVoiceBlob = null;
+      this.pendingVoiceUrl = '';
+    },
+    error: () => {
+      this.showSuccess('Erreur upload vocal.');
+    }
+  });
 }
 sendMessage(): void {
   // Prioritize voice message if exists
@@ -983,5 +990,13 @@ sendPendingVoice(): void {
     return this.currentUserId || 'User';
   }
 
+getAudioUrl(url: string | undefined): string {
+  if (!url) return '';
 
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
+    return url;
+  }
+
+  return `http://localhost:8090${url}`;
+}
 }

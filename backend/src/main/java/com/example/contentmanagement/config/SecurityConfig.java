@@ -107,6 +107,8 @@ public class SecurityConfig {
                                 // sécurisé
                                 .requestMatchers("/feedback/**").authenticated()
 
+                                .requestMatchers("/api/uploads/**", "/uploads/**").permitAll()
+
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);

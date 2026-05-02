@@ -402,8 +402,7 @@
     <span>Voice message</span>
   </div>
 
-  <audio controls [src]="msg.audioUrl || msg.text" class="w-[170px]"></audio>
-</div>
+<audio controls [src]="getAudioUrl(msg.audioUrl || msg.text)" class="w-[170px]"></audio></div>
 
                 <p class="mt-1 text-[10px] font-mono text-gray-500" [ngClass]="{'text-right': msg.isMe}">
                   {{ msg.time }}
