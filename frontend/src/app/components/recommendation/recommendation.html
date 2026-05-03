@@ -1,0 +1,101 @@
+<div class="recommendation-container">
+
+  <div *ngIf="loading" class="loading">
+    <p>⏳ Chargement de votre recommandation...</p>
+  </div>
+
+  <div *ngIf="error" class="error">
+    <p>❌ {{ error }}</p>
+  </div>
+
+  <div *ngIf="recommendation && !loading" class="result-card">
+
+    <h2>🤖 Recommandation ML</h2>
+
+    <div class="badge-container">
+      <div class="badge" [style.background-color]="getBadgeColor()">
+        <span class="badge-icon">{{ getBadgeIcon() }}</span>
+        <span class="badge-text">{{ recommendation.recommande }}</span>
+      </div>
+    </div>
+
+    <div class="probabilities">
+      <h3>Probabilités de match</h3>
+
+      <div class="bar-item">
+        <span class="bar-label">BASIC</span>
+        <div class="bar-track">
+          <div class="bar-fill basic" [style.width.%]="recommendation.matchBasic"></div>
+        </div>
+        <span class="bar-value">{{ recommendation.matchBasic }}%</span>
+      </div>
+
+      <div class="bar-item">
+        <span class="bar-label">PREMIUM</span>
+        <div class="bar-track">
+          <div class="bar-fill premium" [style.width.%]="recommendation.matchPremium"></div>
+        </div>
+        <span class="bar-value">{{ recommendation.matchPremium }}%</span>
+      </div>
+
+      <div class="bar-item">
+        <span class="bar-label">ELITE</span>
+        <div class="bar-track">
+          <div class="bar-fill elite" [style.width.%]="recommendation.matchElite"></div>
+        </div>
+        <span class="bar-value">{{ recommendation.matchElite }}%</span>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <h3>Analyse du profil</h3>
+      <div class="metrics-grid">
+
+        <div class="metric-card">
+          <span class="metric-icon">💰</span>
+          <span class="metric-label">Dépense totale</span>
+          <span class="metric-value">{{ recommendation.totalDepense | number:'1.0-0' }} TND</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="metric-icon">⚠️</span>
+          <span class="metric-label">Risque départ</span>
+          <span class="metric-value" [class.danger]="recommendation.churnRisk > 0.5">
+            {{ (recommendation.churnRisk * 100) | number:'1.0-0' }}%
+          </span>
+        </div>
+
+        <div class="metric-card">
+          <span class="metric-icon">📅</span>
+          <span class="metric-label">Ancienneté</span>
+          <span class="metric-value">{{ recommendation.ancienneteJours }} jours</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="metric-icon">🎯</span>
+          <span class="metric-label">Réservations</span>
+          <span class="metric-value">{{ recommendation.nbReservations }}</span>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="reasons" *ngIf="recommendation.raisons?.length > 0">
+      <h3>Pourquoi cette recommandation ?</h3>
+      <ul>
+        <li *ngFor="let raison of recommendation.raisons">
+          ✅ {{ raison }}
+        </li>
+      </ul>
+    </div>
+
+    <p class="calculated-at">
+      Calculé le : {{ recommendation.calculatedAt | date:'dd/MM/yyyy HH:mm' }}
+    </p>
+
+    <button class="refresh-btn" (click)="loadRecommendation()">
+      🔄 Recalculer
+    </button>
+
+  </div>
+</div>

@@ -1,0 +1,10 @@
+<div class="splash-container">
+  <div class="title">
+    <span class="letter" *ngFor="let letter of letters; let i = index"
+      [style.animation-delay]="i * 0.08 + 's'">
+      {{ letter }}
+    </span>
+  </div>
+  <div class="line"></div>
+  <div class="subtitle">Match Your Moments</div>
+</div>

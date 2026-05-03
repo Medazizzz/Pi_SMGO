@@ -55,9 +55,25 @@ public class UserDTO {
     private LocalDateTime lastLoginAt;
     private boolean locked;
     private boolean enabled;
+    private double fidelityScore;
+    private String fidelityLevel;
 
     private String contentType; // For response
+    public double getFidelityScore() {
+        return fidelityScore;
+    }
 
+    public void setFidelityScore(double fidelityScore) {
+        this.fidelityScore = fidelityScore;
+    }
+
+    public String getFidelityLevel() {
+        return fidelityLevel;
+    }
+
+    public void setFidelityLevel(String fidelityLevel) {
+        this.fidelityLevel = fidelityLevel;
+    }
     public static UserDTO fromUsername(String username) {
         return UserDTO.builder().username(username).build();
     }

@@ -1,0 +1,246 @@
+<div class="renewal-container">
+
+  <!-- HEADER -->
+  <div class="renewal-header">
+    <div class="header-glow"></div>
+    <div class="header-content">
+      <div class="header-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="currentColor" opacity="0.3"/>
+          <path d="M20 12a8 8 0 01-8 8v2c5.52 0 10-4.48 10-10h-2zm-8-8a8 8 0 018 8h2C22 6.48 17.52 2 12 2v2z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Renouvellement <span class="accent">Automatique</span></h1>
+        <p>Suivez l'état de vos abonnements et leur score de renouvellement</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner-ring"></div>
+    <p>Chargement en cours...</p>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-state" *ngIf="errorMessage">
+    <div class="error-icon">⚠️</div>
+    <p>{{ errorMessage }}</p>
+  </div>
+
+  <!-- CONTENU PRINCIPAL -->
+  <div class="renewal-content" *ngIf="!loading && renewals.length > 0">
+
+    <!-- LISTE DES ABONNEMENTS -->
+    <div class="renewals-list">
+      <h2 class="section-title">Mes abonnements</h2>
+
+      <div
+        class="renewal-card"
+        *ngFor="let renewal of renewals"
+        [class.selected]="selectedRenewal?.abonnementId === renewal.abonnementId"
+        (click)="selectRenewal(renewal)">
+
+        <div class="card-shine"></div>
+
+        <div class="card-top">
+          <span class="plan-badge" [ngClass]="'plan-' + renewal.planType?.toLowerCase()">
+            {{ renewal.planType }}
+          </span>
+          <span class="status-badge" [ngClass]="getStatusBadgeClass(renewal.status)">
+            {{ renewal.status }}
+          </span>
+        </div>
+
+        <div class="card-price">
+          <span class="price-amount">{{ renewal.prix | number:'1.2-2' }}</span>
+          <span class="price-currency">DT / mois</span>
+        </div>
+
+        <!-- SCORE BAR -->
+        <div class="score-section">
+          <div class="score-label">
+            <span>Score de renouvellement</span>
+            <span class="score-value" [style.color]="getScoreColor(renewal.renewalScore)">
+              {{ renewal.renewalScore | number:'1.0-0' }}/100
+            </span>
+          </div>
+          <div class="score-bar">
+            <div
+              class="score-fill"
+              [style.width]="getScoreWidth(renewal.renewalScore)"
+              [style.background]="getScoreColor(renewal.renewalScore)">
+            </div>
+          </div>
+        </div>
+
+        <div class="card-decision">{{ renewal.renewalDecisionLabel }}</div>
+        <div class="card-expiry" *ngIf="renewal.endDate">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+          Expire le {{ formatDate(renewal.endDate) }}
+          <span class="days-left" *ngIf="renewal.daysUntilExpiration != null">
+            ({{ renewal.daysUntilExpiration }} jours)
+          </span>
+        </div>
+        <div class="card-expiry muted" *ngIf="!renewal.endDate">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+          Pas de date d'expiration
+        </div>
+      </div>
+    </div>
+
+    <!-- DÉTAIL DE L'ABONNEMENT SÉLECTIONNÉ -->
+    <div class="renewal-detail" *ngIf="selectedRenewal">
+
+      <div class="detail-header">
+        <h2>Détail — <span class="accent">{{ selectedRenewal.planType }}</span></h2>
+      </div>
+
+      <!-- SCORE CIRCULAIRE -->
+      <div class="score-circle-wrapper">
+        <div class="circle-glow" [style.background]="getScoreColor(selectedRenewal.renewalScore)"></div>
+        <svg viewBox="0 0 120 120" width="150" height="150">
+          <!-- Background track -->
+          <circle cx="60" cy="60" r="50"
+            fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>
+          <!-- Score arc -->
+          <circle cx="60" cy="60" r="50"
+            fill="none"
+            [attr.stroke]="getScoreColor(selectedRenewal.renewalScore)"
+            stroke-width="10"
+            stroke-linecap="round"
+            [attr.stroke-dasharray]="314"
+            [attr.stroke-dashoffset]="314 - (314 * selectedRenewal.renewalScore / 100)"
+            transform="rotate(-90 60 60)"
+            style="filter: drop-shadow(0 0 6px currentColor); transition: stroke-dashoffset 0.8s ease"/>
+          <!-- Score number -->
+          <text x="60" y="52" text-anchor="middle"
+            font-size="26" font-weight="700"
+            [attr.fill]="getScoreColor(selectedRenewal.renewalScore)">
+            {{ selectedRenewal.renewalScore | number:'1.0-0' }}
+          </text>
+          <!-- /100 label -->
+          <text x="60" y="72" text-anchor="middle"
+            font-size="12" fill="rgba(255,255,255,0.4)">/100</text>
+        </svg>
+        <div class="decision-label">{{ selectedRenewal.renewalDecisionLabel }}</div>
+      </div>
+
+      <!-- INFORMATIONS GRID -->
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Statut</label>
+          <span class="status-badge" [ngClass]="getStatusBadgeClass(selectedRenewal.status)">
+            {{ selectedRenewal.status }}
+          </span>
+        </div>
+        <div class="info-item">
+          <label>Accès service</label>
+          <span class="access-badge" [class.access-ok]="selectedRenewal.hasServiceAccess">
+            {{ selectedRenewal.hasServiceAccess ? '✅ Actif' : '❌ Suspendu' }}
+          </span>
+        </div>
+        <div class="info-item">
+          <label>Expiration</label>
+          <span>{{ formatDate(selectedRenewal.endDate) }}</span>
+        </div>
+        <div class="info-item">
+          <label>Dernier renouvellement</label>
+          <span>{{ formatDate(selectedRenewal.lastRenewalDate) }}</span>
+        </div>
+        <div class="info-item">
+          <label>Tentatives paiement</label>
+          <div class="retry-dots">
+            <span *ngFor="let i of [0,1,2]"
+              class="retry-dot"
+              [class.used]="i < selectedRenewal.retryCount">
+            </span>
+            <span class="retry-text">{{ selectedRenewal.retryCount }} / 3</span>
+          </div>
+        </div>
+        <div class="info-item">
+          <label>Prochain retry</label>
+          <span>{{ formatDate(selectedRenewal.retryNextDate) }}</span>
+        </div>
+      </div>
+
+      <!-- DUNNING STATUS -->
+      <div class="dunning-section">
+        <h3>Emails envoyés</h3>
+        <div class="dunning-grid">
+          <div class="dunning-item" [class.sent]="selectedRenewal.dunningJ30Sent">
+            <div class="dunning-check">{{ selectedRenewal.dunningJ30Sent ? '✓' : '' }}</div>
+            <span>J-30</span>
+          </div>
+          <div class="dunning-item" [class.sent]="selectedRenewal.dunningJ15Sent">
+            <div class="dunning-check">{{ selectedRenewal.dunningJ15Sent ? '✓' : '' }}</div>
+            <span>J-15</span>
+          </div>
+          <div class="dunning-item" [class.sent]="selectedRenewal.dunningJ7Sent">
+            <div class="dunning-check">{{ selectedRenewal.dunningJ7Sent ? '✓' : '' }}</div>
+            <span>J-7</span>
+          </div>
+          <div class="dunning-item" [class.sent]="selectedRenewal.dunningJ1Sent">
+            <div class="dunning-check">{{ selectedRenewal.dunningJ1Sent ? '✓' : '' }}</div>
+            <span>J-1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="actions-section">
+        <button class="btn-score" (click)="computeScore(selectedRenewal.abonnementId)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          Recalculer le score
+        </button>
+        <button class="btn-cancel"
+          *ngIf="selectedRenewal.status !== 'CANCELLED'"
+          (click)="cancelSubscription(selectedRenewal.abonnementId)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          Annuler l'abonnement
+        </button>
+      </div>
+
+      <!-- AUDIT LOG -->
+      <div class="audit-section">
+        <h3>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21a9 9 0 000-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+          Historique des événements
+        </h3>
+        <div *ngIf="loadingAudit" class="loading-small">
+          <div class="spinner-ring small"></div>
+        </div>
+        <div class="audit-empty" *ngIf="!loadingAudit && auditLogs.length === 0">
+          Aucun événement enregistré
+        </div>
+        <div class="audit-list" *ngIf="!loadingAudit && auditLogs.length > 0">
+          <div class="audit-item" *ngFor="let log of auditLogs">
+            <div class="audit-left">
+              <div class="audit-dot"></div>
+              <div class="audit-line"></div>
+            </div>
+            <div class="audit-right">
+              <div class="audit-action">{{ log.action }}</div>
+              <div class="audit-transition" *ngIf="log.previousStatus || log.newStatus">
+                <span class="state-from">{{ log.previousStatus }}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/></svg>
+                <span class="state-to">{{ log.newStatus }}</span>
+              </div>
+              <div class="audit-details">{{ log.details }}</div>
+              <div class="audit-date">{{ formatDate(log.timestamp) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- AUCUN ABONNEMENT -->
+  <div class="empty-state" *ngIf="!loading && renewals.length === 0">
+    <div class="empty-icon">📭</div>
+    <p>Aucun abonnement trouvé.</p>
+  </div>
+
+</div>

@@ -66,6 +66,14 @@ public class User {
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     // Audit fields
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -75,7 +83,12 @@ public class User {
     private boolean locked = false;
     private boolean enabled = true;
 
+
     // Firebase device tokens for push notifications
     @Builder.Default
     private List<String> deviceTokens = new java.util.ArrayList<>();
+    private double fidelityScore;
+    private String fidelityLevel;
+
+
 }

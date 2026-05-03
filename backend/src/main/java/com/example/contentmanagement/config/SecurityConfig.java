@@ -7,20 +7,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
 
 import java.util.Arrays;
 
@@ -77,38 +75,44 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests((authorize) ->
+                .authorizeHttpRequests(authorize ->
                         authorize
-                                // accès public aux fichiers audio/image uploadés
                                 .requestMatchers("/uploads/**").permitAll()
+                                .requestMatchers("/api/uploads/**", "/uploads/**").permitAll()
 
-                                // endpoints publics
                                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**", "/api-docs/**").permitAll()
                                 .requestMatchers("/api/auth/**").permitAll()
                                 .requestMatchers("/auth/**").permitAll()
+
+                                .requestMatchers("/api/payments", "/api/payments/**").permitAll()
+                                .requestMatchers("/api/renewal/**").permitAll()
+
                                 .requestMatchers("/api/contents", "/api/contents/**").permitAll()
                                 .requestMatchers("/api/categories", "/api/categories/**").permitAll()
                                 .requestMatchers("/api/genres", "/api/genres/**").permitAll()
+                                .requestMatchers("/api/recommendations", "/api/recommendations/**").permitAll()
+
                                 .requestMatchers("/api/notifications", "/api/notifications/**").permitAll()
                                 .requestMatchers("/api/newsletters", "/api/newsletters/**").permitAll()
+
                                 .requestMatchers("/api/users", "/api/users/**").permitAll()
                                 .requestMatchers("/api/roles", "/api/roles/**").permitAll()
+
                                 .requestMatchers("/api/abonnements", "/api/abonnements/**").permitAll()
                                 .requestMatchers("/api/fidelities", "/api/fidelities/**").permitAll()
+
                                 .requestMatchers("/api/cinemas", "/api/cinemas/**").permitAll()
                                 .requestMatchers("/api/salles", "/api/salles/**").permitAll()
                                 .requestMatchers("/api/seances", "/api/seances/**").permitAll()
                                 .requestMatchers("/api/reservations", "/api/reservations/**").permitAll()
+
                                 .requestMatchers("/api/posts", "/api/posts/**").permitAll()
                                 .requestMatchers("/api/commentaires", "/api/commentaires/**").permitAll()
                                 .requestMatchers("/api/promotions", "/api/promotions/**").permitAll()
+
                                 .requestMatchers("/watchparty/**").permitAll()
                                 .requestMatchers("/ws-watchparty/**").permitAll()
-
-                                // sécurisé
-                                .requestMatchers("/feedback/**").authenticated()
-
-                                .requestMatchers("/api/uploads/**", "/uploads/**").permitAll()
+                                .requestMatchers("/feedback/**").permitAll()
 
                                 .anyRequest().authenticated()
                 )
@@ -119,7 +123,7 @@ public class SecurityConfig {
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring()
+        return web -> web.ignoring()
                 .requestMatchers("/ws-watchparty/**");
     }
 }

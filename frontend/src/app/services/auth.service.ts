@@ -194,6 +194,9 @@ export class AuthService {
   getCurrentUser(): CurrentUser | null {
     return this.currentUserSubject.value;
   }
+  getCurrentUserId(): string {
+  return this.currentUserSubject.value?.userId || '';
+}
 
   /**
    * Update the cached current user after a profile change.

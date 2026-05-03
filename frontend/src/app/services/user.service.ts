@@ -10,6 +10,8 @@ export interface UserDTO {
   createdAt?: string;
   blocked?: boolean;
   photoUrl?: string;
+  fidelityScore?: number;
+  fidelityLevel?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -44,4 +46,7 @@ export class UserService {
     const payload = { email, subject: subject || 'SMGO Test Email', body: body || 'This is a test email from SMGO.' };
     return this.http.post(`${this.apiUrl.replace('/users', '')}/notifications/test/send-email`, payload, { responseType: 'text' });
   }
+  getUsers() {
+  return this.http.get("http://localhost:8090/api/users");
+}
 }
