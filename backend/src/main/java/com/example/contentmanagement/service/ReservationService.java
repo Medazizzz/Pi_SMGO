@@ -12,4 +12,5 @@ public interface ReservationService {
     List<ReservationResponseDTO> findByUserId(String userId);
     ReservationResponseDTO update(String id, ReservationRequestDTO request);
     void deleteById(String id);
+    void processExpiredReservations();
 }

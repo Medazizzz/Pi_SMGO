@@ -116,4 +116,25 @@ public class ReservationServiceImpl implements ReservationService {
         }
         return dto;
     }
+
+    @Override
+    public void processExpiredReservations() {
+        Date now = new Date();
+        long expirationTimeMillis = 24 * 60 * 60 * 1000; // 24 heures
+
+        List<Reservation> allReservations = reservationRepository.findAll();
+
+        for (Reservation reservation : allReservations) {
+            if ("CONFIRMEE".equals(reservation.getStatut()) &&
+                    reservation.getDateReservation() != null) {
+
+                long elapsedTime = now.getTime() - reservation.getDateReservation().getTime();
+
+                if (elapsedTime > expirationTimeMillis) {
+                    reservation.setStatut("EXPIREE");
+                    reservationRepository.save(reservation);
+                }
+            }
+        }
+    }
 }
