@@ -11,6 +11,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
 import com.example.contentmanagement.validation.NoSpecialCharacters;
 import com.example.contentmanagement.validation.ValidUsername;
 import com.example.contentmanagement.validation.ValidPhoneNumber;
@@ -73,4 +74,8 @@ public class User {
     private LocalDateTime lastLoginAt;
     private boolean locked = false;
     private boolean enabled = true;
+
+    // Firebase device tokens for push notifications
+    @Builder.Default
+    private List<String> deviceTokens = new java.util.ArrayList<>();
 }

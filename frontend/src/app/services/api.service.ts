@@ -316,6 +316,13 @@ export class ContentService {
       );
   }
 
+  broadcastNotification(notification: NotificationDTO): Observable<any> {
+    return this.http.post<any>(`${this.notificationsBaseUrl}/broadcast`, notification)
+      .pipe(
+        catchError(error => this.handleError('broadcast', 'Notification', error))
+      );
+  }
+
   deleteNotification(id: string): Observable<void> {
     return this.http.delete<void>(`${this.notificationsBaseUrl}/${id}`)
       .pipe(

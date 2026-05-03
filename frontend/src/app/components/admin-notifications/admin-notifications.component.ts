@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Bell, Mail, MessageSquare, Send, Edit2, Trash2, X } from 'lucide-angular';
-import { NotificationService, NewsletterCampaignDTO } from '../../services/api.service';
+import { ContentService, NotificationService, NewsletterCampaignDTO } from '../../services/api.service';
 import { CustomValidators } from '../../services/validators';
 
 export interface Notification {
@@ -38,6 +38,7 @@ export class AdminNotificationsComponent implements OnInit {
   loading = false;
   newsletterLoading = false;
   error: string | null = null;
+  successMessage: string | null = null;
   newsletterError: string | null = null;
   showForm = false;
   showNewsletterForm = false;
@@ -52,6 +53,7 @@ export class AdminNotificationsComponent implements OnInit {
   currentUserId = '';
 
   constructor(
+    private contentService: ContentService,
     private notificationService: NotificationService,
     private fb: FormBuilder
   ) {
@@ -156,12 +158,11 @@ export class AdminNotificationsComponent implements OnInit {
     const formData = {
       message: this.notificationForm.value.message,
       title: this.notificationForm.value.title,
-      userId: this.currentUserId,
       type: 'INFO',
       isRead: false,
     };
 
-    this.createNotification(formData);
+    this.broadcastNotification(formData);
   }
 
   saveNewsletterCampaign() {
@@ -235,6 +236,37 @@ export class AdminNotificationsComponent implements OnInit {
         this.error = 'Failed to send notification';
         this.loading = false;
         console.error('Error sending notification:', err);
+      },
+    });
+  }
+
+  broadcastNotification(data: Notification) {
+    this.loading = true;
+    this.error = null;
+    this.contentService.broadcastNotification(data).subscribe({
+      next: (response) => {
+        console.log('Broadcast notification sent successfully:', response);
+        // Add a representative notification to the admin view
+        const adminNotification = {
+          ...data,
+          id: response.id,
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          read: false,
+          userId: 'BROADCAST',
+          username: 'All Users'
+        };
+        this.notifications.unshift(this.normalizeNotification(adminNotification));
+        this.closeForm();
+        this.loading = false;
+        // Show success message
+        this.successMessage = `Notification broadcasted to all users successfully!`;
+        setTimeout(() => this.successMessage = '', 5000);
+      },
+      error: (err) => {
+        this.error = 'Failed to broadcast notification';
+        this.loading = false;
+        console.error('Error broadcasting notification:', err);
       },
     });
   }

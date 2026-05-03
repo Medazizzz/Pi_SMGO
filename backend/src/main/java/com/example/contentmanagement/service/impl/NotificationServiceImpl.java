@@ -6,6 +6,7 @@ import com.example.contentmanagement.entity.User;
 import com.example.contentmanagement.exception.ResourceNotFoundException;
 import com.example.contentmanagement.repository.NotificationRepository;
 import com.example.contentmanagement.repository.UserRepository;
+import com.example.contentmanagement.service.FirebaseMessagingService;
 import com.example.contentmanagement.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
+    private final FirebaseMessagingService firebaseMessagingService;
 
     @Value("${app.notifications.email-fallback-delay-seconds:300}")
     private long emailFallbackDelaySeconds;
@@ -43,14 +45,16 @@ public class NotificationServiceImpl implements NotificationService {
     public NotificationDTO createNotification(NotificationDTO notificationDTO) {
         try {
             log.info("Creating notification for user: {}", notificationDTO.getUserId());
-            
-            User user;
-            if (notificationDTO.getUserId() != null && !notificationDTO.getUserId().isEmpty()) {
-                user = userRepository.findById(notificationDTO.getUserId())
-                        .orElseGet(() -> createAnonymousUserForNotification(notificationDTO.getUserId()));
-            } else {
-                user = createAnonymousUserForNotification("system-user");
+
+            // If userId is null, this is a broadcast to all users
+            if (notificationDTO.getUserId() == null || notificationDTO.getUserId().isEmpty()) {
+                log.info("Broadcast notification detected - creating for all users");
+                return createBroadcastNotification(notificationDTO);
             }
+
+            // Single user notification
+            User user = userRepository.findById(notificationDTO.getUserId())
+                    .orElseGet(() -> createAnonymousUserForNotification(notificationDTO.getUserId()));
 
             Notification notification = Notification.builder()
                     .message(notificationDTO.getMessage())
@@ -66,10 +70,65 @@ public class NotificationServiceImpl implements NotificationService {
             Notification savedNotification = notificationRepository.save(notification);
             log.info("Notification saved successfully with ID: {}", savedNotification.getId());
 
+            // Send push notification via Firebase if user has device tokens
+            if (user.getDeviceTokens() != null && !user.getDeviceTokens().isEmpty()) {
+                firebaseMessagingService.sendPushNotificationToMultipleTokens(
+                        user.getDeviceTokens(), mapToDTO(savedNotification));
+                log.info("Push notification sent to {} device tokens for user {}", user.getDeviceTokens().size(), user.getId());
+            }
+
             return mapToDTO(savedNotification);
         } catch (Exception e) {
             log.error("Error creating notification: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to create notification: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Creates a broadcast notification for all users in the system.
+     * This method creates individual notification records for each user.
+     */
+    @Transactional
+    private NotificationDTO createBroadcastNotification(NotificationDTO notificationDTO) {
+        try {
+            log.info("Creating broadcast notification for all users");
+
+            // Get all users from the database
+            List<User> allUsers = userRepository.findAll();
+            if (allUsers.isEmpty()) {
+                log.warn("No users found in database for broadcast notification");
+                throw new RuntimeException("No users found to broadcast to");
+            }
+
+            log.info("Broadcasting to {} users", allUsers.size());
+
+            // Create notifications for each user
+            List<Notification> broadcastNotifications = allUsers.stream()
+                    .map(user -> Notification.builder()
+                            .message(notificationDTO.getMessage())
+                            .title(notificationDTO.getTitle())
+                            .type(notificationDTO.getType())
+                            .createdAt(LocalDateTime.now())
+                            .emailFallbackDueAt(LocalDateTime.now().plusSeconds(emailFallbackDelaySeconds))
+                            .isRead(false)
+                            .emailFallbackSent(false)
+                            .user(user)
+                            .build())
+                    .toList();
+
+            // Save all notifications
+            List<Notification> savedNotifications = notificationRepository.saveAll(broadcastNotifications);
+            log.info("Broadcast notification created for {} users", savedNotifications.size());
+
+            // Send broadcast push notification via Firebase
+            firebaseMessagingService.sendBroadcastNotification(notificationDTO);
+            log.info("Broadcast push notification sent via Firebase");
+
+            // Return the first notification as representative (they all have the same content)
+            return mapToDTO(savedNotifications.get(0));
+        } catch (Exception e) {
+            log.error("Error creating broadcast notification: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create broadcast notification: " + e.getMessage(), e);
         }
     }
 
