@@ -146,7 +146,8 @@ export class AdminLayoutComponent {
   sidebarOpen = signal(true);
 
   readonly adminTabs: TabItem[] = [
-    { id: 'content', label: 'Content Management', icon: FileText, route: '/admin/content' },
+    { id: 'advanced', label: 'Advanced', icon: FileText, route: '/admin/advanced' },
+    { id: 'content', label: 'Content', icon: FileText, route: '/admin/content' },
     { id: 'categories', label: 'Categories', icon: Tag, route: '/admin/categories' },
     { id: 'cinema', label: 'Cinema', icon: Ticket, route: '/admin/cinema' },
     { id: 'cinema-sessions', label: 'Sessions', icon: Calendar, route: '/admin/cinema', queryParams: { module: 'seances' } as any },

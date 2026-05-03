@@ -9,6 +9,7 @@ public interface NotificationService {
     List<NotificationDTO> getNotificationsByUserId(String userId);
     void markAsRead(String id);
     void deleteNotification(String id);
+    int processEmailFallbackNow();
     
     // External notification structure
     void sendEmail(String to, String subject, String body);

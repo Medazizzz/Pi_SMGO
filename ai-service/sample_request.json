@@ -1,0 +1,40 @@
+{
+  "limit": 6,
+  "user": {
+    "preferredCategories": ["MOVIE", "SERIES"],
+    "preferredTypes": ["FILM", "SERIES"],
+    "preferredGenres": ["Action", "Adventure", "Drama"]
+  },
+  "contents": [
+    {
+      "contentId": "1",
+      "title": "Galaxy Run",
+      "description": "An action sci-fi movie.",
+      "category": "MOVIE",
+      "contentType": "FILM",
+      "genres": ["Action", "Sci-Fi"],
+      "viewCount": 2400,
+      "releaseDate": "2025-09-10T10:00:00"
+    },
+    {
+      "contentId": "2",
+      "title": "Quiet History",
+      "description": "A documentary about the past.",
+      "category": "DOCUMENTARY",
+      "contentType": "DOCUMENTARY",
+      "genres": ["History", "Education"],
+      "viewCount": 190,
+      "releaseDate": "2024-12-20T10:00:00"
+    },
+    {
+      "contentId": "3",
+      "title": "Family Night",
+      "description": "A comedy for the whole family.",
+      "category": "MOVIE",
+      "contentType": "FILM",
+      "genres": ["Comedy", "Family"],
+      "viewCount": 980,
+      "releaseDate": "2026-01-12T10:00:00"
+    }
+  ]
+}

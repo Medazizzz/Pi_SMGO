@@ -53,6 +53,7 @@
             <img
               [src]="content.image"
               [alt]="content.title"
+              title="{{ content.title }}"
               class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             />
             <span
@@ -134,6 +135,50 @@
     </div>
   </div>
 
+  <!-- Top 10 Content -->
+  <div>
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-2xl mb-1 text-white flex items-center gap-2">
+          <span class="w-6 h-6 text-[#8B5CF6]"></span>
+          Top 10 Content
+        </h2>
+        <p class="text-gray-400">Ranked by engagement score and views.</p>
+      </div>
+      <button (click)="loadTopTenContent()" class="px-4 py-2 border border-[#8B5CF6] text-white hover:bg-[#8B5CF6]/10 rounded-lg transition-all">
+        Refresh Top 10
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" *ngIf="topTenContent().length > 0">
+      <div *ngFor="let item of topTenContent(); let index = index" class="rounded-lg border border-[#8B5CF6]/20 bg-[#141920] p-5 space-y-3">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs uppercase tracking-[0.2em] text-[#8B5CF6] mb-1">#{{ index + 1 }}</p>
+            <h3 class="text-white text-lg leading-tight">{{ item.title }}</h3>
+            <p class="text-sm text-gray-400">{{ item.category }}</p>
+          </div>
+          <span class="rounded-full bg-[#8B5CF6]/10 px-3 py-1 text-xs text-[#8B5CF6]">
+            {{ item.engagementScore | number:'1.0-1' }} score
+          </span>
+        </div>
+
+        <p class="text-sm text-gray-300">
+          {{ item.description || 'Top-ranked content on the platform.' }}
+        </p>
+
+        <div class="flex flex-wrap gap-2 text-xs text-gray-400">
+          <span class="rounded-full border border-[#8B5CF6]/20 px-2 py-1">Views: {{ item.viewCount }}</span>
+          <span class="rounded-full border border-[#8B5CF6]/20 px-2 py-1">Genres: {{ (item.genres || []).length }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="topTenContent().length === 0" class="text-sm text-gray-400">
+      No top 10 data available yet. Refresh after analytics loads.
+    </div>
+  </div>
+
   <!-- Cinema Section -->
   <div>
     <div class="flex items-center justify-between mb-6">
@@ -158,6 +203,7 @@
               <img
                 [src]="showtime.image"
                 [alt]="showtime.title"
+                title="{{ showtime.title }}"
                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               />
             </div>

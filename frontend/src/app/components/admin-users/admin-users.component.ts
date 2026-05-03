@@ -21,6 +21,8 @@ export class AdminUsersComponent implements OnInit {
   loading = false;
   errorMessage = '';
   editingUserId: string | null = null;
+  testEmailUserId: string | null = null;
+  testEmailMessage = '';
   editForm: { username: string; email: string } = {
     username: '',
     email: ''
@@ -124,6 +126,32 @@ export class AdminUsersComponent implements OnInit {
       error: () => {
         this.errorMessage = 'Unable to delete user.';
         this.loading = false;
+      }
+    });
+  }
+
+  sendTestEmail(user: UserDTO): void {
+    if (!user.email) {
+      this.errorMessage = 'User email is required to send a test email.';
+      return;
+    }
+
+    this.testEmailUserId = user.id;
+    this.testEmailMessage = '';
+
+    this.userService.sendTestEmail(user.email, 'SMGO test email', 'This is a test email sent from the admin users page.').subscribe({
+      next: () => {
+        this.testEmailMessage = `Test email sent to ${user.email}`;
+        setTimeout(() => {
+          if (this.testEmailUserId === user.id) {
+            this.testEmailMessage = '';
+            this.testEmailUserId = null;
+          }
+        }, 5000);
+      },
+      error: () => {
+        this.errorMessage = `Unable to send test email to ${user.email}.`;
+        this.testEmailUserId = null;
       }
     });
   }

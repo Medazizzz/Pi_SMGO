@@ -196,6 +196,15 @@ export class AuthService {
   }
 
   /**
+   * Update the cached current user after a profile change.
+   * WHY: Keeps localStorage and in-memory auth state aligned when the user edits their email or username.
+   */
+  updateCurrentUser(user: CurrentUser): void {
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    this.currentUserSubject.next(user);
+  }
+
+  /**
    * Error handling
    * WHY: Consistent error handling across auth methods
    */

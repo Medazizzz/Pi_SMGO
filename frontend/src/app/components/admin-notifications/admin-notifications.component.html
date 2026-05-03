@@ -4,10 +4,73 @@
       <h1 class="text-3xl text-white mb-2">Notification Hub</h1>
       <p class="text-gray-400">Manage and send notifications to users</p>
     </div>
-    <button (click)="openForm()" class="flex items-center gap-2 px-4 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg transition-all">
-      <span class="w-4 h-4"></span>
-      Send Notification
-    </button>
+    <div class="flex flex-wrap gap-3">
+      <button (click)="openNewsletterForm()" class="flex items-center gap-2 px-4 py-2 bg-[#0EA5E9] hover:bg-[#0284C7] text-white rounded-lg transition-all">
+        <span class="w-4 h-4"></span>
+        Schedule Newsletter
+      </button>
+      <button (click)="openForm()" class="flex items-center gap-2 px-4 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg transition-all">
+        <span class="w-4 h-4"></span>
+        Send Notification
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6 space-y-4">
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <h2 class="text-2xl text-white mb-1">Send Custom Test Email</h2>
+        <p class="text-gray-400 text-sm">Type any address here to verify the actual outbound email path.</p>
+      </div>
+      <button (click)="clearCustomTestEmail()" class="px-4 py-2 rounded-lg border border-[#8B5CF6]/30 text-gray-300 hover:bg-[#8B5CF6]/10 transition-all">
+        Reset
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm text-gray-300 mb-2">Recipient Email</label>
+        <input
+          type="email"
+          [(ngModel)]="testEmailAddress"
+          placeholder="recipient@example.com"
+          title="Recipient email address"
+          class="w-full px-4 py-2 bg-[#0B0E14] border border-[#8B5CF6]/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#8B5CF6]"
+        />
+      </div>
+      <div>
+        <label class="block text-sm text-gray-300 mb-2">Subject</label>
+        <input
+          type="text"
+          [(ngModel)]="testEmailSubject"
+          placeholder="Subject"
+          title="Test email subject"
+          class="w-full px-4 py-2 bg-[#0B0E14] border border-[#8B5CF6]/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#8B5CF6]"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm text-gray-300 mb-2">Body</label>
+      <textarea
+        [(ngModel)]="testEmailBody"
+        rows="4"
+        placeholder="Email body"
+        title="Test email body"
+        class="w-full px-4 py-2 bg-[#0B0E14] border border-[#8B5CF6]/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#8B5CF6]"
+      ></textarea>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button
+        (click)="sendCustomTestEmail()"
+        [disabled]="testEmailLoading"
+        class="px-4 py-2 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {{ testEmailLoading ? 'Sending...' : 'Send test email' }}
+      </button>
+      <div *ngIf="testEmailMessage" class="text-sm text-green-400">{{ testEmailMessage }}</div>
+    </div>
   </div>
 
   <!-- Error Message -->
@@ -35,6 +98,61 @@
       <h3 class="text-xl text-white mb-2">Status</h3>
       <p class="text-3xl text-white mb-2">Active</p>
       <p class="text-sm text-gray-400">System operational</p>
+    </div>
+  </div>
+
+  <!-- Newsletter Campaigns -->
+  <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6 space-y-4">
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <h2 class="text-2xl text-white mb-1">Scheduled Newsletters</h2>
+        <p class="text-gray-400 text-sm">Separate from immediate notifications and unread-email fallback</p>
+      </div>
+      <button
+        (click)="loadNewsletterCampaigns()"
+        class="px-4 py-2 rounded-lg border border-[#8B5CF6]/30 text-gray-300 hover:bg-[#8B5CF6]/10 transition-all"
+      >
+        Refresh
+      </button>
+    </div>
+
+    <div *ngIf="newsletterError" class="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg">
+      {{ newsletterError }}
+    </div>
+
+    <div class="overflow-x-auto" *ngIf="newsletterCampaigns.length > 0">
+      <table class="w-full text-sm">
+        <thead class="bg-[#0B0E14] border-b border-[#8B5CF6]/20 text-gray-400">
+          <tr>
+            <th class="px-4 py-3 text-left">Title</th>
+            <th class="px-4 py-3 text-left">Audience</th>
+            <th class="px-4 py-3 text-left">Schedule</th>
+            <th class="px-4 py-3 text-left">Status</th>
+            <th class="px-4 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#8B5CF6]/10">
+          <tr *ngFor="let campaign of newsletterCampaigns" class="text-gray-300 hover:bg-[#0B0E14]/50">
+            <td class="px-4 py-3 font-medium text-white">{{ campaign.title }}</td>
+            <td class="px-4 py-3">{{ getNewsletterSummary(campaign) }}</td>
+            <td class="px-4 py-3">{{ campaign.scheduledAt | date:'medium' }}</td>
+            <td class="px-4 py-3">{{ campaign.status }}</td>
+            <td class="px-4 py-3 text-right">
+              <button
+                *ngIf="campaign.status !== 'DISPATCHED'"
+                (click)="dispatchNewsletterCampaign(campaign.id!)"
+                class="px-3 py-1 rounded-md bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
+              >
+                Dispatch now
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="newsletterCampaigns.length === 0" class="text-gray-400 text-sm">
+      No scheduled newsletters yet.
     </div>
   </div>
 
@@ -142,6 +260,71 @@
         class="px-4 py-2 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {{ loading ? 'Sending...' : 'Send' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Newsletter Modal -->
+<div *ngIf="showNewsletterForm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+  <div class="bg-[#141920] border border-[#0EA5E9]/30 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between p-6 border-b border-[#0EA5E9]/20">
+      <h2 class="text-2xl text-white">Schedule Newsletter</h2>
+      <button (click)="closeNewsletterForm()" title="Close form" aria-label="Close form" class="text-gray-400 hover:text-white">
+        <span class="w-5 h-5"></span>
+      </button>
+    </div>
+
+    <div *ngIf="newsletterError" class="mx-6 mt-4 bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg">
+      {{ newsletterError }}
+    </div>
+
+    <form [formGroup]="newsletterForm" class="p-6 space-y-4">
+      <div>
+        <label class="block text-sm text-gray-300 mb-2">Title <span class="text-red-500">*</span></label>
+        <input type="text" formControlName="title" placeholder="Newsletter title" class="w-full px-4 py-2 bg-[#0B0E14] border border-[#0EA5E9]/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#0EA5E9]" [class.border-red-500]="newsletterForm.get('title')?.invalid && newsletterForm.get('title')?.touched" />
+        <p *ngIf="newsletterForm.get('title')?.invalid && newsletterForm.get('title')?.touched" class="text-red-500 text-sm mt-1">{{ getNewsletterFieldError('title') }}</p>
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-300 mb-2">Message <span class="text-red-500">*</span></label>
+        <textarea formControlName="message" placeholder="Newsletter content" rows="6" class="w-full px-4 py-2 bg-[#0B0E14] border border-[#0EA5E9]/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#0EA5E9]" [class.border-red-500]="newsletterForm.get('message')?.invalid && newsletterForm.get('message')?.touched"></textarea>
+        <p *ngIf="newsletterForm.get('message')?.invalid && newsletterForm.get('message')?.touched" class="text-red-500 text-sm mt-1">{{ getNewsletterFieldError('message') }}</p>
+      </div>
+
+      <div>
+        <label for="newsletter-scheduled-at" class="block text-sm text-gray-300 mb-2">Scheduled At <span class="text-red-500">*</span></label>
+        <input id="newsletter-scheduled-at" type="datetime-local" formControlName="scheduledAt" title="Newsletter scheduled date and time" class="w-full px-4 py-2 bg-[#0B0E14] border border-[#0EA5E9]/30 rounded-lg text-white focus:outline-none focus:border-[#0EA5E9]" [class.border-red-500]="newsletterForm.get('scheduledAt')?.invalid && newsletterForm.get('scheduledAt')?.touched" />
+        <p *ngIf="newsletterForm.get('scheduledAt')?.invalid && newsletterForm.get('scheduledAt')?.touched" class="text-red-500 text-sm mt-1">{{ getNewsletterFieldError('scheduledAt') }}</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="newsletter-target-category" class="block text-sm text-gray-300 mb-2">Target Category</label>
+          <select id="newsletter-target-category" formControlName="targetCategory" title="Target category for this newsletter" class="w-full px-4 py-2 bg-[#0B0E14] border border-[#0EA5E9]/30 rounded-lg text-white focus:outline-none focus:border-[#0EA5E9]">
+            <option value="">All active users</option>
+            <option value="MOVIE">Movie viewers</option>
+            <option value="SERIES">Series viewers</option>
+            <option value="DOCUMENTARY">Documentary viewers</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-300 mb-2">Target Genres</label>
+          <input type="text" formControlName="targetGenres" placeholder="Action, Drama, History" class="w-full px-4 py-2 bg-[#0B0E14] border border-[#0EA5E9]/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#0EA5E9]" />
+        </div>
+      </div>
+
+      <label class="flex items-center gap-3 text-gray-300 text-sm">
+        <input type="checkbox" formControlName="sendEmail" class="rounded border-[#0EA5E9]/40 bg-[#0B0E14]" />
+        Send email when the newsletter is dispatched
+      </label>
+    </form>
+
+    <div class="flex items-center justify-end gap-3 p-6 border-t border-[#0EA5E9]/20">
+      <button (click)="closeNewsletterForm()" class="px-4 py-2 rounded-lg border border-[#0EA5E9]/30 text-gray-300 hover:bg-[#0EA5E9]/10 transition-all">Cancel</button>
+      <button (click)="saveNewsletterCampaign()" [disabled]="!newsletterForm.valid || newsletterLoading" class="px-4 py-2 rounded-lg bg-[#0EA5E9] hover:bg-[#0284C7] text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+        {{ newsletterLoading ? 'Scheduling...' : 'Schedule' }}
       </button>
     </div>
   </div>
