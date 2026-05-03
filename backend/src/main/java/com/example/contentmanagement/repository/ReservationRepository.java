@@ -7,4 +7,8 @@ import java.util.List;
 
 public interface ReservationRepository extends MongoRepository<Reservation, String> {
     List<Reservation> findByUserId(String userId);
+
+
+    Long countByUserId(String userId);
+
 }

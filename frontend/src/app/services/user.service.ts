@@ -10,6 +10,8 @@ export interface UserDTO {
   createdAt?: string;
   blocked?: boolean;
   photoUrl?: string;
+  fidelityScore?: number;
+  fidelityLevel?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -36,4 +38,7 @@ export class UserService {
   updateMyProfile(data: { username?: string; email?: string; photoUrl?: string }): Observable<UserDTO> {
     return this.http.put<UserDTO>(`${this.apiUrl}/me`, data);
   }
+  getUsers() {
+  return this.http.get("http://localhost:8090/api/users");
+}
 }

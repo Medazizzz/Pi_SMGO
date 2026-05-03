@@ -6,36 +6,34 @@
     </div>
   </div>
 
+  <!-- STATS -->
   <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
     <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6">
-      <span class="w-10 h-10 text-[#8B5CF6] mb-4"></span>
       <h3 class="text-lg text-white mb-2">Total Users</h3>
       <p class="text-3xl text-white mb-2">{{ totalUsers }}</p>
       <p class="text-sm text-gray-400">Live database count</p>
     </div>
-    
+
     <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6">
-      <span class="w-10 h-10 text-[#8B5CF6] mb-4"></span>
       <h3 class="text-lg text-white mb-2">Active Users</h3>
       <p class="text-3xl text-white mb-2">{{ activeUsers }}</p>
       <p class="text-sm text-gray-400">Not blocked</p>
     </div>
-    
+
     <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6">
-      <span class="w-10 h-10 text-[#8B5CF6] mb-4"></span>
       <h3 class="text-lg text-white mb-2">Admin Users</h3>
       <p class="text-3xl text-white mb-2">{{ adminUsers }}</p>
       <p class="text-sm text-gray-400">Role includes ADMIN</p>
     </div>
-    
+
     <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6">
-      <span class="w-10 h-10 text-[#8B5CF6] mb-4"></span>
       <h3 class="text-lg text-white mb-2">Regular Users</h3>
       <p class="text-3xl text-white mb-2">{{ regularUsers }}</p>
       <p class="text-sm text-gray-400">Non-admin users</p>
     </div>
   </div>
 
+  <!-- USERS TABLE -->
   <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6">
     <div class="flex items-center justify-between gap-4 mb-4">
       <h2 class="text-xl text-white">Users List</h2>
@@ -43,7 +41,6 @@
     </div>
 
     <div *ngIf="loading" class="text-sm text-gray-400 py-6">Loading users...</div>
-
     <div *ngIf="errorMessage" class="text-sm text-red-400 py-4">{{ errorMessage }}</div>
 
     <div *ngIf="!loading && !errorMessage" class="overflow-x-auto">
@@ -54,74 +51,101 @@
             <th class="py-3 pr-4">Email</th>
             <th class="py-3 pr-4">Role</th>
             <th class="py-3 pr-4">Status</th>
+            <th class="py-3 pr-4">Score</th> <!-- 🔥 NEW -->
+            <th class="py-3 pr-4">Level</th> <!-- 🔥 NEW -->
             <th class="py-3 pr-4">Joined</th>
             <th class="py-3 pr-4">Actions</th>
           </tr>
         </thead>
+
         <tbody>
           <tr *ngFor="let user of users" class="border-b border-white/5 text-sm text-gray-200">
+
+            <!-- USERNAME -->
             <td class="py-3 pr-4 font-medium text-white">
-              <input
-                *ngIf="editingUserId === user.id"
-                [(ngModel)]="editForm.username"
-                title="Username"
-                placeholder="Username"
-                class="bg-[#0B0E14] border border-[#8B5CF6]/30 rounded px-2 py-1 text-sm w-full"
-              />
+              <input *ngIf="editingUserId === user.id"
+                     [(ngModel)]="editForm.username"
+                     class="bg-[#0B0E14] border border-[#8B5CF6]/30 rounded px-2 py-1 text-sm w-full" />
               <span *ngIf="editingUserId !== user.id">{{ user.username }}</span>
             </td>
+
+            <!-- EMAIL -->
             <td class="py-3 pr-4">
-              <input
-                *ngIf="editingUserId === user.id"
-                [(ngModel)]="editForm.email"
-                title="Email"
-                placeholder="Email"
-                class="bg-[#0B0E14] border border-[#8B5CF6]/30 rounded px-2 py-1 text-sm w-full"
-              />
+              <input *ngIf="editingUserId === user.id"
+                     [(ngModel)]="editForm.email"
+                     class="bg-[#0B0E14] border border-[#8B5CF6]/30 rounded px-2 py-1 text-sm w-full" />
               <span *ngIf="editingUserId !== user.id">{{ user.email }}</span>
             </td>
+
+            <!-- ROLE -->
             <td class="py-3 pr-4">{{ user.role || 'USER' }}</td>
+
+            <!-- STATUS -->
             <td class="py-3 pr-4">
               <span [class]="user.blocked ? 'text-red-400' : 'text-green-400'">
                 {{ user.blocked ? 'Blocked' : 'Active' }}
               </span>
             </td>
-            <td class="py-3 pr-4 text-gray-400">{{ user.createdAt ? (user.createdAt | date:'dd/MM/yyyy') : '-' }}</td>
+
+            <!-- 🔥 SCORE -->
+            <td class="py-3 pr-4 text-blue-400 font-semibold">
+              {{ user.fidelityScore || 0 }}
+            </td>
+
+            <!-- 🔥 LEVEL -->
+            <td class="py-3 pr-4">
+              <span class="px-2 py-1 rounded text-xs font-semibold"
+                    [ngClass]="{
+                      'bg-yellow-500/20 text-yellow-400': user.fidelityLevel === 'GOLD',
+                      'bg-gray-400/20 text-gray-300': user.fidelityLevel === 'SILVER',
+                      'bg-purple-500/20 text-purple-400': user.fidelityLevel === 'VIP',
+                      'bg-orange-500/20 text-orange-400': user.fidelityLevel === 'BRONZE'
+                    }">
+                {{ user.fidelityLevel || 'BRONZE' }}
+              </span>
+            </td>
+
+            <!-- DATE -->
+            <td class="py-3 pr-4 text-gray-400">
+              {{ user.createdAt ? (user.createdAt | date:'dd/MM/yyyy') : '-' }}
+            </td>
+
+            <!-- ACTIONS -->
             <td class="py-3 pr-4">
               <div class="flex items-center gap-2">
-                <button
-                  *ngIf="editingUserId !== user.id"
-                  (click)="startEdit(user)"
-                  class="px-3 py-1 rounded border border-[#8B5CF6]/50 text-[#C4B5FD] hover:bg-[#8B5CF6]/10"
-                >
+
+                <button *ngIf="editingUserId !== user.id"
+                        (click)="startEdit(user)"
+                        class="px-3 py-1 rounded border border-[#8B5CF6]/50 text-[#C4B5FD] hover:bg-[#8B5CF6]/10">
                   Edit
                 </button>
-                <button
-                  *ngIf="editingUserId !== user.id"
-                  (click)="removeUser(user)"
-                  class="px-3 py-1 rounded border border-red-500/50 text-red-300 hover:bg-red-500/10"
-                >
+
+                <button *ngIf="editingUserId !== user.id"
+                        (click)="removeUser(user)"
+                        class="px-3 py-1 rounded border border-red-500/50 text-red-300 hover:bg-red-500/10">
                   Delete
                 </button>
-                <button
-                  *ngIf="editingUserId === user.id"
-                  (click)="saveEdit()"
-                  class="px-3 py-1 rounded border border-green-500/60 text-green-300 hover:bg-green-500/10"
-                >
+
+                <button *ngIf="editingUserId === user.id"
+                        (click)="saveEdit()"
+                        class="px-3 py-1 rounded border border-green-500/60 text-green-300 hover:bg-green-500/10">
                   Save
                 </button>
-                <button
-                  *ngIf="editingUserId === user.id"
-                  (click)="cancelEdit()"
-                  class="px-3 py-1 rounded border border-gray-500/60 text-gray-300 hover:bg-gray-500/10"
-                >
+
+                <button *ngIf="editingUserId === user.id"
+                        (click)="cancelEdit()"
+                        class="px-3 py-1 rounded border border-gray-500/60 text-gray-300 hover:bg-gray-500/10">
                   Cancel
                 </button>
+
               </div>
             </td>
           </tr>
+
           <tr *ngIf="users.length === 0">
-            <td colspan="6" class="py-6 text-center text-gray-400">No users found.</td>
+            <td colspan="8" class="py-6 text-center text-gray-400">
+              No users found.
+            </td>
           </tr>
         </tbody>
       </table>

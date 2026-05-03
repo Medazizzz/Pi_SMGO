@@ -2,13 +2,14 @@ import { Routes } from '@angular/router';
 import { AdminLayoutComponent } from './layouts/admin-layout.component';
 import { UserLayoutComponent } from './layouts/user-layout.component';
 import { adminGuard, userGuard } from './guards/auth.guard';
+import { SplashComponent } from './components/splash-screen/splash-screen';
 
-/**
- * Application Routes Configuration
- * WHY: Defines all application routes with lazy loading
- * Implements proper navigation structure for the SPA
- */
 export const routes: Routes = [
+
+  // Splash Screen
+  { path: '', component: SplashComponent },
+
+
   {
     path: 'auth/login',
     loadComponent: () => import('./components/auth/login.component').then(m => m.LoginComponent),
@@ -25,7 +26,7 @@ export const routes: Routes = [
     data: { title: 'Forgot Password' }
   },
 
-  // Admin panel with layout
+  // Admin panel
   {
     path: 'admin',
     component: AdminLayoutComponent,
@@ -89,7 +90,7 @@ export const routes: Routes = [
     ]
   },
 
-  // User panel with layout
+  // User panel
   {
     path: 'user',
     component: UserLayoutComponent,
@@ -158,6 +159,22 @@ export const routes: Routes = [
         data: { title: 'Feedback' }
       },
       {
+        path: 'recommendation',
+        loadComponent: () => import('./components/recommendation/recommendation').then(m => m.RecommendationComponent),
+        data: { title: 'Recommendation' }
+      },
+      {
+        path: 'payment/:abonnementId',
+        loadComponent: () => import('./components/payment/payment').then(m => m.PaymentComponent),
+        data: { title: 'Payment' }
+      },
+      // ✅ Renewal — dans les children user (guard + layout appliqués)
+      {
+        path: 'renewal',
+        loadComponent: () => import('./user/renewal-status/renewal-status.component').then(m => m.RenewalStatusComponent),
+        data: { title: 'Renouvellement' }
+      },
+      {
         path: '',
         redirectTo: 'home',
         pathMatch: 'full'
@@ -165,7 +182,6 @@ export const routes: Routes = [
     ]
   },
 
-  // Default route
   {
     path: 'watchparty/:id',
     loadComponent: () => import('./components/watchparty-session/watchparty-session.component').then(m => m.WatchpartySessionComponent),
@@ -173,15 +189,7 @@ export const routes: Routes = [
   },
 
   {
-    path: '',
-    redirectTo: '/auth/login',
-    pathMatch: 'full'
-  },
-
-  // Wildcard route for 404
-  {
     path: '**',
     redirectTo: '/auth/login'
   }
 ];
-

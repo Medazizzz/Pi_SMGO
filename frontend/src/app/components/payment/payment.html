@@ -1,0 +1,229 @@
+<div class="min-h-screen bg-[#0d1117] flex items-center justify-center p-6">
+  <div class="w-full max-w-md">
+
+    <!-- ══ SUCCÈS ════════════════════════════════ -->
+    <div *ngIf="success"
+         class="bg-[#141920] rounded-2xl p-8 border
+                border-green-500/40 text-center">
+      <div class="text-6xl mb-4">🎉</div>
+      <h2 class="text-2xl font-bold text-white mb-2">
+        Payment Approved!
+      </h2>
+      <p class="text-gray-400 mb-4">
+        Subscribed to
+        <span class="text-purple-400 font-bold">
+          {{ abonnement?.type }}
+        </span>
+      </p>
+
+      <!-- Trust Score -->
+      <div class="bg-green-500/10 border border-green-500/30
+                  rounded-xl p-4 mb-4">
+        <p [class]="'font-bold text-2xl mb-1 ' + getTrustColor()">
+          {{ trustScore }}% Trust Score
+        </p>
+        <p class="text-gray-400 text-sm">{{ cardType }}</p>
+        <p class="text-gray-500 text-xs mt-1">{{ maskedCard }}</p>
+      </div>
+
+      <p class="text-gray-500 text-sm">
+        Redirecting to loyalty page...
+      </p>
+      <div class="mt-3 flex justify-center">
+        <div class="w-6 h-6 border-2 border-green-500
+                    border-t-transparent rounded-full animate-spin">
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ FORMULAIRE ════════════════════════════ -->
+    <div *ngIf="!success"
+         class="bg-[#141920] rounded-2xl p-8
+                border border-[#8B5CF6]/30">
+
+      <!-- Header -->
+      <div class="flex items-center gap-3 mb-6">
+        <button (click)="goBack()"
+                class="text-gray-400 hover:text-white
+                       transition-colors text-sm">
+          ← Back
+        </button>
+        <h2 class="text-xl font-bold text-white">
+          🔒 Secure Payment
+        </h2>
+      </div>
+
+      <!-- Plan résumé -->
+      <div *ngIf="abonnement"
+           class="bg-[#1a2030] rounded-xl p-4 mb-6
+                  border border-[#8B5CF6]/20">
+        <div class="flex justify-between items-center">
+          <div>
+            <p class="text-gray-400 text-xs mb-1">Selected Plan</p>
+            <p class="text-white font-bold text-lg">
+              {{ abonnement.type }}
+            </p>
+            <p class="text-gray-500 text-xs">
+              {{ abonnement.description }}
+            </p>
+          </div>
+          <div class="text-right">
+            <p class="text-gray-400 text-xs mb-1">Amount</p>
+            <p class="text-white font-bold text-2xl">
+              {{ abonnement.prix | number:'1.2-2' }}
+              <span class="text-sm text-gray-400">TND</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trust Score après échec -->
+      <div *ngIf="checks" class="mb-4">
+        <div class="bg-[#1a2030] rounded-xl p-4 mb-3">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-gray-400 text-sm">Trust Score</span>
+            <span [class]="'font-bold text-lg ' + getTrustColor()">
+              {{ trustScore }}%
+            </span>
+          </div>
+          <div class="w-full bg-gray-700 rounded-full h-3">
+            <div [class]="'h-3 rounded-full transition-all duration-700 '
+                          + getTrustBarColor()"
+                 [style.width.%]="trustScore">
+            </div>
+          </div>
+        </div>
+
+        <!-- Détail checks -->
+        <div class="space-y-2">
+          <p class="text-gray-400 text-xs mb-1">Validation details :</p>
+          <div *ngFor="let check of checks | keyvalue"
+               class="flex items-center justify-between
+                      bg-[#1a2030] rounded-lg px-3 py-2">
+            <span class="text-gray-400 text-xs capitalize">
+              {{ check.key }}
+            </span>
+            <span class="text-xs font-medium"
+                  [class]="check.value['valid'] ?
+                           'text-green-400' : 'text-red-400'">
+              {{ check.value['valid'] ? '✅' : '❌' }}
+              {{ check.value['message'] }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Erreur -->
+      <div *ngIf="error"
+           class="bg-red-500/20 border border-red-500/40
+                  rounded-lg p-3 mb-4 text-red-400
+                  text-sm text-center">
+        ❌ {{ error }}
+      </div>
+
+      <!-- Formulaire carte -->
+      <div class="space-y-4">
+
+        <!-- Card Holder -->
+        <div>
+          <label class="text-gray-400 text-sm mb-1 block">
+            Card Holder Name
+          </label>
+          <input [(ngModel)]="cardHolder"
+                 type="text"
+                 placeholder="John Doe"
+                 class="w-full bg-[#1a2030] border border-gray-700
+                        rounded-xl px-4 py-3 text-white
+                        placeholder-gray-600 focus:outline-none
+                        focus:border-purple-500 transition-colors"/>
+        </div>
+
+        <!-- Card Number -->
+        <div>
+          <label class="text-gray-400 text-sm mb-1 block">
+            Card Number
+          </label>
+          <input [(ngModel)]="cardNumber"
+                 (keyup)="formatCardNumber()"
+                 type="text"
+                 placeholder="1234 5678 9012 3456"
+                 maxlength="19"
+                 class="w-full bg-[#1a2030] border border-gray-700
+                        rounded-xl px-4 py-3 text-white font-mono
+                        placeholder-gray-600 focus:outline-none
+                        focus:border-purple-500 transition-colors"/>
+          <!-- Type détecté en temps réel -->
+          <p *ngIf="cardType"
+             class="text-purple-400 text-xs mt-1 font-medium">
+            {{ getCardIcon() }} detected
+          </p>
+        </div>
+
+        <!-- Expiry + CVV -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-gray-400 text-sm mb-1 block">
+              Expiry Date
+            </label>
+            <input [(ngModel)]="expiryDate"
+                   (keyup)="formatExpiryDate()"
+                   type="text"
+                   placeholder="MM/YY"
+                   maxlength="5"
+                   class="w-full bg-[#1a2030] border border-gray-700
+                          rounded-xl px-4 py-3 text-white
+                          placeholder-gray-600 focus:outline-none
+                          focus:border-purple-500 transition-colors"/>
+          </div>
+          <div>
+            <label class="text-gray-400 text-sm mb-1 block">
+              CVV
+            </label>
+            <input [(ngModel)]="cvv"
+                   type="password"
+                   placeholder="•••"
+                   maxlength="4"
+                   class="w-full bg-[#1a2030] border border-gray-700
+                          rounded-xl px-4 py-3 text-white
+                          placeholder-gray-600 focus:outline-none
+                          focus:border-purple-500 transition-colors"/>
+          </div>
+        </div>
+
+        <!-- Bouton Pay -->
+        <button
+          (click)="processPayment()"
+          [disabled]="!isFormValid() || loading"
+          [class]="'w-full py-4 rounded-xl font-bold text-lg
+                    transition-all duration-200 mt-2 ' +
+            (isFormValid() && !loading
+              ? 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white cursor-pointer'
+              : 'bg-gray-700 text-gray-500 cursor-not-allowed')">
+          <span *ngIf="!loading">
+            🔒 Pay {{ abonnement?.prix | number:'1.2-2' }} TND
+          </span>
+          <span *ngIf="loading"
+                class="flex items-center justify-center gap-2">
+            <div class="w-5 h-5 border-2 border-white
+                        border-t-transparent rounded-full animate-spin">
+            </div>
+            Validating card...
+          </span>
+        </button>
+
+        <!-- Badge sécurité -->
+        <div class="flex items-center justify-center gap-2 mt-2">
+          <span class="text-gray-600 text-xs">
+            🔒 Secured by Luhn Algorithm
+          </span>
+          <span class="text-gray-700">•</span>
+          <span class="text-gray-600 text-xs">
+            Bank-grade validation
+          </span>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
