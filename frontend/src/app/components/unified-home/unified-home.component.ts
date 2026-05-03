@@ -187,11 +187,6 @@ get recommendedStreamingData(): StreamingContent[] {
     genres.includes(content.genre)
   );
 }
-get top5Movies(): StreamingContent[] {
-  return [...this.streamingData]
-    .sort((a, b) => b.views - a.views)
-    .slice(0, 5);
-}
 
   setHoveredStream(id: string | null) {
     this.hoveredStream.set(id);

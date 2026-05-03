@@ -20,6 +20,7 @@ import {
 } from 'lucide-angular';
 import { trigger, style, transition, animate } from '@angular/animations';
 import { AuthService } from '../services/auth.service';
+import { UserNotificationsComponent } from '../components/user-notifications/user-notifications.component';
 
 interface TabItem {
   id: string;
@@ -32,7 +33,7 @@ interface TabItem {
 @Component({
   selector: 'app-user-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink],
+  imports: [CommonModule, RouterOutlet, RouterLink, UserNotificationsComponent],
   template: `
     <div class="min-h-screen bg-[#0B0E14] text-white">
       <header class="sticky top-0 z-40 bg-[#0B0E14]/80 backdrop-blur-xl border-b border-[#8B5CF6]/20">
@@ -96,6 +97,9 @@ interface TabItem {
           </div>
         </div>
       </header>
+
+      <!-- User Notifications Component -->
+      <app-user-notifications></app-user-notifications>
 
       <main class="pb-12">
         <router-outlet></router-outlet>

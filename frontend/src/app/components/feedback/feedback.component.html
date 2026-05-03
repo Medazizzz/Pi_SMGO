@@ -854,7 +854,7 @@
         WatchParty Safety List
       </h2>
       <p class="text-sm text-gray-400 mt-1">
-        Afficher les WatchParty selon le niveau de sécurité.
+        Display WatchParties by safety level.
       </p>
     </div>
 
@@ -874,7 +874,7 @@
     *ngIf="visibleRiskWatchParties.length === 0"
     class="rounded-2xl bg-[#06080f]/80 border border-white/10 p-5 text-gray-400 text-center"
   >
-    Aucune WatchParty dans cette catégorie.
+    No WatchParties in this category.
   </div>
 
   <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3" *ngIf="visibleRiskWatchParties.length > 0">
@@ -907,7 +907,7 @@
 
 <div class="mb-8">
   <div class="text-[11px] font-bold tracking-[0.2em] uppercase text-violet-300 mb-2">
-    Administration
+    Management
   </div>
 
     <div *ngIf="successMessage"

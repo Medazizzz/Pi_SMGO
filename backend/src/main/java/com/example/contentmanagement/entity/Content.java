@@ -58,6 +58,8 @@ public abstract class Content {
 
     private Integer viewCount = 0;
 
+    private Double rating;
+
     /**
      * Genre IDs: References to Genre documents (multiple genres per content)
      * WHY: Allows flexible genre management through a separate Genre collection
