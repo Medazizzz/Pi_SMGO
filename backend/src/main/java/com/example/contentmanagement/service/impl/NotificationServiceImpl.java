@@ -10,6 +10,7 @@ import com.example.contentmanagement.service.FirebaseMessagingService;
 import com.example.contentmanagement.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -22,14 +23,22 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
-    private final FirebaseMessagingService firebaseMessagingService;
+    @Autowired(required = false)
+    private FirebaseMessagingService firebaseMessagingService;
+
+    public NotificationServiceImpl(NotificationRepository notificationRepository,
+                                   UserRepository userRepository,
+                                   JavaMailSender mailSender) {
+        this.notificationRepository = notificationRepository;
+        this.userRepository = userRepository;
+        this.mailSender = mailSender;
+    }
 
     @Value("${app.notifications.email-fallback-delay-seconds:300}")
     private long emailFallbackDelaySeconds;
