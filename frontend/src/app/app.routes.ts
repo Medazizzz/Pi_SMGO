@@ -42,9 +42,14 @@ export const routes: Routes = [
         data: { title: 'Promotions' }
       },
       {
+        path: 'advanced',
+        loadComponent: () => import('./components/admin-advanced/admin-advanced.component').then(m => m.AdminAdvancedComponent),
+        data: { title: 'Advanced' }
+      },
+      {
         path: 'content',
         loadComponent: () => import('./components/admin-content/admin-content.component').then(m => m.AdminContentComponent),
-        data: { title: 'Content Management' }
+        data: { title: 'Content' }
       },
       {
         path: 'categories',
@@ -83,7 +88,7 @@ export const routes: Routes = [
       },
       {
         path: '',
-        redirectTo: 'content',
+        redirectTo: 'advanced',
         pathMatch: 'full'
       }
     ]

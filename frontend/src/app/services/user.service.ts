@@ -36,4 +36,12 @@ export class UserService {
   updateMyProfile(data: { username?: string; email?: string; photoUrl?: string }): Observable<UserDTO> {
     return this.http.put<UserDTO>(`${this.apiUrl}/me`, data);
   }
+
+  /**
+   * Send a one-off test email to the specified address using the backend test endpoint.
+   */
+  sendTestEmail(email: string, subject?: string, body?: string): Observable<string> {
+    const payload = { email, subject: subject || 'SMGO Test Email', body: body || 'This is a test email from SMGO.' };
+    return this.http.post(`${this.apiUrl.replace('/users', '')}/notifications/test/send-email`, payload, { responseType: 'text' });
+  }
 }

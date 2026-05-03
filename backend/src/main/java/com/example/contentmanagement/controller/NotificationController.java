@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -80,6 +81,40 @@ public class NotificationController {
         } catch (Exception e) {
             log.error("Error deleting notification: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body("Error deleting notification: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/test/trigger-email-fallback")
+    public ResponseEntity<?> triggerEmailFallbackForTesting() {
+        try {
+            int processed = notificationService.processEmailFallbackNow();
+            return ResponseEntity.ok("Email fallback trigger executed. Processed notifications: " + processed);
+        } catch (Exception e) {
+            log.error("Error triggering email fallback test: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body("Error triggering fallback: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Send a one-off test email to any address. Accepts JSON with keys: email, subject, body.
+     * This uses the same mail sender path as notifications so delivery behavior matches production sends.
+     */
+    @PostMapping("/test/send-email")
+    public ResponseEntity<?> sendTestEmail(@RequestBody Map<String, String> payload) {
+        try {
+            String to = payload.get("email");
+            String subject = payload.getOrDefault("subject", "SMGO Test Email");
+            String body = payload.getOrDefault("body", "This is a test email from SMGO.");
+
+            if (to == null || to.isBlank()) {
+                return ResponseEntity.badRequest().body("Missing 'email' in request body");
+            }
+
+            notificationService.sendEmail(to, subject, body);
+            return ResponseEntity.ok("Test email sent to " + to);
+        } catch (Exception e) {
+            log.error("Error sending test email: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Failed to send test email: " + e.getMessage());
         }
     }
 }

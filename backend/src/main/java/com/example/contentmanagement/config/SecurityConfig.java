@@ -110,6 +110,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/categories", "/api/categories/**").permitAll()
                                 .requestMatchers("/api/genres", "/api/genres/**").permitAll()
                                 .requestMatchers("/api/notifications", "/api/notifications/**").permitAll()
+                                .requestMatchers("/api/newsletters", "/api/newsletters/**").permitAll()
                                 .requestMatchers("/api/users", "/api/users/**").permitAll()
                                 .requestMatchers("/api/roles", "/api/roles/**").permitAll()
                                 .requestMatchers("/api/abonnements", "/api/abonnements/**").permitAll()

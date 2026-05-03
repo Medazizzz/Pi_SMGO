@@ -1,6 +1,9 @@
 package com.example.contentmanagement.service;
 
 import com.example.contentmanagement.dto.ContentDTO;
+import com.example.contentmanagement.dto.ContentAnalyticsDTO;
+import com.example.contentmanagement.dto.ContentRecommendationDTO;
+import com.example.contentmanagement.dto.ContentSearchResultDTO;
 import com.example.contentmanagement.dto.PageResponseDTO;
 import com.example.contentmanagement.dto.FilmDTO;
 import com.example.contentmanagement.dto.SeriesDTO;
@@ -21,6 +24,10 @@ public interface ContentService {
     // ==================== READ ====================
     ContentDTO getContentById(String id);
     List<ContentDTO> getAllContent();
+    List<ContentAnalyticsDTO> getContentAnalytics(String category, String genreKeyword, int limit);
+    List<ContentAnalyticsDTO> getTop10Content(String category, String genreKeyword);
+    List<ContentRecommendationDTO> getContentRecommendations(String userId, int limit);
+    List<ContentSearchResultDTO> searchContentAdvanced(String keyword, String genreKeyword, String category, int limit);
     
     /**
      * Get paginated and filtered content

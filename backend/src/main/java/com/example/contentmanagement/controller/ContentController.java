@@ -120,6 +120,37 @@ public class ContentController {
         return ResponseEntity.ok(contentService.getAllContent());
     }
 
+    @GetMapping("/analytics")
+    public ResponseEntity<List<ContentAnalyticsDTO>> getContentAnalytics(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String genreKeyword,
+            @RequestParam(defaultValue = "20") int limit) {
+        return ResponseEntity.ok(contentService.getContentAnalytics(category, genreKeyword, limit));
+    }
+
+    @GetMapping("/top10")
+    public ResponseEntity<List<ContentAnalyticsDTO>> getTop10Content(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String genreKeyword) {
+        return ResponseEntity.ok(contentService.getTop10Content(category, genreKeyword));
+    }
+
+    @GetMapping("/recommendations")
+    public ResponseEntity<List<ContentRecommendationDTO>> getContentRecommendations(
+            @RequestParam(required = false) String userId,
+            @RequestParam(defaultValue = "6") int limit) {
+        return ResponseEntity.ok(contentService.getContentRecommendations(userId, limit));
+    }
+
+    @GetMapping("/search/advanced")
+    public ResponseEntity<List<ContentSearchResultDTO>> advancedSearch(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String genreKeyword,
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "30") int limit) {
+        return ResponseEntity.ok(contentService.searchContentAdvanced(keyword, genreKeyword, category, limit));
+    }
+
     /**
      * Get paginated and filtered content
      * WHY: Supports large datasets with pagination and filtering

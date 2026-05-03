@@ -17,6 +17,13 @@
         </div>
       </div>
 
+      <div class="mt-4 flex items-center gap-3">
+        <button (click)="sendTestEmail()" [disabled]="testEmailLoading" class="text-sm px-3 py-2 bg-[#8B5CF6] text-white rounded-lg hover:bg-[#7C3AED] transition-colors">
+          {{ testEmailLoading ? 'Sending...' : 'Send test email to me' }}
+        </button>
+        <div *ngIf="testEmailMessage" class="text-sm text-[#9CA3AF]">{{ testEmailMessage }}</div>
+      </div>
+
       <div class="grid grid-cols-2 gap-4 pt-4 border-t border-[rgba(139,92,246,0.1)]">
         <div>
           <p class="text-xs text-[#9CA3AF] mb-1">Member since</p>
@@ -36,12 +43,12 @@
       <form *ngIf="isEditing" [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="space-y-4">
         <div class="flex flex-col gap-1">
           <label class="text-sm text-[#9CA3AF]">Username</label>
-          <input type="text" formControlName="username" class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)] text-[#E4E6EB] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#8B5CF6] transition-colors"/>
+          <input type="text" formControlName="username" placeholder="Your username" title="Username" class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)] text-[#E4E6EB] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#8B5CF6] transition-colors"/>
         </div>
 
         <div class="flex flex-col gap-1">
           <label class="text-sm text-[#9CA3AF]">Email</label>
-          <input type="email" formControlName="email" class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)] text-[#E4E6EB] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#8B5CF6] transition-colors"/>
+          <input type="email" formControlName="email" placeholder="name@example.com" title="Email address" class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)] text-[#E4E6EB] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#8B5CF6] transition-colors"/>
         </div>
 
         <div class="flex flex-col gap-1">

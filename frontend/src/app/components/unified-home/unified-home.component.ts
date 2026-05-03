@@ -1,5 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ContentAnalyticsDTO, ContentService } from '../../services/api.service';
 import {
   Play,
   Star,
@@ -36,7 +37,7 @@ interface CinemaShowtime {
   templateUrl: './unified-home.component.html',
   styleUrls: ['./unified-home.component.css'],
 })
-export class UnifiedHomeComponent {
+export class UnifiedHomeComponent implements OnInit {
   readonly PlayIcon = Play;
   readonly StarIcon = Star;
   readonly ClockIcon = Clock;
@@ -46,6 +47,13 @@ export class UnifiedHomeComponent {
 
   hoveredStream = signal<string | null>(null);
   hoveredCinema = signal<string | null>(null);
+  topTenContent = signal<ContentAnalyticsDTO[]>([]);
+
+  constructor(private contentService: ContentService) {}
+
+  ngOnInit(): void {
+    this.loadTopTenContent();
+  }
 
   streamingData: StreamingContent[] = [
     {
@@ -113,6 +121,13 @@ export class UnifiedHomeComponent {
 
   setHoveredCinema(id: string | null) {
     this.hoveredCinema.set(id);
+  }
+
+  loadTopTenContent(): void {
+    this.contentService.getTop10Content(undefined, undefined).subscribe({
+      next: (data) => this.topTenContent.set(Array.isArray(data) ? data.slice(0, 10) : []),
+      error: () => this.topTenContent.set([]),
+    });
   }
 }
 

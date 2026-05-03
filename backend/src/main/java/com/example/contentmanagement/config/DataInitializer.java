@@ -5,6 +5,7 @@ import com.example.contentmanagement.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ import java.util.Set;
 
 @Slf4j
 @Component
+@Order(1)
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 

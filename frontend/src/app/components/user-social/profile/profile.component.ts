@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { UserService, UserDTO } from '../../../services/user.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-profile',
@@ -15,10 +16,13 @@ export class ProfileComponent implements OnInit {
   loading = false;
   successMessage = '';
   errorMessage = '';
+  testEmailLoading = false;
+  testEmailMessage = '';
   isEditing = false;
 
   constructor(
     private userService: UserService,
+    private authService: AuthService,
     private fb: FormBuilder
   ) {
     this.profileForm = this.fb.group({
@@ -60,6 +64,15 @@ export class ProfileComponent implements OnInit {
             email: updated.email,
             photoUrl: updated.photoUrl || ''
           });
+
+          const cachedUser = this.authService.getCurrentUser();
+          if (cachedUser) {
+            this.authService.updateCurrentUser({
+              ...cachedUser,
+              username: updated.username,
+              email: updated.email,
+            });
+          }
         });
 
         this.loading = false;
@@ -70,6 +83,28 @@ export class ProfileComponent implements OnInit {
       error: () => {
         this.errorMessage = 'Error while updating profile';
         this.loading = false;
+      }
+    });
+  }
+
+  sendTestEmail() {
+    if (!this.user || !this.user.email) {
+      this.testEmailMessage = 'No email available for user';
+      return;
+    }
+
+    this.testEmailLoading = true;
+    this.testEmailMessage = '';
+    this.userService.sendTestEmail(this.user.email, 'SMGO: Test Email', 'This is a test email sent from your profile.').subscribe({
+      next: () => {
+        this.testEmailLoading = false;
+        this.testEmailMessage = 'Test email sent to ' + this.user!.email;
+        setTimeout(() => this.testEmailMessage = '', 5000);
+      },
+      error: (err) => {
+        this.testEmailLoading = false;
+        this.testEmailMessage = 'Failed to send test email';
+        console.error(err);
       }
     });
   }

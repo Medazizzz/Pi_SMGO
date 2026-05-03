@@ -8,6 +8,36 @@ $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $backendDir = Join-Path $scriptRoot "backend"
 Set-Location $backendDir
 
+function Import-EnvFile {
+    param(
+        [string]$Path
+    )
+
+    if (-not (Test-Path $Path)) {
+        return
+    }
+
+    Get-Content $Path | ForEach-Object {
+        $line = $_.Trim()
+        if (-not $line -or $line.StartsWith('#')) {
+            return
+        }
+
+        $parts = $line -split '=', 2
+        if ($parts.Count -ne 2) {
+            return
+        }
+
+        $name = $parts[0].Trim()
+        $value = $parts[1].Trim().Trim('"').Trim("'")
+        if ($name) {
+            [System.Environment]::SetEnvironmentVariable($name, $value, 'Process')
+        }
+    }
+}
+
+Import-EnvFile -Path (Join-Path $scriptRoot ".env")
+
 $mvnCommand = Get-Command mvn -ErrorAction Stop
 $mavenBin = $mvnCommand.Source
 
@@ -17,6 +47,7 @@ Write-Host "══════════════════════�
 Write-Host ""
 Write-Host "Java Home: $env:JAVA_HOME" -ForegroundColor Green
 Write-Host "Maven Home: $env:M2_HOME" -ForegroundColor Green
+Write-Host "SMTP Username: $env:SMTP_USERNAME" -ForegroundColor Green
 Write-Host ""
 
 if ($Build) {

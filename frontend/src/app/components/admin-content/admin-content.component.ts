@@ -13,7 +13,7 @@ import {
   Download,
   X,
 } from 'lucide-angular';
-import { ContentService, ContentDTO, GenreDTO, CategoryDTO } from '../../services/api.service';
+import { ContentService, ContentDTO, GenreDTO, CategoryDTO, ContentAnalyticsDTO, ContentSearchResultDTO } from '../../services/api.service';
 import { CustomValidators } from '../../services/validators';
 
 @Component({
@@ -42,12 +42,17 @@ export class AdminContentComponent implements OnInit {
   contentList = signal<(ContentDTO & { platform?: string; genre?: string; rating?: number; views?: number; status?: string; hiddenGem?: boolean; })[]>([]);
   genres = signal<GenreDTO[]>([]);
   categories = signal<CategoryDTO[]>([]);
+  analyticsList = signal<ContentAnalyticsDTO[]>([]);
+  advancedSearchResults = signal<ContentSearchResultDTO[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
   showForm = signal(false);
   editingId = signal<string | null>(null);
   contentForm!: FormGroup;
   submitAttempted = false;
+  advancedKeyword = '';
+  advancedGenreQuery = '';
+  advancedCategory = '';
   private readonly allowedTextCharactersRegex = /[^\p{L}\p{N}\s\-']/gu;
   private readonly allowedTextPattern = /^[\p{L}\p{N}\s\-']+$/u;
   private readonly nonDigitRegex = /[^0-9]/g;
@@ -60,9 +65,62 @@ export class AdminContentComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.searchQuery.set('');
+    this.filterPlatform.set('all');
+    this.filterStatus.set('all');
     this.loadGenres();
     this.loadCategories();
     this.loadAllContent();
+  }
+
+  hasAdvancedCriteria(): boolean {
+    return !!(
+      this.advancedKeyword.trim() ||
+      this.advancedGenreQuery.trim() ||
+      this.advancedCategory.trim()
+    );
+  }
+
+  onAdvancedSearchInputChange() {
+    if (!this.hasAdvancedCriteria()) {
+      this.advancedSearchResults.set([]);
+      return;
+    }
+
+    this.runAdvancedSearch();
+  }
+
+  loadAnalytics() {
+    this.contentService.getContentAnalytics(undefined, undefined, 10).subscribe({
+      next: (data) => this.analyticsList.set(Array.isArray(data) ? data : []),
+      error: (err) => {
+        console.error('Error loading analytics:', err);
+      }
+    });
+  }
+
+  runAdvancedSearch() {
+    const keyword = this.advancedKeyword.trim();
+    const genre = this.advancedGenreQuery.trim();
+    const category = this.advancedCategory.trim();
+
+    if (!keyword && !genre && !category) {
+      this.advancedSearchResults.set([]);
+      return;
+    }
+
+    this.contentService.advancedContentSearch(
+      keyword || undefined,
+      genre || undefined,
+      category || undefined,
+      12
+    ).subscribe({
+      next: (data) => this.advancedSearchResults.set(Array.isArray(data) ? data : []),
+      error: (err) => {
+        console.error('Error running advanced search:', err);
+        this.advancedSearchResults.set([]);
+      }
+    });
   }
 
   loadCategories() {
@@ -118,6 +176,9 @@ export class AdminContentComponent implements OnInit {
         CustomValidators.noLeadingTrailingWhitespace
       ]],
       releaseDate: ['', [Validators.required, CustomValidators.pastDateValidator]],
+      publishAt: [''],
+      expireAt: [''],
+      status: ['DRAFT', Validators.required],
       category: ['MOVIE', Validators.required],
       selectedCategoryId: ['', Validators.required],
       contentType: ['FILM', Validators.required],
@@ -243,7 +304,7 @@ export class AdminContentComponent implements OnInit {
             genre: genreNames.length > 0 ? genreNames[0] : 'Unknown',
             rating: 0,
             views: 0,
-            status: 'active',
+            status: item.status || 'PUBLISHED',
             hiddenGem: false,
           };
         });
@@ -266,6 +327,7 @@ export class AdminContentComponent implements OnInit {
     this.initializeForm();
     this.contentForm.reset({
       category: 'MOVIE',
+      status: 'DRAFT',
       contentType: 'FILM',
       selectedCategoryId: this.categories()[0]?.id || '',
       isCompleted: false
@@ -312,6 +374,9 @@ export class AdminContentComponent implements OnInit {
       title: content.title,
       description: content.description,
       releaseDate: this.toDateInputValue(content.releaseDate),
+      publishAt: this.toDateTimeLocalValue(content.publishAt),
+      expireAt: this.toDateTimeLocalValue(content.expireAt),
+      status: content.status || 'DRAFT',
       category: categoryValue,
       selectedCategoryId: matchingCategory?.id || this.categories()[0]?.id || '',
       contentType: contentType,
@@ -349,6 +414,32 @@ export class AdminContentComponent implements OnInit {
 
     if (value instanceof Date) {
       return value.toISOString().substring(0, 10);
+    }
+
+    return '';
+  }
+
+  private toDateTimeLocalValue(value: unknown): string {
+    if (!value) {
+      return '';
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return '';
+      }
+
+      if (trimmed.length >= 16) {
+        return trimmed.substring(0, 16);
+      }
+
+      return trimmed;
+    }
+
+    if (value instanceof Date) {
+      const iso = value.toISOString();
+      return iso.substring(0, 16);
     }
 
     return '';
@@ -395,6 +486,9 @@ export class AdminContentComponent implements OnInit {
       title: data.title,
       description: data.description,
       releaseDate: data.releaseDate,
+      publishAt: data.publishAt || undefined,
+      expireAt: data.expireAt || undefined,
+      status: data.status || 'DRAFT',
       category: data.category,
       genreIds: data.genreIds || [],
     };
@@ -433,7 +527,7 @@ export class AdminContentComponent implements OnInit {
           genre: 'Unknown',
           rating: 0,
           views: 0,
-          status: 'active',
+          status: response.status || 'PUBLISHED',
           hiddenGem: false,
         };
         this.contentList.set([...this.contentList(), enrichedResponse]);
@@ -461,6 +555,9 @@ export class AdminContentComponent implements OnInit {
       title: data.title,
       description: data.description,
       releaseDate: data.releaseDate,
+      publishAt: data.publishAt || undefined,
+      expireAt: data.expireAt || undefined,
+      status: data.status || 'DRAFT',
       category: data.category,
       genreIds: data.genreIds || [],
     };
@@ -499,7 +596,7 @@ export class AdminContentComponent implements OnInit {
           genre: 'Unknown',
           rating: 0,
           views: 0,
-          status: 'active',
+          status: response.status || 'PUBLISHED',
           hiddenGem: false,
         };
         const updated = this.contentList().map(item =>
@@ -557,7 +654,7 @@ export class AdminContentComponent implements OnInit {
   }
 
   get activeCount(): number {
-    return this.content.filter((c) => c.status === 'active').length;
+    return this.content.filter((c) => c.status === 'PUBLISHED').length;
   }
 
   get hiddenGemsCount(): number {
@@ -637,6 +734,9 @@ export class AdminContentComponent implements OnInit {
       title: 'Title',
       description: 'Description',
       releaseDate: 'Release date',
+      publishAt: 'Publish at',
+      expireAt: 'Expire at',
+      status: 'Status',
       selectedCategoryId: 'Category',
       genreIds: 'Genres',
       durationInMinutes: 'Duration',
@@ -657,12 +757,17 @@ export class AdminContentComponent implements OnInit {
 
   getStatusColor(status: string): string {
     switch (status) {
+      case 'PUBLISHED':
       case 'active':
         return 'bg-green-500/20 text-green-500 border-green-500';
+      case 'ARCHIVED':
       case 'hidden':
         return 'bg-gray-500/20 text-gray-400 border-gray-400';
+      case 'SCHEDULED':
       case 'scheduled':
         return 'bg-blue-500/20 text-blue-500 border-blue-500';
+      case 'DRAFT':
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-400';
       default:
         return 'bg-gray-500/20 text-gray-400 border-gray-400';
     }

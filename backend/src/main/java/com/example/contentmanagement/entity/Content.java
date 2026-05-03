@@ -37,6 +37,12 @@ public abstract class Content {
 
     private LocalDateTime releaseDate;
 
+    private LocalDateTime publishAt;
+
+    private LocalDateTime expireAt;
+
+    private LocalDateTime publishedAt;
+
     @NotNull(message = "Category is mandatory")
     private ContentCategory category;
 
@@ -45,6 +51,12 @@ public abstract class Content {
      * WHY: Helps identify the concrete type for polymorphic queries
      */
     private String contentType;
+
+    private ContentStatus status;
+
+    private Boolean visible = Boolean.FALSE;
+
+    private Integer viewCount = 0;
 
     /**
      * Genre IDs: References to Genre documents (multiple genres per content)

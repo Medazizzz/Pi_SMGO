@@ -8,7 +8,7 @@
         <p>Select a cinema from the available establishments.</p>
       </div>
       <div class="head-actions">
-        <span class="count-pill">Total : {{ cinemas.length }}</span>
+        <span class="count-pill">Total: {{ cinemas.length }}</span>
         <button (click)="refreshCinemaData()" class="refresh-btn">Refresh</button>
       </div>
     </div>
@@ -16,13 +16,13 @@
     <div class="cinema-grid">
       <article class="cinema-card" *ngFor="let cinema of cinemas">
         <div class="cinema-card-head">
-          <span class="cinema-kicker">Cinéma</span>
+          <span class="cinema-kicker">Cinema</span>
           <span class="icon-dot">◉</span>
         </div>
         <h3>{{ cinema.nom }}</h3>
-        <p><strong>Adresse :</strong> {{ cinema.adresse }}</p>
-        <p><strong>Ville :</strong> {{ cinema.ville }}</p>
-        <button class="ghost-map">Voir sur la carte</button>
+        <p><strong>Address:</strong> {{ cinema.adresse }}</p>
+        <p><strong>City:</strong> {{ cinema.ville }}</p>
+        <button class="ghost-map">View on map</button>
       </article>
     </div>
   </section>

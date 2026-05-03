@@ -30,8 +30,15 @@ public class Notification {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime emailFallbackDueAt;
+
+    private LocalDateTime emailFallbackSentAt;
+
     @Builder.Default
     private Boolean isRead = false;
+
+    @Builder.Default
+    private Boolean emailFallbackSent = false;
 
     @DBRef
     @NotNull(message = "User is mandatory")

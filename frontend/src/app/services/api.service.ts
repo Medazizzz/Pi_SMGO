@@ -16,11 +16,50 @@ export interface ContentDTO {
   title: string;
   description?: string;
   releaseDate?: string;
+  publishAt?: string;
+  expireAt?: string;
+  publishedAt?: string;
   category: 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
   genreIds?: string[];
   addedById?: string;
   addedByUsername?: string;
   contentType: string;
+  status?: 'DRAFT' | 'SCHEDULED' | 'PUBLISHED' | 'ARCHIVED';
+  visible?: boolean;
+  viewCount?: number;
+}
+
+export interface ContentAnalyticsDTO {
+  contentId: string;
+  title: string;
+  category: 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
+  genres: string[];
+  viewCount: number;
+  commentsCount: number;
+  engagementScore: number;
+}
+
+export interface ContentSearchResultDTO {
+  contentId: string;
+  title: string;
+  description?: string;
+  category: 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
+  status?: 'DRAFT' | 'SCHEDULED' | 'PUBLISHED' | 'ARCHIVED';
+  genres: string[];
+  publishAt?: string;
+  releaseDate?: string;
+}
+
+export interface ContentRecommendationDTO {
+  contentId: string;
+  title: string;
+  description?: string;
+  category: 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
+  genres: string[];
+  viewCount: number;
+  engagementScore: number;
+  recommendationScore: number;
+  reason?: string;
 }
 
 
@@ -61,6 +100,22 @@ export interface NotificationDTO {
   read?: boolean;
 }
 
+export interface NewsletterCampaignDTO {
+  id?: string;
+  title: string;
+  message: string;
+  scheduledAt: string;
+  targetCategory?: string;
+  targetGenres?: string[];
+  sendEmail?: boolean;
+  status?: string;
+  createdAt?: string;
+  dispatchedAt?: string;
+  createdBy?: string;
+  recipientCount?: number;
+  lastError?: string;
+}
+
 
 export interface PageResponseDTO<T> {
   content: T[];
@@ -88,6 +143,7 @@ export class ContentService {
   private categoriesBaseUrl = 'http://localhost:8090/api/categories';
   private genresBaseUrl = 'http://localhost:8090/api/genres';
   private notificationsBaseUrl = 'http://localhost:8090/api/notifications';
+  private newslettersBaseUrl = 'http://localhost:8090/api/newsletters';
 
   constructor(private http: HttpClient) { }
 
@@ -170,6 +226,42 @@ export class ContentService {
       .pipe(catchError(error => this.handleError('read', 'Content', error)));
   }
 
+  getContentAnalytics(category?: string, genreKeyword?: string, limit: number = 20): Observable<ContentAnalyticsDTO[]> {
+    let url = `${this.contentsBaseUrl}/analytics?limit=${limit}`;
+    if (category) url += `&category=${encodeURIComponent(category)}`;
+    if (genreKeyword) url += `&genreKeyword=${encodeURIComponent(genreKeyword)}`;
+    return this.http.get<ContentAnalyticsDTO[]>(url)
+      .pipe(catchError(error => this.handleError('read', 'Content analytics', error)));
+  }
+
+  getTop10Content(category?: string, genreKeyword?: string): Observable<ContentAnalyticsDTO[]> {
+    let url = `${this.contentsBaseUrl}/top10`;
+    const params: string[] = [];
+    if (category) params.push(`category=${encodeURIComponent(category)}`);
+    if (genreKeyword) params.push(`genreKeyword=${encodeURIComponent(genreKeyword)}`);
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
+    }
+    return this.http.get<ContentAnalyticsDTO[]>(url)
+      .pipe(catchError(error => this.handleError('read', 'Top 10 content', error)));
+  }
+
+  getContentRecommendations(userId?: string, limit: number = 6): Observable<ContentRecommendationDTO[]> {
+    let url = `${this.contentsBaseUrl}/recommendations?limit=${limit}`;
+    if (userId) url += `&userId=${encodeURIComponent(userId)}`;
+    return this.http.get<ContentRecommendationDTO[]>(url)
+      .pipe(catchError(error => this.handleError('read', 'Content recommendations', error)));
+  }
+
+  advancedContentSearch(keyword?: string, genreKeyword?: string, category?: string, limit: number = 30): Observable<ContentSearchResultDTO[]> {
+    let url = `${this.contentsBaseUrl}/search/advanced?limit=${limit}`;
+    if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+    if (genreKeyword) url += `&genreKeyword=${encodeURIComponent(genreKeyword)}`;
+    if (category) url += `&category=${encodeURIComponent(category)}`;
+    return this.http.get<ContentSearchResultDTO[]>(url)
+      .pipe(catchError(error => this.handleError('read', 'Advanced content search', error)));
+  }
+
   deleteContent(id: string): Observable<void> {
     return this.http.delete<void>(`${this.contentsBaseUrl}/${id}`)
       .pipe(
@@ -229,6 +321,26 @@ export class ContentService {
       .pipe(
         catchError(error => this.handleError('delete', 'Notification', error))
       );
+  }
+
+  getNewsletterCampaigns(): Observable<NewsletterCampaignDTO[]> {
+    return this.http.get<NewsletterCampaignDTO[]>(this.newslettersBaseUrl)
+      .pipe(catchError(error => this.handleError('read', 'Newsletter campaigns', error)));
+  }
+
+  createNewsletterCampaign(campaign: NewsletterCampaignDTO): Observable<NewsletterCampaignDTO> {
+    return this.http.post<NewsletterCampaignDTO>(this.newslettersBaseUrl, campaign)
+      .pipe(catchError(error => this.handleError('create', 'Newsletter campaign', error)));
+  }
+
+  dispatchNewsletterCampaign(id: string): Observable<NewsletterCampaignDTO> {
+    return this.http.post<NewsletterCampaignDTO>(`${this.newslettersBaseUrl}/${id}/dispatch`, {})
+      .pipe(catchError(error => this.handleError('update', 'Newsletter campaign', error)));
+  }
+
+  dispatchDueNewsletterCampaigns(): Observable<string> {
+    return this.http.post(this.newslettersBaseUrl + '/dispatch-due', {}, { responseType: 'text' })
+      .pipe(catchError(error => this.handleError('update', 'Newsletter scheduler', error)));
   }
 
   // ==================== GENRES CRUD ====================
@@ -365,6 +477,7 @@ export class CategoryService {
 })
 export class NotificationService {
   private baseUrl = 'http://localhost:8090/api/notifications';
+  private newslettersBaseUrl = 'http://localhost:8090/api/newsletters';
 
   constructor(private http: HttpClient) { }
 
@@ -376,6 +489,17 @@ export class NotificationService {
   createNotification(notification: Notification): Observable<Notification> {
     return this.http.post<Notification>(this.baseUrl, notification)
       .pipe(catchError(error => this.handleError('create', 'Notification', error)));
+  }
+
+  sendTestEmail(email: string, subject?: string, body?: string): Observable<string> {
+    const payload = {
+      email,
+      subject: subject || 'SMGO Test Email',
+      body: body || 'This is a test email from SMGO.'
+    };
+
+    return this.http.post(`${this.baseUrl}/test/send-email`, payload, { responseType: 'text' })
+      .pipe(catchError(error => this.handleError('create', 'Test email', error)));
   }
 
   getNotificationsByUserId(userId: string): Observable<Notification[]> {
@@ -391,6 +515,26 @@ export class NotificationService {
   deleteNotification(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`)
       .pipe(catchError(error => this.handleError('delete', 'Notification', error)));
+  }
+
+  getNewsletterCampaigns(): Observable<NewsletterCampaignDTO[]> {
+    return this.http.get<NewsletterCampaignDTO[]>(this.newslettersBaseUrl)
+      .pipe(catchError(error => this.handleError('read', 'Newsletter campaigns', error)));
+  }
+
+  createNewsletterCampaign(campaign: NewsletterCampaignDTO): Observable<NewsletterCampaignDTO> {
+    return this.http.post<NewsletterCampaignDTO>(this.newslettersBaseUrl, campaign)
+      .pipe(catchError(error => this.handleError('create', 'Newsletter campaign', error)));
+  }
+
+  dispatchNewsletterCampaign(id: string): Observable<NewsletterCampaignDTO> {
+    return this.http.post<NewsletterCampaignDTO>(`${this.newslettersBaseUrl}/${id}/dispatch`, {})
+      .pipe(catchError(error => this.handleError('update', 'Newsletter campaign', error)));
+  }
+
+  dispatchDueNewsletterCampaigns(): Observable<string> {
+    return this.http.post(this.newslettersBaseUrl + '/dispatch-due', {}, { responseType: 'text' })
+      .pipe(catchError(error => this.handleError('update', 'Newsletter scheduler', error)));
   }
 
   private handleError(operation: string, entity: string, error: HttpErrorResponse) {
