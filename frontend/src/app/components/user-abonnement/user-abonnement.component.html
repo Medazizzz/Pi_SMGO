@@ -1,3 +1,122 @@
+<!-- ══ BOUTON AI RECOMMENDATION ══════════════ -->
+<div class="flex justify-center mb-6">
+  <button
+    (click)="openRecommendation()"
+    class="flex items-center gap-3 px-6 py-3
+           bg-purple-600 hover:bg-purple-700
+           text-white font-bold rounded-xl
+           transition-all duration-200
+           border border-purple-500/50">
+    🤖 Get AI Recommendation
+  </button>
+</div>
+
+<!-- ══ MODAL ML ════════════════════════════════ -->
+<div *ngIf="showModal"
+     class="fixed inset-0 bg-black/70 flex items-center
+            justify-center z-50 p-4">
+  <div class="bg-[#141920] rounded-2xl p-6 border
+              border-purple-500/30 w-full max-w-md
+              relative">
+
+    <button (click)="closeRecommendation()"
+            class="absolute top-4 right-4 text-gray-400
+                   hover:text-white text-xl">✕</button>
+
+    <h2 class="text-white text-xl font-bold mb-4">
+      🤖 AI Subscription Recommendation
+    </h2>
+
+    <div *ngIf="loadingRec" class="flex justify-center py-8">
+      <div class="w-10 h-10 border-2 border-purple-500
+                  border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <div *ngIf="errorRec && !loadingRec"
+         class="text-red-400 text-center py-4">
+      ❌ {{ errorRec }}
+    </div>
+
+    <div *ngIf="recommendation && !loadingRec">
+      <div class="flex justify-center mb-4">
+        <div class="flex items-center gap-3 px-6 py-3
+                    rounded-full text-white font-bold text-xl"
+             [style.background-color]="getBadgeColor()">
+          <span>{{ getBadgeIcon() }}</span>
+          <span>{{ recommendation.recommande }}</span>
+        </div>
+      </div>
+
+      <div class="space-y-3 mb-4">
+        <div class="flex items-center gap-3">
+          <span class="text-gray-400 w-20 text-sm">BASIC</span>
+          <div class="flex-1 bg-gray-700 rounded-full h-3 overflow-hidden">
+            <div class="h-full rounded-full" style="background:#CD7F32"
+                 [style.width.%]="recommendation.matchBasic"></div>
+          </div>
+          <span class="text-white text-sm font-bold w-10 text-right">
+            {{ recommendation.matchBasic }}%
+          </span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-gray-400 w-20 text-sm">PREMIUM</span>
+          <div class="flex-1 bg-gray-700 rounded-full h-3 overflow-hidden">
+            <div class="h-full rounded-full" style="background:#C0C0C0"
+                 [style.width.%]="recommendation.matchPremium"></div>
+          </div>
+          <span class="text-white text-sm font-bold w-10 text-right">
+            {{ recommendation.matchPremium }}%
+          </span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-gray-400 w-20 text-sm">ELITE</span>
+          <div class="flex-1 bg-gray-700 rounded-full h-3 overflow-hidden">
+            <div class="h-full rounded-full" style="background:#FFD700"
+                 [style.width.%]="recommendation.matchElite"></div>
+          </div>
+          <span class="text-white text-sm font-bold w-10 text-right">
+            {{ recommendation.matchElite }}%
+          </span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="bg-[#1a2030] rounded-xl p-3 text-center">
+          <p class="text-gray-400 text-xs">Total Spent</p>
+          <p class="text-white font-bold">
+            {{ recommendation.totalDepense | number:'1.0-0' }} TND
+          </p>
+        </div>
+        <div class="bg-[#1a2030] rounded-xl p-3 text-center">
+          <p class="text-gray-400 text-xs">Churn Risk</p>
+          <p class="font-bold"
+             [class]="recommendation.churnRisk > 0.5 ? 'text-red-400' : 'text-green-400'">
+            {{ (recommendation.churnRisk * 100) | number:'1.0-0' }}%
+          </p>
+        </div>
+      </div>
+
+      <div *ngIf="recommendation.raisons?.length > 0" class="mb-4">
+        <p class="text-gray-400 text-xs mb-2">Why ?</p>
+        <ul class="space-y-1">
+          <li *ngFor="let r of recommendation.raisons"
+              class="text-gray-300 text-xs flex gap-2">
+            <span class="text-green-400">✓</span> {{ r }}
+          </li>
+        </ul>
+      </div>
+
+      <button
+        (click)="choosePlanByType(recommendation.recommande)"
+        class="w-full py-3 bg-purple-600 hover:bg-purple-700
+               text-white font-bold rounded-xl transition-colors">
+        ✅ Choose {{ recommendation.recommande }} Plan
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PLANS ══════════════════════════════════ -->
 <div class="space-y-8 p-6 max-w-5xl mx-auto">
   <div class="text-center">
     <h1 class="text-4xl text-white mb-3">Subscription Plans</h1>
@@ -34,9 +153,7 @@
           </div>
         </div>
         <div [class]="'p-3 rounded-xl ' + (isPremium(a) ? 'bg-yellow-500/20' : 'bg-[#8B5CF6]/20')">
-          <span
-            [class]="'w-5 h-5 ' + (isPremium(a) ? 'text-yellow-400' : 'text-[#8B5CF6]')">
-          </span>
+          <span [class]="'w-5 h-5 ' + (isPremium(a) ? 'text-yellow-400' : 'text-[#8B5CF6]')"></span>
         </div>
       </div>
 
@@ -51,12 +168,26 @@
 
       <div [class]="'h-px mb-6 ' + (isPremium(a) ? 'bg-yellow-500/20' : 'bg-[#8B5CF6]/20')"></div>
 
-      <button [class]="'w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 ' +
-        (isPremium(a)
-          ? 'bg-yellow-500 hover:bg-yellow-400 text-black'
-          : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white')">
-        Choose Plan
-      </button>
+      <!-- Boutons -->
+      <div class="flex flex-col gap-3">
+        <button
+          (click)="choosePlan(a)"
+          [class]="'w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer ' +
+            (isPremium(a)
+              ? 'bg-yellow-500 hover:bg-yellow-400 text-black'
+              : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white')">
+          💳 Choose Plan
+        </button>
+
+        <!-- ✅ Bouton Renewal Status -->
+        <button
+          (click)="goToRenewal()"
+          class="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200
+                 border border-[#8B5CF6]/50 text-[#8B5CF6] hover:bg-[#8B5CF6]/10">
+          🔄 My Renewal Status
+        </button>
+      </div>
+
     </div>
   </div>
 
