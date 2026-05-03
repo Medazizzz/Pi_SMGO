@@ -166,7 +166,7 @@ public class NewsletterService {
                         i + 1,
                         item.getTitle(),
                         item.getCategory() != null ? item.getCategory().getDisplayName() : "Content",
-                        item.getCreatedAt() != null ? item.getCreatedAt().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) : "Recently"));
+                        item.getPublishedAt() != null ? item.getPublishedAt().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) : "Recently"));
             }
             content.append("\n");
         }
@@ -194,10 +194,10 @@ public class NewsletterService {
     private List<Content> getRecentlyAddedContent() {
         LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
         return contentRepository.findAll().stream()
-                .filter(content -> content.getCreatedAt() != null && content.getCreatedAt().isAfter(thirtyDaysAgo))
+                .filter(content -> content.getPublishedAt() != null && content.getPublishedAt().isAfter(thirtyDaysAgo))
                 .sorted((a, b) -> {
-                    LocalDateTime dateA = a.getCreatedAt() != null ? a.getCreatedAt() : LocalDateTime.MIN;
-                    LocalDateTime dateB = b.getCreatedAt() != null ? b.getCreatedAt() : LocalDateTime.MIN;
+                    LocalDateTime dateA = a.getPublishedAt() != null ? a.getPublishedAt() : LocalDateTime.MIN;
+                    LocalDateTime dateB = b.getPublishedAt() != null ? b.getPublishedAt() : LocalDateTime.MIN;
                     return dateB.compareTo(dateA); // Most recent first
                 })
                 .limit(10)
