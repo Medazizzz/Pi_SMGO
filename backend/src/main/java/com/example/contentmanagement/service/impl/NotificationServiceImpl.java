@@ -10,6 +10,7 @@ import com.example.contentmanagement.service.FirebaseMessagingService;
 import com.example.contentmanagement.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -29,7 +30,9 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
-    private final FirebaseMessagingService firebaseMessagingService;
+
+    @Autowired(required = false)
+    private FirebaseMessagingService firebaseMessagingService;
 
     @Value("${app.notifications.email-fallback-delay-seconds:300}")
     private long emailFallbackDelaySeconds;
@@ -71,7 +74,7 @@ public class NotificationServiceImpl implements NotificationService {
             log.info("Notification saved successfully with ID: {}", savedNotification.getId());
 
             // Send push notification via Firebase if user has device tokens
-            if (user.getDeviceTokens() != null && !user.getDeviceTokens().isEmpty()) {
+            if (user.getDeviceTokens() != null && !user.getDeviceTokens().isEmpty() && firebaseMessagingService != null) {
                 firebaseMessagingService.sendPushNotificationToMultipleTokens(
                         user.getDeviceTokens(), mapToDTO(savedNotification));
                 log.info("Push notification sent to {} device tokens for user {}", user.getDeviceTokens().size(), user.getId());
@@ -121,8 +124,12 @@ public class NotificationServiceImpl implements NotificationService {
             log.info("Broadcast notification created for {} users", savedNotifications.size());
 
             // Send broadcast push notification via Firebase
-            firebaseMessagingService.sendBroadcastNotification(notificationDTO);
-            log.info("Broadcast push notification sent via Firebase");
+            if (firebaseMessagingService != null) {
+                firebaseMessagingService.sendBroadcastNotification(notificationDTO);
+                log.info("Broadcast push notification sent via Firebase");
+            } else {
+                log.info("Firebase messaging not available, skipping broadcast push notification");
+            }
 
             // Return the first notification as representative (they all have the same content)
             return mapToDTO(savedNotifications.get(0));

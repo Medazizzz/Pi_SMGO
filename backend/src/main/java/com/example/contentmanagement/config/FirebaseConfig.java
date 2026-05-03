@@ -5,6 +5,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -64,8 +65,14 @@ public class FirebaseConfig {
             }
         } else {
             // Use Application Default Credentials (for GCP environments)
-            log.info("Using Application Default Credentials for Firebase");
-            optionsBuilder.setCredentials(GoogleCredentials.getApplicationDefault());
+            try {
+                log.info("Using Application Default Credentials for Firebase");
+                optionsBuilder.setCredentials(GoogleCredentials.getApplicationDefault());
+            } catch (Exception e) {
+                log.warn("Firebase credentials not available, skipping Firebase initialization for development: {}", e.getMessage());
+                // Return null to indicate Firebase is not available
+                return null;
+            }
         }
 
         if (databaseUrl != null && !databaseUrl.trim().isEmpty()) {

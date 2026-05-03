@@ -1,6 +1,7 @@
-package com.example.contentmanagement.service;
+package com.example.contentmanagement.service.impl;
 
 import com.example.contentmanagement.dto.CommentCorrectionRequest;
+import com.example.contentmanagement.service.CommentCorrectionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;

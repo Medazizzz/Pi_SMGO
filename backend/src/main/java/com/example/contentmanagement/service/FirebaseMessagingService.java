@@ -2,8 +2,8 @@ package com.example.contentmanagement.service;
 
 import com.example.contentmanagement.dto.NotificationDTO;
 import com.google.firebase.messaging.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -18,10 +18,10 @@ import java.util.concurrent.ExecutionException;
  */
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class FirebaseMessagingService {
 
-    private final FirebaseMessaging firebaseMessaging;
+    @Autowired(required = false)
+    private FirebaseMessaging firebaseMessaging;
 
     @Value("${firebase.messaging.enabled:true}")
     private boolean messagingEnabled;
@@ -31,7 +31,7 @@ public class FirebaseMessagingService {
      */
     public void sendPushNotification(String token, NotificationDTO notification) {
         if (!messagingEnabled || firebaseMessaging == null) {
-            log.debug("Firebase messaging is disabled or not configured");
+            log.debug("Firebase messaging is disabled or not configured, skipping push notification");
             return;
         }
 
