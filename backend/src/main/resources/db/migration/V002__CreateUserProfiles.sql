@@ -1,0 +1,70 @@
+-- =====================================================
+-- MongoDB Collections for User Profiles
+-- WHY: MongoDB doesn't use SQL migrations
+-- This file is kept for reference only
+-- See MongoDB initialization below
+-- =====================================================
+
+-- Collection: user_profiles
+-- Documents structure:
+-- {
+--   "_id": ObjectId or String,
+--   "user_id": "user_123",
+--   "name": "mayssen",
+--   "type": "ADULT",  // ADULT, KIDS, TEEN
+--   "avatar_url": "https://...",
+--   "color": "#4D96FF",
+--   "is_default": true,
+--   "age_restriction": null,
+--   "created_at": ISODate("2026-05-02T..."),
+--   "updated_at": ISODate("2026-05-02T...")
+-- }
+
+-- MongoDB Commands to Initialize (run in MongoDB shell):
+-- =========================================================
+-- 
+-- 1. Create user_profiles collection
+-- db.createCollection("user_profiles")
+-- 
+-- 2. Create indexes
+-- db.user_profiles.createIndex({ "user_id": 1 })
+-- db.user_profiles.createIndex({ "user_id": 1, "is_default": 1 })
+-- db.user_profiles.createIndex({ "user_id": 1, "type": 1 })
+-- 
+-- 3. Insert sample data
+-- db.user_profiles.insertMany([
+--   {
+--     "_id": "profile_1",
+--     "user_id": "user_123",
+--     "name": "mayssen",
+--     "type": "ADULT",
+--     "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=adult-avatar",
+--     "color": "#4D96FF",
+--     "is_default": true,
+--     "age_restriction": null,
+--     "created_at": new Date(),
+--     "updated_at": new Date()
+--   },
+--   {
+--     "_id": "profile_2",
+--     "user_id": "user_123",
+--     "name": "Enfants",
+--     "type": "KIDS",
+--     "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=kids-avatar",
+--     "color": "#FF6B9D",
+--     "is_default": false,
+--     "age_restriction": 13,
+--     "created_at": new Date(),
+--     "updated_at": new Date()
+--   }
+-- ])
+--
+-- 4. Create other collections (optional)
+-- db.createCollection("profile_favorites")
+-- db.createCollection("profile_watch_history")
+-- db.createCollection("profile_parental_controls")
+--
+-- =========================================================
+-- Note: MongoDB initialization is handled by Spring Data
+-- See UserProfileRepository and MongoDB configuration
+-- =========================================================
