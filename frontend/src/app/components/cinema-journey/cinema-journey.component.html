@@ -1,0 +1,154 @@
+<div class="cinema-shell">
+  <div *ngIf="error" class="cinema-error">{{ error }}</div>
+
+  <section *ngIf="activeModule === 'cinema'" class="module-panel">
+    <div class="module-head">
+      <div>
+        <h2>Cinema List</h2>
+        <p>Select a cinema from the available establishments.</p>
+      </div>
+      <div class="head-actions">
+        <span class="count-pill">Total: {{ cinemas.length }}</span>
+        <button (click)="refreshCinemaData()" class="refresh-btn">Refresh</button>
+      </div>
+    </div>
+
+    <div class="cinema-grid">
+      <article class="cinema-card" *ngFor="let cinema of cinemas">
+        <div class="cinema-card-head">
+          <span class="cinema-kicker">Cinema</span>
+          <span class="icon-dot">◉</span>
+        </div>
+        <h3>{{ cinema.nom }}</h3>
+        <p><strong>Address:</strong> {{ cinema.adresse }}</p>
+        <p><strong>City:</strong> {{ cinema.ville }}</p>
+        <button class="ghost-map">View on map</button>
+      </article>
+    </div>
+  </section>
+
+  <section *ngIf="activeModule === 'sessions'" class="module-panel sessions-panel">
+    <header class="sessions-header">
+      <h2>Sessions & Screenings</h2>
+      <p>Browse all upcoming movie sessions across our partner cinemas</p>
+    </header>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <span>Total Sessions</span>
+        <strong>{{ filteredSeances.length }}</strong>
+      </div>
+      <div class="stat-box">
+        <span>Available</span>
+        <strong class="text-green">{{ availableSessions }}</strong>
+      </div>
+      <div class="stat-box">
+        <span>Avg Rating</span>
+        <strong class="text-gold">{{ averageSessionRating }}★</strong>
+      </div>
+    </div>
+
+    <div class="filter-block">
+      <label>Filter by Cinema</label>
+      <input [(ngModel)]="sessionSearch" placeholder="Search cinema name..." />
+    </div>
+
+    <div class="session-grid">
+      <article class="session-card" *ngFor="let seance of filteredSeances; let i = index">
+        <div class="session-head">
+          <div>
+            <h3>{{ seance.contenuId || 'Untitled' }}</h3>
+            <p>{{ seance.nomCinema || 'Unknown Cinema' }}</p>
+          </div>
+          <span class="session-badge" [class.limited]="sessionStatus(i) !== 'Available'">{{ sessionStatus(i) }}</span>
+        </div>
+
+        <div class="session-meta">✶ {{ seance.dateSeance }} at {{ seance.heureSeance }}</div>
+        <div class="session-meta">⌂ Hall: {{ seance.numeroSalle || 'Unknown Hall' }}</div>
+        <div class="session-meta">◔ {{ sessionWatching(i) }} watching</div>
+        <div class="session-rating">★ {{ sessionRating(i) }}/5.0</div>
+
+        <button class="cta-gradient" (click)="selectSessionForBooking(seance)">Book Now</button>
+      </article>
+    </div>
+  </section>
+
+  <section *ngIf="activeModule === 'halls'" class="hall-grid">
+    <article class="hall-card" *ngFor="let salle of salles; let i = index">
+      <div class="hall-top">
+        <div>
+          <h3>{{ salle.name }}</h3>
+          <p>{{ i % 2 === 0 ? 'Standard' : 'Premium' }}</p>
+        </div>
+        <span class="session-badge" [class.limited]="hallStatus(i) !== 'Available'">{{ hallStatus(i) }}</span>
+      </div>
+
+      <div class="hall-row">··· Capacity: <strong>{{ salle.capacity }} seats</strong></div>
+      <div class="hall-row">⌁ Occupancy <span class="occupancy-value">{{ hallOccupancy(i) }}%</span></div>
+      <div class="occupancy-track"><span [style.width.%]="hallOccupancy(i)"></span></div>
+
+      <div class="amenities-title">Amenities:</div>
+      <div class="amenities">
+        <span>Dolby Atmos</span>
+        <span *ngIf="i % 2 === 0">Reclining Seats</span>
+      </div>
+
+      <button class="cta-gradient">View Details</button>
+    </article>
+  </section>
+
+  <section *ngIf="activeModule === 'reservations'" class="module-panel">
+    <div class="module-head reservations-head">
+      <h2>My Reservations</h2>
+      <button class="refresh-btn" (click)="loadUserReservations()">Refresh</button>
+    </div>
+
+    <article class="reservation-card" *ngFor="let reservation of reservations">
+      <div class="reservation-grid">
+        <div>
+          <span class="field-label">Reservation Date</span>
+          <p class="field-strong">{{ reservation.dateReservation }}</p>
+        </div>
+        <div>
+          <span class="field-label">Session</span>
+          <p>{{ reservation.dateSeance }} {{ reservation.heureSeance }}</p>
+        </div>
+        <div>
+          <span class="field-label">Seat Number</span>
+          <p class="field-strong">{{ reservation.numeroPlace }}</p>
+        </div>
+        <div>
+          <span class="field-label">Hall</span>
+          <p>{{ reservation.numeroSalle }}</p>
+        </div>
+        <div>
+          <span class="field-label">Status</span>
+          <p class="field-strong">{{ reservation.statut }}</p>
+        </div>
+        <div>
+          <span class="field-label">Price</span>
+          <p class="price">{{ reservation.prix }}€</p>
+        </div>
+      </div>
+
+      <div class="reservation-footer">
+        <div>
+          <span class="field-label">Content ID</span>
+          <p>{{ reservation.contenuId || '-' }}</p>
+        </div>
+        <div>
+          <span class="field-label">Watch Party ID</span>
+          <p>-</p>
+        </div>
+        <div>
+          <span class="field-label">User ID</span>
+          <p>{{ reservation.userId }}</p>
+        </div>
+      </div>
+    </article>
+
+    <p *ngIf="reservations.length === 0" class="empty-msg">No reservations available.</p>
+  </section>
+
+  <p *ngIf="reservationMessage" class="status-msg">{{ reservationMessage }}</p>
+</div>

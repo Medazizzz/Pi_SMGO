@@ -1,0 +1,30 @@
+:host {
+  display: block;
+}
+
+.watchparty-chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #8b5cf6 transparent;
+}
+
+.watchparty-chat-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.watchparty-chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.watchparty-chat-scroll::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.7);
+  border-radius: 999px;
+}
+
+.watchparty-chat-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.9);
+}
+.watchparty-card-img {
+  height: 190px;
+  object-fit: cover;
+  width: 100%;
+}

@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "start:backend": "cd backend && mvn spring-boot:run -DskipTests",
+    "start:frontend": "cd frontend && npm start",
+    "build:backend": "cd backend && mvn clean package -DskipTests",
+    "build:frontend": "cd frontend && npm run build",
+    "start:all:win": "powershell -ExecutionPolicy Bypass -File ./start-all.ps1",
+    "run:backend:ps1": "powershell -ExecutionPolicy Bypass -File ./run-backend.ps1"
+  },
+  "dependencies": {
+    "mongodb": "^7.1.1"
+  }
+}

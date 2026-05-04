@@ -1,0 +1,32 @@
+<div class="p-6 max-w-6xl mx-auto space-y-6">
+  <div class="flex items-center gap-3">
+    <span class="w-6 h-6 text-[#8B5CF6]"></span>
+    <h2 class="text-2xl text-white">User Module</h2>
+  </div>
+
+  <nav class="flex items-center gap-2 overflow-x-auto pb-2">
+    <a
+      routerLink="posts"
+      routerLinkActive="bg-[#8B5CF6] text-white"
+      class="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#141920] text-gray-300 hover:bg-[#8B5CF6]/30 transition-all">
+      <span class="w-4 h-4"></span>
+      <span>Posts</span>
+    </a>
+    <a
+      routerLink="profile"
+      routerLinkActive="bg-[#8B5CF6] text-white"
+      class="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#141920] text-gray-300 hover:bg-[#8B5CF6]/30 transition-all">
+      <span class="w-4 h-4"></span>
+      <span>Profile</span>
+    </a>
+    <a
+      routerLink="promotions"
+      routerLinkActive="bg-[#8B5CF6] text-white"
+      class="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#141920] text-gray-300 hover:bg-[#8B5CF6]/30 transition-all">
+      <span class="w-4 h-4"></span>
+      <span>Promotions</span>
+    </a>
+  </nav>
+
+  <router-outlet></router-outlet>
+</div>

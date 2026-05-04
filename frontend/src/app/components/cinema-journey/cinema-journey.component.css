@@ -1,0 +1,420 @@
+:host {
+	display: block;
+}
+
+.cinema-shell {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 1.25rem;
+	color: #e6e7ee;
+}
+
+.module-panel {
+	background: linear-gradient(180deg, rgba(20, 25, 40, 0.96) 0%, rgba(8, 12, 24, 0.96) 100%);
+	border: 1px solid rgba(102, 115, 156, 0.2);
+	border-radius: 14px;
+	padding: 1.2rem;
+}
+
+.module-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 0.8rem;
+	margin-bottom: 1rem;
+}
+
+.module-head h2 {
+	margin: 0;
+	font-size: 1.9rem;
+	color: #f4f5ff;
+}
+
+.module-head p {
+	margin: 0.2rem 0 0;
+	color: #95a2c2;
+}
+
+.head-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+}
+
+.count-pill,
+.refresh-btn {
+	border-radius: 999px;
+	padding: 0.5rem 0.9rem;
+	font-size: 0.9rem;
+	border: 1px solid rgba(123, 91, 255, 0.3);
+	background: rgba(66, 46, 134, 0.35);
+	color: #cfbfff;
+}
+
+.refresh-btn {
+	cursor: pointer;
+}
+
+.cinema-grid,
+.session-grid,
+.hall-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 1rem;
+}
+
+.cinema-card,
+.session-card,
+.hall-card,
+.reservation-card {
+	background: linear-gradient(180deg, rgba(20, 26, 42, 0.92) 0%, rgba(15, 20, 34, 0.95) 100%);
+	border: 1px solid rgba(87, 102, 145, 0.22);
+	border-radius: 12px;
+}
+
+.cinema-card {
+	padding: 1rem;
+}
+
+.cinema-card-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.cinema-kicker {
+	text-transform: uppercase;
+	letter-spacing: 0.28em;
+	color: #9aa5c3;
+	font-size: 0.72rem;
+}
+
+.icon-dot {
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: #9f86ff;
+	background: rgba(102, 83, 201, 0.2);
+}
+
+.cinema-card h3 {
+	margin: 0.55rem 0 0.7rem;
+	font-size: 1.1rem;
+	color: #f8f8ff;
+}
+
+.cinema-card p {
+	margin: 0.15rem 0;
+	color: #cfd6e9;
+}
+
+.ghost-map {
+	margin-top: 0.8rem;
+	border: 0;
+	border-radius: 999px;
+	background: rgba(73, 89, 134, 0.3);
+	color: #d4dcf1;
+	padding: 0.5rem 0.85rem;
+}
+
+.sessions-header {
+	text-align: center;
+	margin-bottom: 1rem;
+}
+
+.sessions-header h2 {
+	margin: 0;
+	font-size: 2.1rem;
+}
+
+.sessions-header p {
+	margin: 0.35rem 0 0;
+	color: #9aa5c3;
+}
+
+.stats-row {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 0.75rem;
+	margin-bottom: 1rem;
+}
+
+.stat-box {
+	background: rgba(31, 37, 58, 0.7);
+	border: 1px solid rgba(87, 102, 145, 0.22);
+	border-radius: 10px;
+	padding: 0.8rem 1rem;
+}
+
+.stat-box span {
+	display: block;
+	color: #9da8c4;
+	font-size: 0.88rem;
+}
+
+.stat-box strong {
+	display: block;
+	margin-top: 0.3rem;
+	font-size: 2rem;
+	line-height: 1;
+}
+
+.text-green {
+	color: #45df7a;
+}
+
+.text-gold {
+	color: #f7cc3d;
+}
+
+.filter-block {
+	background: rgba(21, 28, 45, 0.8);
+	border: 1px solid rgba(87, 102, 145, 0.22);
+	border-radius: 10px;
+	padding: 0.8rem;
+	margin-bottom: 1rem;
+}
+
+.filter-block label {
+	display: block;
+	margin-bottom: 0.55rem;
+	color: #d7ddf0;
+	font-size: 0.92rem;
+}
+
+.filter-block input {
+	width: 100%;
+	border-radius: 10px;
+	border: 1px solid rgba(78, 96, 145, 0.25);
+	background: rgba(9, 14, 27, 0.9);
+	color: #eef1fb;
+	padding: 0.58rem 0.78rem;
+}
+
+.session-card {
+	padding: 0.9rem;
+}
+
+.session-head {
+	display: flex;
+	justify-content: space-between;
+	gap: 0.6rem;
+	align-items: start;
+}
+
+.session-head h3 {
+	margin: 0;
+	color: #f6f7ff;
+}
+
+.session-head p {
+	margin: 0.15rem 0 0;
+	color: #9da8c4;
+}
+
+.session-badge {
+	background: rgba(35, 156, 90, 0.3);
+	color: #77efac;
+	border-radius: 999px;
+	padding: 0.24rem 0.6rem;
+	font-size: 0.77rem;
+	white-space: nowrap;
+}
+
+.session-badge.limited {
+	background: rgba(177, 93, 30, 0.34);
+	color: #ffb767;
+}
+
+.session-meta {
+	margin-top: 0.45rem;
+	color: #c8d0e5;
+}
+
+.session-rating {
+	margin-top: 0.48rem;
+	color: #f8c94b;
+	font-weight: 700;
+}
+
+.cta-gradient {
+	width: 100%;
+	border: 0;
+	border-radius: 10px;
+	margin-top: 0.8rem;
+	padding: 0.62rem 0.9rem;
+	color: #f4edff;
+	font-weight: 600;
+	background: linear-gradient(90deg, #7c5df4 0%, #e64298 100%);
+	cursor: pointer;
+}
+
+.hall-card {
+	overflow: hidden;
+}
+
+.hall-top {
+	background: linear-gradient(90deg, rgba(106, 80, 191, 0.35) 0%, rgba(143, 62, 145, 0.28) 100%);
+	border-bottom: 1px solid rgba(87, 102, 145, 0.22);
+	padding: 0.8rem 0.9rem;
+	display: flex;
+	justify-content: space-between;
+	align-items: start;
+}
+
+.hall-top h3 {
+	margin: 0;
+	color: #f6f7ff;
+}
+
+.hall-top p {
+	margin: 0.15rem 0 0;
+	color: #aeb8d3;
+}
+
+.hall-row {
+	padding: 0.38rem 0.9rem 0;
+	color: #d2d9ec;
+}
+
+.occupancy-value {
+	float: right;
+	color: #ff6a76;
+	background: rgba(133, 41, 57, 0.35);
+	border-radius: 5px;
+	padding: 0.1rem 0.4rem;
+	font-size: 0.76rem;
+}
+
+.occupancy-track {
+	margin: 0.45rem 0.9rem;
+	height: 7px;
+	border-radius: 99px;
+	background: rgba(69, 81, 116, 0.34);
+	overflow: hidden;
+}
+
+.occupancy-track span {
+	display: block;
+	height: 100%;
+	border-radius: 99px;
+	background: linear-gradient(90deg, #8958ff 0%, #eb43a5 100%);
+}
+
+.amenities-title {
+	color: #98a5c6;
+	margin: 0.55rem 0.9rem 0.35rem;
+	font-size: 0.85rem;
+}
+
+.amenities {
+	display: flex;
+	gap: 0.4rem;
+	padding: 0 0.9rem;
+	flex-wrap: wrap;
+}
+
+.amenities span {
+	background: rgba(85, 73, 162, 0.25);
+	color: #9e95e7;
+	border-radius: 5px;
+	padding: 0.2rem 0.4rem;
+	font-size: 0.76rem;
+}
+
+.reservations-head {
+	margin-bottom: 0.8rem;
+}
+
+.reservation-card {
+	padding: 0.85rem;
+	margin-bottom: 0.8rem;
+}
+
+.reservation-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 0.8rem 1.4rem;
+	padding-bottom: 0.8rem;
+	border-bottom: 1px solid rgba(87, 102, 145, 0.2);
+}
+
+.field-label {
+	display: block;
+	color: #7f8eaf;
+	font-size: 0.84rem;
+	margin-bottom: 0.15rem;
+}
+
+.field-strong {
+	font-size: 1.45rem;
+	font-weight: 700;
+	margin: 0;
+}
+
+.price {
+	color: #8c67ff;
+	font-size: 1.5rem;
+	margin: 0;
+}
+
+.reservation-footer {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 1rem;
+	padding-top: 0.8rem;
+}
+
+.empty-msg,
+.status-msg {
+	color: #a9b4d2;
+	text-align: center;
+}
+
+.cinema-error {
+	margin-bottom: 0.8rem;
+	border: 1px solid rgba(245, 67, 104, 0.5);
+	background: rgba(178, 33, 70, 0.24);
+	color: #ffd6df;
+	border-radius: 10px;
+	padding: 0.75rem 0.95rem;
+}
+
+@media (max-width: 1024px) {
+	.cinema-grid,
+	.session-grid,
+	.hall-grid,
+	.stats-row,
+	.reservation-grid,
+	.reservation-footer {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 700px) {
+	.cinema-shell {
+		padding: 0.85rem;
+	}
+
+	.module-head {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.cinema-grid,
+	.session-grid,
+	.hall-grid,
+	.stats-row,
+	.reservation-grid,
+	.reservation-footer {
+		grid-template-columns: 1fr;
+	}
+
+	.field-strong,
+	.price {
+		font-size: 1.15rem;
+	}
+}

@@ -1,0 +1,167 @@
+<div class="space-y-6 p-6 max-w-7xl mx-auto">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h1 class="text-3xl text-white mb-2">Advanced</h1>
+      <p class="text-gray-400">Advanced search and analytics for content performance</p>
+    </div>
+  </div>
+
+  <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6 space-y-4">
+    <h2 class="text-xl text-white">Advanced Search (Content + Genre)</h2>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <input
+        type="text"
+        [(ngModel)]="advancedKeyword"
+        (ngModelChange)="onAdvancedSearchInputChange()"
+        placeholder="Title / description keyword"
+        class="px-4 py-2 bg-[#0B0E14] border border-[#8B5CF6]/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#8B5CF6]"
+      />
+      <input
+        type="text"
+        [(ngModel)]="advancedGenreQuery"
+        (ngModelChange)="onAdvancedSearchInputChange()"
+        placeholder="Genre keyword"
+        class="px-4 py-2 bg-[#0B0E14] border border-[#8B5CF6]/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#8B5CF6]"
+      />
+      <select
+        [(ngModel)]="advancedCategory"
+        (ngModelChange)="onAdvancedSearchInputChange()"
+        title="Category filter"
+        class="px-4 py-2 bg-[#0B0E14] border border-[#8B5CF6]/30 rounded-lg text-white focus:outline-none focus:border-[#8B5CF6]"
+      >
+        <option value="">All categories</option>
+        <option value="MOVIE">Movie</option>
+        <option value="SERIES">Series</option>
+        <option value="DOCUMENTARY">Documentary</option>
+      </select>
+      <select
+        [(ngModel)]="advancedStatus"
+        (ngModelChange)="onAdvancedSearchInputChange()"
+        title="Status filter"
+        class="px-4 py-2 bg-[#0B0E14] border border-[#8B5CF6]/30 rounded-lg text-white focus:outline-none focus:border-[#8B5CF6]"
+      >
+        <option value="">All status</option>
+        <option value="DRAFT">Draft</option>
+        <option value="SCHEDULED">Scheduled</option>
+        <option value="PUBLISHED">Published</option>
+        <option value="ARCHIVED">Archived</option>
+      </select>
+    </div>
+    <div class="flex justify-end">
+      <button (click)="runAdvancedSearch()" class="px-4 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg transition-all">Run Advanced Search</button>
+    </div>
+
+    <div class="overflow-x-auto" *ngIf="hasAdvancedCriteria() && advancedSearchResults().length > 0">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-[#8B5CF6]/20 text-gray-400">
+            <th class="text-left py-2 pr-3">Title</th>
+            <th class="text-left py-2 pr-3">Genres</th>
+            <th class="text-left py-2 pr-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of advancedSearchResults()" class="border-b border-[#8B5CF6]/10 text-gray-300">
+            <td class="py-2 pr-3">{{ row.title }}</td>
+            <td class="py-2 pr-3">{{ (row.genres || []).join(', ') }}</td>
+            <td class="py-2 pr-3">{{ row.status || 'N/A' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="hasAdvancedCriteria() && advancedSearchResults().length === 0" class="text-gray-400 text-sm">
+      No advanced search results found.
+    </div>
+  </div>
+
+  <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6 space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl text-white">Content Analytics</h2>
+      <button (click)="loadAnalytics()" class="px-4 py-2 border border-[#8B5CF6] text-[#8B5CF6] hover:bg-[#8B5CF6]/10 rounded-lg transition-all">Refresh Analytics</button>
+    </div>
+
+    <div class="space-y-3">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg text-white">Top 10 Content</h3>
+          <p class="text-sm text-gray-400">Ranked by engagement score, then views.</p>
+        </div>
+        <span class="text-xs uppercase tracking-[0.2em] text-[#8B5CF6]">Live ranking</span>
+      </div>
+      <div class="overflow-x-auto" *ngIf="topTenContent().length > 0">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-[#8B5CF6]/20 text-gray-400">
+              <th class="text-left py-2 pr-3">#</th>
+              <th class="text-left py-2 pr-3">Title</th>
+              <th class="text-left py-2 pr-3">Category</th>
+              <th class="text-left py-2 pr-3">Views</th>
+              <th class="text-left py-2 pr-3">Engagement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of topTenContent(); let index = index" class="border-b border-[#8B5CF6]/10 text-gray-300">
+              <td class="py-2 pr-3 text-[#8B5CF6]">{{ index + 1 }}</td>
+              <td class="py-2 pr-3">{{ item.title }}</td>
+              <td class="py-2 pr-3">{{ item.category }}</td>
+              <td class="py-2 pr-3">{{ item.viewCount }}</td>
+              <td class="py-2 pr-3">{{ item.engagementScore | number:'1.1-1' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="topTenContent().length === 0" class="text-gray-400 text-sm">
+        Load analytics to see the top 10 ranking.
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+      <div *ngFor="let step of deliveryStrategy" class="bg-[#0B0E14] border border-[#8B5CF6]/15 rounded-lg p-4 space-y-2">
+        <h3 class="text-white text-base">{{ step.title }}</h3>
+        <p class="text-sm text-gray-400">{{ step.description }}</p>
+      </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-lg border border-[#8B5CF6]/15 bg-[#0B0E14] px-4 py-3">
+      <div>
+        <h3 class="text-white text-base">Multi-Channel Delivery Strategy</h3>
+        <p class="text-sm text-gray-400">Send in-app first, then email if unread after {{ deliveryFallbackHours }} hour{{ deliveryFallbackHours === 1 ? '' : 's' }}.</p>
+      </div>
+      <label class="text-sm text-gray-300 flex items-center gap-3">
+        <span>Fallback delay</span>
+        <input
+          type="number"
+          min="1"
+          max="72"
+          [(ngModel)]="deliveryFallbackHours"
+          class="w-24 px-3 py-2 bg-[#141920] border border-[#8B5CF6]/30 rounded-lg text-white focus:outline-none focus:border-[#8B5CF6]"
+        />
+      </label>
+    </div>
+
+    <div class="overflow-x-auto" *ngIf="analyticsList().length > 0">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-[#8B5CF6]/20 text-gray-400">
+            <th class="text-left py-2 pr-3">Title</th>
+            <th class="text-left py-2 pr-3">Views</th>
+            <th class="text-left py-2 pr-3">Comments</th>
+            <th class="text-left py-2 pr-3">Engagement Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of analyticsList()" class="border-b border-[#8B5CF6]/10 text-gray-300">
+            <td class="py-2 pr-3">{{ item.title }}</td>
+            <td class="py-2 pr-3">{{ item.viewCount }}</td>
+            <td class="py-2 pr-3">{{ item.commentsCount }}</td>
+            <td class="py-2 pr-3">{{ item.engagementScore | number:'1.1-1' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="analyticsList().length === 0" class="text-gray-400 text-sm">
+      No analytics records available.
+    </div>
+  </div>
+</div>

@@ -1,0 +1,72 @@
+<div class="space-y-6 p-6 max-w-7xl mx-auto">
+  <div class="text-center py-12">
+    <span class="w-16 h-16 text-[#8B5CF6] mx-auto mb-4"></span>
+    <h2 class="text-3xl text-white mb-4">AI-Powered Discovery</h2>
+    <p class="text-gray-400 max-w-2xl mx-auto">
+      Content recommendations are ranked from engagement signals so users see the most relevant titles first.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6 text-center hover:border-[#8B5CF6] transition-all">
+      <span class="w-12 h-12 text-[#8B5CF6] mx-auto mb-4"></span>
+      <h3 class="text-xl text-white mb-2">Smart Recommendations</h3>
+      <p class="text-gray-400">AI analyzes your preferences to suggest hidden gems</p>
+    </div>
+    
+    <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6 text-center hover:border-[#8B5CF6] transition-all">
+      <span class="w-12 h-12 text-[#8B5CF6] mx-auto mb-4"></span>
+      <h3 class="text-xl text-white mb-2">Mood-Based Search</h3>
+      <p class="text-gray-400">Find content that matches your current vibe</p>
+    </div>
+    
+    <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6 text-center hover:border-[#8B5CF6] transition-all">
+      <span class="w-12 h-12 text-[#8B5CF6] mx-auto mb-4"></span>
+      <h3 class="text-xl text-white mb-2">Personalized Lists</h3>
+      <p class="text-gray-400">Curated collections just for you</p>
+    </div>
+  </div>
+
+  <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6 space-y-4">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div>
+        <h3 class="text-2xl text-white">Content Recommendations</h3>
+        <p class="text-sm text-gray-400">AI ranking based on views, engagement, and content performance.</p>
+      </div>
+      <button (click)="loadRecommendations()" class="px-4 py-2 border border-[#8B5CF6] text-[#8B5CF6] hover:bg-[#8B5CF6]/10 rounded-lg transition-all">
+        Refresh Recommendations
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" *ngIf="recommendations().length > 0">
+      <div *ngFor="let item of recommendations()" class="rounded-lg border border-[#8B5CF6]/15 bg-[#0B0E14] p-4 space-y-3">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h4 class="text-white text-lg leading-tight">{{ item.title }}</h4>
+            <p class="text-sm text-gray-400">{{ item.category }}</p>
+          </div>
+          <span class="rounded-full bg-[#8B5CF6]/10 px-3 py-1 text-xs text-[#8B5CF6]">
+            {{ item.engagementScore | number:'1.0-1' }} score
+          </span>
+        </div>
+
+        <p class="text-sm text-gray-300">
+          {{ item.description || 'This title is selected by the recommendation engine.' }}
+        </p>
+
+        <p class="text-xs uppercase tracking-[0.2em] text-[#8B5CF6]">
+          AI reason: {{ item.reason || 'balanced content profile' }}
+        </p>
+
+        <div class="flex flex-wrap gap-2 text-xs text-gray-400">
+          <span class="rounded-full border border-[#8B5CF6]/20 px-2 py-1">Views: {{ item.viewCount }}</span>
+          <span class="rounded-full border border-[#8B5CF6]/20 px-2 py-1">Genres: {{ (item.genres || []).length }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="recommendations().length === 0" class="text-sm text-gray-400">
+      No recommendations available yet. Refresh after analytics data is loaded.
+    </div>
+  </div>
+</div>

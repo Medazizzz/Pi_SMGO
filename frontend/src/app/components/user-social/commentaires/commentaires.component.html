@@ -1,0 +1,42 @@
+<div class="mt-6 border-t border-[rgba(139,92,246,0.2)] pt-4">
+  <h4 class="text-sm font-medium text-[#9CA3AF] mb-4">
+    Comments ({{ commentaires.length }})
+  </h4>
+
+  <div *ngFor="let c of commentaires" class="bg-[#1A1F2B] rounded-lg p-3 mb-3 border border-[rgba(139,92,246,0.1)]">
+    <p class="text-[#E4E6EB] text-sm">{{ c.contenu }}</p>
+    <div class="flex items-center justify-between mt-2">
+      <span class="text-xs text-[#9CA3AF]/60">
+        By <span class="text-[#8B5CF6]">{{ c.authorUsername }}</span>
+        · {{ c.dateCommentaire | date:'dd/MM/yyyy' }}
+      </span>
+      <div class="flex gap-2">
+        <button (click)="editCommentaire(c)" class="text-xs px-2 py-1 bg-[#252B38] hover:bg-[#1E2530] text-[#E4E6EB] rounded transition-colors">
+          Update
+        </button>
+        <button (click)="deleteCommentaire(c.id!)" class="text-xs px-2 py-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded transition-colors">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <p *ngIf="commentaires.length === 0" class="text-xs text-[#9CA3AF]/60 mb-4">
+    No comments yet. Be the first!
+  </p>
+
+  <form [formGroup]="commentForm" (ngSubmit)="onSubmit()" class="mt-3">
+    <div class="flex gap-2">
+      <input type="text" formControlName="contenu" [ngClass]="commentForm.get('contenu')?.invalid && commentForm.get('contenu')?.touched ? 'border-red-500/50' : 'border-[rgba(139,92,246,0.2)]'" class="flex-1 bg-[#1A1F2B] border text-[#E4E6EB] rounded-lg px-3 py-2 text-sm outline-none focus:border-[#8B5CF6] transition-colors placeholder:text-[#9CA3AF]"/>
+      <button type="submit" [disabled]="commentForm.invalid" class="bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:bg-[#8B5CF6]/40 text-white rounded-lg px-4 py-2 text-sm transition-colors">
+        {{ editingId ? 'Update' : 'Send' }}
+      </button>
+      <button *ngIf="editingId" type="button" (click)="cancelEdit()" class="bg-[#252B38] text-[#9CA3AF] rounded-lg px-3 py-2 text-sm">
+        Cancel
+      </button>
+    </div>
+    <small class="text-red-400 text-xs mt-1 block" *ngIf="commentForm.get('contenu')?.invalid && commentForm.get('contenu')?.touched">
+      Minimum 5 characters
+    </small>
+  </form>
+</div>

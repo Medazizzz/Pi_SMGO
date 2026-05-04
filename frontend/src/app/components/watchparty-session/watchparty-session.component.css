@@ -1,0 +1,151 @@
+:host {
+  display: block;
+}
+
+.watchparty-chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #8b5cf6 transparent;
+}
+
+.watchparty-chat-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.watchparty-chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.watchparty-chat-scroll::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.7);
+  border-radius: 999px;
+}
+
+.watchparty-chat-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.9);
+}
+
+video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+button {
+  outline: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+input {
+  min-width: 0;
+}
+
+img {
+  display: block;
+}
+
+.chat-reaction-bounce {
+  animation: chatReactionPop 0.2s ease-out;
+}
+
+.chat-gif-image {
+  width: 150px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+}
+
+.chat-picker-panel {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.chat-message-enter {
+  animation: chatMessageFade 0.18s ease-out;
+}
+
+.chat-system-badge {
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.15);
+}
+
+.chat-bubble-me,
+.chat-bubble-other,
+.chat-bubble-system,
+.chat-bubble-reaction,
+.chat-bubble-gif {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.chat-bubble-reaction {
+  min-width: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-bubble-gif {
+  overflow: hidden;
+}
+
+.chat-action-btn {
+  position: relative;
+}
+
+.chat-action-btn:hover {
+  transform: translateY(-1px);
+}
+
+.chat-action-btn,
+.chat-send-btn {
+  transition: all 0.2s ease;
+}
+
+.chat-send-btn:hover {
+  transform: scale(1.03);
+}
+
+.chat-send-btn:active,
+.chat-action-btn:active {
+  transform: scale(0.96);
+}
+
+.chat-picker-grid button:hover,
+.chat-gif-option:hover {
+  transform: translateY(-1px);
+}
+
+.chat-picker-grid button,
+.chat-gif-option {
+  transition: all 0.18s ease;
+}
+
+.chat-input-glow:focus {
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+}
+
+@keyframes chatReactionPop {
+  0% {
+    transform: scale(0.75);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes chatMessageFade {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

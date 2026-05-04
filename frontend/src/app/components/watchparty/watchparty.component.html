@@ -1,0 +1,651 @@
+<div class="w-full text-white">
+  <!-- RECOMMENDATION NOTIFICATION -->
+<div *ngIf="showRecommendationNotification && topRecommendation"
+     class="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-lg rounded-2xl border border-[#8B5CF6]/40 bg-[#111827] p-5 shadow-2xl">
+
+  <div class="flex items-start justify-between gap-4">
+    <div>
+      <p class="text-xs uppercase tracking-wider text-[#a78bfa] font-bold mb-1">
+        🎯 Recommendation for you
+      </p>
+
+      <h3 class="text-xl font-bold text-white">
+        {{ topRecommendation.titre }}
+      </h3>
+
+      <p class="text-sm text-gray-400 mt-2">
+        This WatchParty is recommended based on participants and feedback score.
+      </p>
+
+      <div class="mt-3 grid grid-cols-2 gap-2 text-sm text-gray-300">
+        <span>👥 {{ topRecommendation.nombreParticipants }} participants</span>
+        <span>⭐ {{ topRecommendation.moyenneFeedback | number:'1.0-2' }}</span>
+        <span>💬 {{ topRecommendation.nombreFeedbacks }} feedbacks</span>
+        <span>🔥 Score {{ topRecommendation.scoreRecommendation | number:'1.0-2' }}</span>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      (click)="closeRecommendationNotification()"
+      class="text-gray-400 hover:text-white text-xl font-bold">
+      ✕
+    </button>
+  </div>
+</div>
+
+  <!-- ===== HOST PENDING REQUESTS ===== -->
+  <div *ngIf="mode === 'user' && hostPendingRequests.length > 0"
+       class="fixed top-6 right-6 z-50 flex flex-col gap-3 max-w-sm">
+    <div *ngFor="let req of hostPendingRequests"
+         class="bg-[#111827] border border-[#8B5CF6]/50 rounded-2xl p-4 shadow-2xl">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-full bg-[#8B5CF6]/20 border border-[#8B5CF6] flex items-center justify-center text-lg shrink-0">
+          👤
+        </div>
+        <div>
+          <p class="text-white font-semibold text-sm">Join request</p>
+          <p class="text-gray-400 text-xs">
+            <span class="text-[#8B5CF6]">{{ req.userId }}</span>
+            wants to join
+            <span class="text-white font-medium">{{ req.watchPartyTitre }}</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button
+          (click)="approveRequest(req)"
+          class="flex-1 rounded-xl bg-green-600 hover:bg-green-700 px-3 py-2 text-white text-sm font-semibold transition">
+          ✅ Approve
+        </button>
+
+        <button
+          (click)="rejectRequest(req)"
+          class="flex-1 rounded-xl bg-red-600 hover:bg-red-700 px-3 py-2 text-white text-sm font-semibold transition">
+          ❌ Reject
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="newRequestToast"
+         class="bg-[#111827] border border-[#34d399]/50 rounded-2xl p-4 shadow-2xl text-sm text-[#a7f3d0]">
+      New join request received. Check the list to approve or reject.
+    </div>
+  </div>
+
+  <!-- ===== WAITING FOR APPROVAL OVERLAY ===== -->
+  <div *ngIf="waitingForApproval"
+       class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+    <div class="bg-[#111827] border border-[#8B5CF6]/30 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+      <div class="relative w-20 h-20 mx-auto mb-5">
+        <div class="absolute inset-0 rounded-full border-4 border-[#8B5CF6]/20"></div>
+        <div class="absolute inset-0 rounded-full border-4 border-t-[#8B5CF6] animate-spin"></div>
+        <div class="absolute inset-0 flex items-center justify-center text-3xl">⏳</div>
+      </div>
+
+      <h2 class="text-xl font-bold text-white mb-2">Waiting for approval</h2>
+      <p class="text-gray-400 text-sm mb-5">
+        Your join request was sent to the session host. Please wait…
+      </p>
+
+      <div *ngIf="waitingWatchParty"
+           class="bg-[#0B0E14] border border-[#8B5CF6]/20 rounded-xl p-4 mb-5 text-left">
+        <p class="font-semibold text-white text-sm mb-1">{{ waitingWatchParty.titre }}</p>
+        <p class="text-xs text-gray-500 font-mono">{{ waitingWatchParty.contenuId }}</p>
+        <div class="flex items-center gap-2 mt-2 text-xs text-gray-400">
+          <span>👥</span>
+          <span>{{ waitingWatchParty.participantIds?.length || 0 }} participant(s)</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-center gap-2 text-sm mb-5">
+        <span class="w-2 h-2 rounded-full bg-[#8B5CF6] animate-pulse"></span>
+        <span class="w-2 h-2 rounded-full bg-[#8B5CF6] animate-pulse" style="animation-delay: 0.2s"></span>
+        <span class="w-2 h-2 rounded-full bg-[#8B5CF6] animate-pulse" style="animation-delay: 0.4s"></span>
+        <span class="ml-2 text-gray-400">Awaiting host response...</span>
+      </div>
+
+      <button
+        (click)="cancelJoinRequest()"
+        class="w-full rounded-xl bg-[#1C1F35] border border-[#8B5CF6]/20 px-6 py-3 text-gray-300 font-semibold hover:bg-[#252847] transition text-sm">
+        Cancel Request
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== REJECTED TOAST ===== -->
+  <div *ngIf="joinRejected"
+       class="fixed bottom-6 right-6 z-50 bg-red-500/20 border border-red-500/30 rounded-2xl px-5 py-4 text-red-300 text-sm font-medium shadow-xl max-w-xs">
+    🚫 Your join request was rejected by the host.
+  </div>
+
+  <!-- ===== SUCCESS TOAST ===== -->
+  <div *ngIf="successMessage"
+       class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-green-500/20 border border-green-500/30 rounded-2xl px-6 py-3 text-green-300 text-sm font-medium shadow-xl">
+    ✅ {{ successMessage }}
+  </div>
+
+  <!-- ===== USER MODE ===== -->
+  <div *ngIf="mode === 'user'" class="max-w-5xl mx-auto mt-8">
+
+    <!-- CREATE FORM -->
+    <div class="bg-[#111827] border border-[#8B5CF6]/20 rounded-2xl shadow-lg p-8 mb-8">
+      <h2 class="text-3xl font-bold mb-2 text-white">Create a WatchParty</h2>
+      <p class="text-gray-400 mb-6">Start a new session and invite friends</p>
+
+      <div *ngIf="errorMessage"
+           class="mb-4 rounded-lg bg-red-500/20 border border-red-500/30 px-4 py-3 text-red-300 flex items-center gap-2">
+        ⚠️ {{ errorMessage }}
+      </div>
+
+      <form #watchPartyForm="ngForm" (ngSubmit)="submit(watchPartyForm)" class="space-y-5" novalidate>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-300">Title</label>
+          <input
+            type="text"
+            name="titre"
+            [(ngModel)]="titre"
+            #titreCtrl="ngModel"
+            required
+            minlength="3"
+            placeholder="e.g. Movie Night"
+            class="w-full rounded-xl border border-[#8B5CF6]/20 bg-[#0B0E14] px-4 py-3 text-white outline-none focus:border-[#8B5CF6] transition"
+          />
+
+          <div *ngIf="titreCtrl.invalid && titreCtrl.touched" class="mt-2 text-sm text-red-400">
+            <div *ngIf="titreCtrl.errors?.['required']">Title is required.</div>
+            <div *ngIf="titreCtrl.errors?.['minlength']">Title must be at least 3 characters.</div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-300">Content</label>
+
+          <div style="position: relative;">
+            <input
+              type="text"
+              name="contentSearch"
+              [(ngModel)]="searchQuery"
+              (input)="searchContents()"
+              (blur)="hideDropdownDelayed()"
+              placeholder="Search content by name..."
+              autocomplete="off"
+              class="w-full rounded-xl border border-[#8B5CF6]/20 bg-[#0B0E14] px-4 py-3 text-white outline-none focus:border-[#8B5CF6] transition"
+            />
+
+            <ul *ngIf="showDropdown && filteredContents.length > 0"
+                class="absolute left-0 right-0 mt-1 rounded-xl border border-[#8B5CF6]/30 bg-[#111827] shadow-2xl z-50 overflow-hidden">
+              <li *ngFor="let c of filteredContents"
+                  (mousedown)="selectContent(c)"
+                  class="px-4 py-3 cursor-pointer hover:bg-[#8B5CF6]/20 transition flex items-center justify-between">
+                <span class="text-white font-medium">{{ c.title }}</span>
+                <span class="text-xs text-[#8B5CF6] bg-[#8B5CF6]/10 px-2 py-1 rounded-full">
+                  {{ c.contentType || 'Content' }}
+                </span>
+              </li>
+            </ul>
+
+            <div *ngIf="showDropdown && filteredContents.length === 0 && searchQuery.length >= 2"
+                 class="absolute left-0 right-0 mt-1 rounded-xl border border-[#8B5CF6]/20 bg-[#111827] px-4 py-3 text-gray-400 text-sm z-50">
+              No content found for "{{ searchQuery }}"
+            </div>
+          </div>
+
+          <div *ngIf="selectedContent" class="mt-2 flex items-center gap-2 text-green-400 text-sm">
+            <span>✅</span>
+            <span>Selected: <strong>{{ selectedContent.title }}</strong></span>
+            <button
+              type="button"
+              (click)="clearContent()"
+              class="text-gray-500 hover:text-red-400 ml-2 transition">
+              ✕
+            </button>
+          </div>
+
+          <input type="hidden" name="contenuId" [(ngModel)]="contenuId" required />
+
+          <div *ngIf="!selectedContent && watchPartyForm.submitted" class="mt-2 text-sm text-red-400">
+            Please select a content.
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="watchPartyForm.invalid || !selectedContent"
+          class="rounded-xl bg-[#8B5CF6] px-8 py-3 font-semibold text-white transition hover:bg-[#7C3AED] disabled:opacity-40 disabled:cursor-not-allowed">
+          Create WatchParty
+        </button>
+      </form>
+    </div>
+
+    <!-- INVITE LINK -->
+    <div *ngIf="createdWatchPartyId"
+         class="mb-8 rounded-2xl border border-green-500/30 bg-green-500/10 p-6 shadow-lg">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-xl font-bold text-green-300">WatchParty created successfully</h3>
+          <p class="text-sm text-gray-400">Share this link, guests will wait for your approval.</p>
+        </div>
+
+        <button
+          (click)="closeInvite()"
+          class="text-gray-400 hover:text-white transition text-xl font-bold">
+          ✕
+        </button>
+      </div>
+
+      <div class="flex items-center gap-3 bg-[#0B0E14] border border-[#8B5CF6]/30 rounded-xl px-4 py-3">
+        <span class="text-[#8B5CF6] text-lg">🔗</span>
+        <span class="flex-1 text-sm text-gray-300 font-mono break-all">{{ inviteLink }}</span>
+        <button
+          (click)="copyLink()"
+          [ngClass]="linkCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-[#8B5CF6] hover:bg-[#7C3AED]'"
+          class="shrink-0 rounded-lg px-4 py-2 text-white text-sm font-semibold transition">
+          {{ linkCopied ? 'Copied ✓' : 'Copy' }}
+        </button>
+      </div>
+
+      <p class="mt-3 text-xs text-gray-500">This message disappears in 30 seconds.</p>
+    </div>
+
+    <!-- ADVANCED SEARCH -->
+    <div class="mb-8 rounded-2xl border border-[#8B5CF6]/20 bg-[#111827] p-6 shadow-lg">
+      <div class="flex flex-col lg:flex-row lg:items-end gap-4">
+        <div class="flex-1">
+          <h2 class="text-2xl font-bold text-white">Advanced Search</h2>
+          <p class="text-gray-400 mt-1">
+            Search by title, status, host username, feedback comment, or sentiment
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          <input
+            type="text"
+            [(ngModel)]="advancedSearchKeyword"
+            (keydown.enter)="searchWatchParties()"
+            placeholder="Type a keyword..."
+            class="w-full sm:w-80 rounded-xl border border-[#8B5CF6]/20 bg-[#0B0E14] px-4 py-3 text-white outline-none focus:border-[#8B5CF6] transition"
+          />
+
+          <button
+            type="button"
+            (click)="searchWatchParties()"
+            class="rounded-xl bg-[#8B5CF6] px-6 py-3 font-semibold text-white transition hover:bg-[#7C3AED]">
+            Search
+          </button>
+
+          <button
+            type="button"
+            (click)="clearAdvancedSearch()"
+            class="rounded-xl border border-gray-600 px-6 py-3 font-semibold text-gray-300 transition hover:bg-gray-800">
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="isSearching" class="mt-4 text-sm text-[#8B5CF6]">
+        Searching...
+      </div>
+
+      <div *ngIf="isSearchMode && !isSearching" class="mt-4 text-sm text-gray-400">
+        {{ list.length }} result(s) found for
+        "<span class="text-white font-medium">{{ advancedSearchKeyword }}</span>"
+      </div>
+    </div>
+      <!-- RECOMMENDED WATCHPARTIES -->
+<div class="mb-8 rounded-2xl border border-[#8B5CF6]/20 bg-[#111827] p-6 shadow-lg">
+  <div class="flex items-center justify-between mb-5">
+    <div>
+      <h2 class="text-2xl font-bold text-white">Recommended WatchParties</h2>
+      <p class="text-gray-400 mt-1">Top sessions based on participants and feedback score</p>
+    </div>
+
+    <button
+      type="button"
+      (click)="loadRecommendations()"
+      class="rounded-xl bg-[#1C1F35] border border-[#8B5CF6]/20 px-4 py-2 text-sm text-gray-300 hover:bg-[#252847] transition">
+      🔄 Refresh
+    </button>
+  </div>
+
+  <p *ngIf="loadingRecommendations" class="text-[#8B5CF6] text-sm">
+    Loading recommendations...
+  </p>
+
+  <div *ngIf="!loadingRecommendations && recommendations.length === 0"
+       class="rounded-xl border border-gray-700 bg-[#0B0E14] p-4 text-gray-400 text-sm">
+    No recommendations available.
+  </div>
+
+  <div *ngIf="!loadingRecommendations && recommendations.length > 0"
+       class="grid gap-4 md:grid-cols-2">
+    <div *ngFor="let wp of recommendations"
+         class="rounded-2xl border border-[#8B5CF6]/20 bg-[#0B0E14] p-5 hover:border-[#8B5CF6]/50 transition">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-bold text-white">{{ wp.titre }}</h3>
+
+        <span class="text-xs font-semibold px-3 py-1 rounded-full border bg-green-500/20 text-green-300 border-green-500/30">
+          {{ wp.statut }}
+        </span>
+      </div>
+
+      <div class="grid gap-2 text-sm text-gray-300">
+        <p>👥 Participants: <span class="text-white font-semibold">{{ wp.nombreParticipants }}</span></p>
+        <p>⭐ Average feedback: <span class="text-white font-semibold">{{ wp.moyenneFeedback | number:'1.0-2' }}</span></p>
+        <p>💬 Feedbacks: <span class="text-white font-semibold">{{ wp.nombreFeedbacks }}</span></p>
+        <p>🔥 Score: <span class="text-[#8B5CF6] font-bold">{{ wp.scoreRecommendation | number:'1.0-2' }}</span></p>
+      </div>
+    </div>
+  </div>
+</div>
+    <!-- LIST HEADER -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-3xl font-bold text-white">
+          {{ isSearchMode ? 'Search Results' : 'Available Watch Parties' }}
+        </h2>
+        <p class="text-gray-400 mt-1">{{ list.length }} session(s) available</p>
+      </div>
+    </div>
+
+    <!-- EMPTY LIST -->
+    <div *ngIf="list.length === 0 && !errorMessage"
+         class="rounded-2xl border border-[#8B5CF6]/20 bg-[#111827] p-10 text-center text-gray-400">
+      <p class="text-lg">
+        {{ isSearchMode ? 'No matching WatchParty found.' : 'No WatchParty found. Be the first to create one.' }}
+      </p>
+    </div>
+
+    <!-- WATCHPARTY CARDS -->
+    <div class="grid gap-4" *ngIf="list.length > 0">
+      <div *ngFor="let w of list"
+           class="rounded-2xl border border-[#8B5CF6]/20 bg-[#111827] p-5 shadow-md hover:border-[#8B5CF6]/50 transition">
+        <div class="flex items-start justify-between gap-4 flex-col lg:flex-row">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-3 flex-wrap">
+              <p class="text-xl font-bold text-white">{{ w.titre }}</p>
+
+              <span
+                [ngClass]="{
+                  'bg-blue-500/20 text-blue-300 border-blue-500/30': getWatchPartyStatus(w) === 'CREATED',
+                  'bg-green-500/20 text-green-300 border-green-500/30': getWatchPartyStatus(w) === 'OPEN',
+                  'bg-red-500/20 text-red-300 border-red-500/30': getWatchPartyStatus(w) === 'CLOSED',
+                  'bg-gray-500/20 text-gray-300 border-gray-500/30': getWatchPartyStatus(w) === 'CANCELLED'
+                }"
+                class="text-xs font-semibold px-3 py-1 rounded-full border">
+                {{ getWatchPartyStatus(w) || 'UNKNOWN' }}
+              </span>
+
+              <span *ngIf="isHost(w)"
+                    class="text-xs font-bold px-3 py-1 rounded-full border bg-[#8B5CF6]/10 text-[#a78bfa] border-[#8B5CF6]/30">
+                HOST
+              </span>
+
+              <span *ngIf="isParticipant(w) && !isHost(w)"
+                    class="text-xs font-bold px-3 py-1 rounded-full border bg-cyan-500/10 text-cyan-300 border-cyan-500/30">
+                PARTICIPANT
+              </span>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-2 text-sm text-gray-300">
+              <div *ngIf="w.contenuId">
+                <span class="font-semibold text-white">Content:</span> {{ w.contenuId }}
+              </div>
+
+              <div>
+                <span class="font-semibold text-white">Participants:</span> {{ w.participantIds?.length || 0 }}
+              </div>
+              
+
+              <div *ngIf="w.dateCreation">
+                <span class="font-semibold text-white">Created:</span>
+                {{ w.dateCreation | date:'dd/MM/yyyy HH:mm' }}
+              </div>
+
+              <div *ngIf="w.hostUsername">
+                <span class="font-semibold text-white">Host:</span> {{ w.hostUsername }}
+              </div>
+
+              <div *ngIf="w.feedbackCount !== undefined">
+                <span class="font-semibold text-white">Feedback count:</span> {{ w.feedbackCount }}
+              </div>
+            </div>
+
+            <div *ngIf="w.matchedSentiment || w.matchedFeedbackComment"
+                 class="mt-4 rounded-xl border border-[#8B5CF6]/20 bg-[#0B0E14] p-4">
+              <p class="text-xs uppercase tracking-wider text-gray-500 mb-2 font-semibold">
+                Search match details
+              </p>
+
+              <p *ngIf="w.matchedSentiment" class="text-sm text-gray-300">
+                <span class="font-semibold text-white">Matched sentiment:</span>
+                <span class="text-yellow-300">{{ w.matchedSentiment }}</span>
+              </p>
+
+              <p *ngIf="w.matchedFeedbackComment" class="text-sm text-gray-300 mt-1 break-words">
+                <span class="font-semibold text-white">Matched feedback:</span>
+                {{ w.matchedFeedbackComment }}
+              </p>
+            </div>
+          </div>
+
+          <!-- ACTIONS -->
+          <div class="flex gap-3 shrink-0 flex-wrap">
+            <button
+              *ngIf="canOpen(w)"
+              type="button"
+              (click)="openSession(w.id)"
+              class="rounded-lg bg-[#8B5CF6] px-5 py-2 text-white font-semibold hover:bg-[#7C3AED] transition">
+              Open
+            </button>
+
+            <button
+              *ngIf="canJoin(w)"
+              type="button"
+              (click)="joinWatchParty(w)"
+              class="rounded-lg bg-green-600 px-5 py-2 text-white font-semibold hover:bg-green-700 transition">
+              Join
+            </button>
+
+            <span
+              *ngIf="showPendingBadge(w)"
+              class="inline-flex items-center gap-1 rounded-lg bg-yellow-500/20 border border-yellow-500/30 px-4 py-2 text-yellow-300 text-sm font-semibold">
+              Pending approval
+            </span>
+
+            <span
+              *ngIf="showRejectedBadge(w)"
+              class="inline-flex items-center gap-1 rounded-lg bg-red-500/20 border border-red-500/30 px-4 py-2 text-red-300 text-sm font-semibold">
+              Rejected
+            </span>
+
+            <span
+              *ngIf="showUnavailableBadge(w)"
+              class="inline-flex items-center gap-1 rounded-lg bg-gray-500/20 border border-gray-500/30 px-4 py-2 text-gray-300 text-sm font-semibold">
+              Unavailable
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN MODE ===== -->
+  <div *ngIf="mode === 'admin'" class="w-full">
+
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h2 class="text-3xl font-bold text-white">WatchParties List</h2>
+        <p class="text-gray-400 mt-2">{{ list.length }} watch party(ies) total</p>
+      </div>
+
+      <button
+        (click)="load()"
+        class="flex items-center gap-2 rounded-xl bg-[#1C1F35] border border-[#8B5CF6]/20 px-4 py-2 text-sm text-gray-300 hover:bg-[#252847] transition">
+        🔄 Refresh
+      </button>
+    </div>
+
+    <!-- ADMIN SEARCH -->
+    <div class="mb-6 rounded-2xl border border-[#8B5CF6]/20 bg-[#111827] p-6 shadow-lg">
+      <div class="flex flex-col lg:flex-row lg:items-end gap-4">
+        <div class="flex-1">
+          <h3 class="text-xl font-bold text-white">Advanced Search</h3>
+          <p class="text-gray-400 mt-1">
+            Search by title, status, host username, feedback comment, or sentiment
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          <input
+            type="text"
+            [(ngModel)]="advancedSearchKeyword"
+            (keydown.enter)="searchWatchParties()"
+            placeholder="Type a keyword..."
+            class="w-full sm:w-80 rounded-xl border border-[#8B5CF6]/20 bg-[#0B0E14] px-4 py-3 text-white outline-none focus:border-[#8B5CF6] transition"
+          />
+
+          <button
+            type="button"
+            (click)="searchWatchParties()"
+            class="rounded-xl bg-[#8B5CF6] px-6 py-3 font-semibold text-white transition hover:bg-[#7C3AED]">
+            Search
+          </button>
+
+          <button
+            type="button"
+            (click)="clearAdvancedSearch()"
+            class="rounded-xl border border-gray-600 px-6 py-3 font-semibold text-gray-300 transition hover:bg-gray-800">
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="isSearching" class="mt-4 text-sm text-[#8B5CF6]">
+        Searching...
+      </div>
+    </div>
+
+    <div *ngIf="errorMessage"
+         class="mb-4 rounded-lg bg-red-500/20 border border-red-500/30 px-4 py-3 text-red-300">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="list.length === 0 && !errorMessage"
+         class="rounded-2xl border border-[#8B5CF6]/20 bg-[#111827] p-6 text-gray-400 text-center">
+      No WatchParty found.
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4" *ngIf="list.length > 0">
+  <div *ngFor="let w of list"
+       class="group overflow-hidden rounded-[28px] bg-[#111827] border border-[#8B5CF6]/25 shadow-2xl hover:-translate-y-1 hover:border-[#8B5CF6]/60 transition">
+
+    <!-- HEADER -->
+    <div class="relative h-34 bg-gradient-to-br from-[#13091f] via-[#3b1678] to-[#8B5CF6] flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/10"></div>
+
+      <span class="absolute top-5 left-5 rounded-full px-4 py-2 text-xs font-bold border bg-red-500/20 text-red-200 border-red-400/40">
+        {{ getWatchPartyStatus(w) || 'UNKNOWN' }}
+      </span>
+
+      <span *ngIf="isBlocked(w)"
+            class="absolute top-5 right-5 rounded-full px-4 py-2 text-xs font-bold bg-red-500 text-white shadow-lg">
+        BLOCKED
+      </span>
+
+      <div class="z-10 text-center px-6">
+        <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/15 border border-white/20 shadow-xl">
+          <span class="text-5xl">🍿</span>
+        </div>
+
+        <h3 class="text-3xl font-extrabold text-white drop-shadow">
+          {{ w.titre }}
+        </h3>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="p-6 text-white">
+      <div class="flex items-start justify-between gap-4 mb-5">
+        <div>
+          <h3 class="text-2xl font-extrabold text-white">
+            {{ w.titre }}
+          </h3>
+          <p class="text-sm text-gray-400 mt-1 break-all">
+            Content: {{ w.contenuId || 'No content' }}
+          </p>
+        </div>
+
+        <div class="text-right shrink-0">
+          <div class="text-yellow-400 text-lg">★★★★★</div>
+          <p class="text-xs text-gray-500">WatchParty</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-5">
+        <div class="rounded-2xl bg-[#0B0E14] border border-[#8B5CF6]/15 p-4">
+          <p class="text-xs text-gray-400">Participants</p>
+          <p class="text-2xl font-extrabold text-white">
+            {{ w.participantIds?.length || 0 }}
+          </p>
+        </div>
+
+        <div class="rounded-2xl bg-[#0B0E14] border border-[#8B5CF6]/15 p-4">
+          <p class="text-xs text-gray-400">Feedbacks</p>
+          <p class="text-2xl font-extrabold text-white">
+            {{ w.feedbackCount || 0 }}
+          </p>
+        </div>
+
+        <div class="rounded-2xl bg-[#0B0E14] border border-[#8B5CF6]/15 p-4 col-span-2" *ngIf="w.dateCreation">
+          <p class="text-xs text-gray-400">Created</p>
+          <p class="text-sm font-bold text-white">
+            {{ w.dateCreation | date:'dd/MM/yyyy HH:mm' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="grid grid-cols-3 gap-3">
+        <button
+          *ngIf="!isBlocked(w)"
+          type="button"
+          (click)="blockWatchParty(w.id)"
+          class="rounded-2xl bg-red-500/20 border border-red-400/30 px-4 py-3 text-red-200 font-bold hover:bg-red-500 hover:text-white transition">
+          Block
+        </button>
+
+        <button
+          *ngIf="isBlocked(w)"
+          type="button"
+          disabled
+          class="rounded-2xl bg-red-500/10 border border-red-400/20 px-4 py-3 text-red-300 font-bold cursor-not-allowed">
+          Blocked
+        </button>
+
+        <button
+          type="button"
+          (click)="showScore(w.id || w.watchPartyId)"
+          class="rounded-2xl bg-[#8B5CF6] px-4 py-3 text-white font-bold hover:bg-[#7C3AED] transition">
+          {{ loadingScore[w.id || w.watchPartyId] ? 'Loading...' : 'Score' }}
+        </button>
+
+        <button
+          type="button"
+          (click)="deleteWatchParty(w.id)"
+          class="rounded-2xl bg-[#1f2937] px-4 py-3 text-white font-bold hover:bg-gray-900 transition">
+          Delete
+        </button>
+      </div>
+
+      <div
+        *ngIf="scores[w.id || w.watchPartyId] !== undefined"
+        class="mt-4 rounded-2xl bg-emerald-500/10 border border-emerald-400/30 px-4 py-3 text-emerald-300 text-sm font-bold text-center">
+        Score: {{ scores[w.id || w.watchPartyId] | number:'1.0-2' }}
+      </div>
+    </div>
+  </div>
+</div>
+    </div>
+  </div>

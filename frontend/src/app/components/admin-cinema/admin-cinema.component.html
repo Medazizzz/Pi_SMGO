@@ -1,0 +1,319 @@
+<div class="admin-cinema-shell">
+  <div *ngIf="error" class="error-banner">{{ error }}</div>
+
+  <section *ngIf="activeTab === 'cinemas'" class="module-panel">
+    <header class="module-header">
+      <div>
+        <h1>Cinema Portal</h1>
+        <p>Manage theater partnerships, showtimes, and locations</p>
+      </div>
+      <button class="primary-btn" (click)="openCreateCinema()">+ Add Theater</button>
+    </header>
+
+    <div class="kpi-grid">
+      <article class="kpi-card">
+        <h3>Partner Theaters</h3>
+        <strong>{{ cinemas.length }}</strong>
+        <span>Active partnerships</span>
+      </article>
+      <article class="kpi-card">
+        <h3>Daily Showtimes</h3>
+        <strong>{{ seances.length }}</strong>
+        <span>Scheduled today</span>
+      </article>
+      <article class="kpi-card">
+        <h3>Coverage Area</h3>
+        <strong>{{ cinemaCitiesCovered }}</strong>
+        <span>Cities served</span>
+      </article>
+    </div>
+
+    <div class="table-panel">
+      <div class="table-head">
+        <h2>Cinemas</h2>
+        <button class="refresh-btn" (click)="loadAll()">Refresh</button>
+      </div>
+
+      <div *ngIf="showCinemaForm" class="inline-form form-grid-3">
+        <input [(ngModel)]="cinemaForm.nom" placeholder="Cinema name" />
+        <input [(ngModel)]="cinemaForm.ville" placeholder="City" />
+        <input [(ngModel)]="cinemaForm.adresse" placeholder="Address" />
+        <div class="form-actions full-row">
+          <button class="primary-btn" (click)="saveCinema()">{{ editingCinemaId ? 'Update' : 'Create' }}</button>
+          <button class="ghost-btn" (click)="resetCinemaForm()">Cancel</button>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>City</th>
+            <th>Address</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let cinema of cinemas; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td class="name-cell">{{ cinema.nom }}</td>
+            <td>{{ cinema.ville }}</td>
+            <td>{{ cinema.adresse }}</td>
+            <td>
+              <div class="action-row">
+                <button class="action-btn" (click)="editCinema(cinema)">Edit</button>
+                <button class="action-btn" (click)="deleteCinema(cinema.id)">Delete</button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="cinemas.length === 0">
+            <td colspan="5" class="empty-cell">No cinemas found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section *ngIf="activeTab === 'salles'" class="module-panel">
+    <header class="module-header">
+      <div>
+        <h1>Hall</h1>
+        <p>Manage halls and capacities</p>
+      </div>
+      <button class="primary-btn" (click)="openCreateSalle()">+ Add Hall</button>
+    </header>
+
+    <div class="kpi-grid">
+      <article class="kpi-card">
+        <h3>Halls</h3>
+        <strong>{{ salles.length }}</strong>
+        <span>Total</span>
+      </article>
+      <article class="kpi-card">
+        <h3>Total Capacity</h3>
+        <strong>{{ totalHallCapacity }}</strong>
+        <span>Seats</span>
+      </article>
+      <article class="kpi-card">
+        <h3>Average</h3>
+        <strong>{{ averageHallCapacity }}</strong>
+        <span>Seats / hall</span>
+      </article>
+    </div>
+
+    <div class="table-panel">
+      <div class="table-head">
+        <h2>Halls (from backend)</h2>
+        <button class="refresh-btn" (click)="loadAll()">Refresh</button>
+      </div>
+
+      <div *ngIf="showSalleForm" class="inline-form form-grid-2">
+        <input [(ngModel)]="salleForm.name" placeholder="Hall name" />
+        <input [(ngModel)]="salleForm.capacity" type="number" min="1" placeholder="Capacity" />
+        <div class="form-actions full-row">
+          <button class="primary-btn" (click)="createSalle()">{{ editingSalleId ? 'Update' : 'Create' }}</button>
+          <button class="ghost-btn" (click)="showSalleForm = false; editingSalleId = null">Cancel</button>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Capacity</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let salle of salles">
+            <td class="name-cell">{{ salle.name }}</td>
+            <td>{{ salle.capacity }} seats</td>
+            <td>
+              <div class="action-row">
+                <button class="action-btn" (click)="editSalle(salle)">Edit</button>
+                <button class="action-btn" (click)="deleteSalle(salle.id)">Delete</button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="salles.length === 0">
+            <td colspan="3" class="empty-cell">No halls found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section *ngIf="activeTab === 'seances'" class="module-panel">
+    <header class="module-header">
+      <div>
+        <h1>Session</h1>
+        <p>Manage sessions, schedules and halls</p>
+      </div>
+      <button class="primary-btn" (click)="openCreateSeance()">+ Add Session</button>
+    </header>
+
+    <div class="kpi-grid">
+      <article class="kpi-card">
+        <h3>Sessions</h3>
+        <strong>{{ seances.length }}</strong>
+        <span>Total</span>
+      </article>
+      <article class="kpi-card">
+        <h3>Dates</h3>
+        <strong>{{ scheduledDatesCount }}</strong>
+        <span>Scheduled sessions</span>
+      </article>
+      <article class="kpi-card">
+        <h3>Times</h3>
+        <strong>{{ scheduledTimesCount }}</strong>
+        <span>Session times</span>
+      </article>
+    </div>
+
+    <div class="table-panel">
+      <div class="table-head">
+        <h2>Sessions (from backend)</h2>
+        <button class="refresh-btn" (click)="loadAll()">Refresh</button>
+      </div>
+
+      <div *ngIf="showSeanceForm" class="inline-form form-grid-2">
+        <input [(ngModel)]="seanceForm.dateSeance" type="date" title="Session date" placeholder="Date" />
+        <input [(ngModel)]="seanceForm.heureSeance" type="time" title="Session time" placeholder="Time" />
+        <select [(ngModel)]="seanceForm.salleId" title="Hall selection">
+          <option value="">Select hall</option>
+          <option *ngFor="let salle of salles" [value]="salle.id">{{ salle.name }}</option>
+        </select>
+        <select [(ngModel)]="seanceForm.cinemaId" title="Cinema selection">
+          <option value="">Select cinema</option>
+          <option *ngFor="let cinema of cinemas" [value]="cinema.id">{{ cinema.nom }}</option>
+        </select>
+        <input [(ngModel)]="seanceForm.contenuId" placeholder="Content ID" class="full-row" />
+        <div class="form-actions full-row">
+          <button class="primary-btn" (click)="createSeance()">{{ editingSeanceId ? 'Update' : 'Create' }}</button>
+          <button class="ghost-btn" (click)="showSeanceForm = false; editingSeanceId = null">Cancel</button>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Hall</th>
+            <th>Cinema ID</th>
+            <th>Content ID</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let seance of seances">
+            <td>{{ seance.dateSeance }}</td>
+            <td>{{ seance.heureSeance }}</td>
+            <td>{{ seance.numeroSalle }}</td>
+            <td>{{ seance.nomCinema }}</td>
+            <td>{{ seance.contenuId || '-' }}</td>
+            <td>
+              <div class="action-row">
+                <button class="action-btn" (click)="editSeance(seance)">Edit</button>
+                <button class="action-btn" (click)="deleteSeance(seance.id)">Delete</button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="seances.length === 0">
+            <td colspan="6" class="empty-cell">No sessions found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section *ngIf="activeTab === 'reservations'" class="module-panel">
+    <header class="module-header">
+      <div>
+        <h1>Reservation</h1>
+        <p>Manage reservations and seats</p>
+      </div>
+      <button class="primary-btn" (click)="openCreateReservation()">+ New Reservation</button>
+    </header>
+
+    <div class="kpi-grid">
+      <article class="kpi-card">
+        <h3>Reservations</h3>
+        <strong>{{ reservations.length }}</strong>
+        <span>Total</span>
+      </article>
+      <article class="kpi-card">
+        <h3>Revenue</h3>
+        <strong>{{ reservationRevenue }}€</strong>
+        <span>Total (price)</span>
+      </article>
+      <article class="kpi-card">
+        <h3>Statuses</h3>
+        <strong>-</strong>
+        <span>{{ reservationStatusesText }}</span>
+      </article>
+    </div>
+
+    <div class="table-panel">
+      <div class="table-head">
+        <h2>Reservations (from backend)</h2>
+        <button class="refresh-btn" (click)="loadAll()">Refresh</button>
+      </div>
+
+      <div *ngIf="showReservationForm" class="inline-form form-grid-2">
+        <select [(ngModel)]="reservationForm.seanceId" title="Session selection">
+          <option value="">Select session</option>
+          <option *ngFor="let seance of seances" [value]="seance.id">
+            {{ seance.nomCinema }} - {{ seance.numeroSalle }} - {{ seance.dateSeance }} {{ seance.heureSeance }}
+          </option>
+        </select>
+        <input [(ngModel)]="reservationForm.userId" title="User ID" placeholder="User ID" />
+        <input [(ngModel)]="reservationForm.numeroPlace" title="Seat number" placeholder="Seat number (e.g. A12)" />
+        <input [(ngModel)]="reservationForm.prix" title="Price" type="number" min="0.01" step="0.01" placeholder="Price" />
+        <input [(ngModel)]="reservationForm.contenuId" title="Content ID" placeholder="Content ID" class="full-row" />
+        <div class="form-actions full-row">
+          <button class="primary-btn" (click)="saveReservation()">{{ editingReservationId ? 'Update' : 'Create' }}</button>
+          <button class="ghost-btn" (click)="showReservationForm = false; editingReservationId = null">Cancel</button>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Seat</th>
+            <th>Session</th>
+            <th>Hall</th>
+            <th>Status</th>
+            <th>Price</th>
+            <th>User ID</th>
+            <th>Content ID</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let reservation of reservations">
+            <td>{{ reservation.dateReservation }}</td>
+            <td class="name-cell">{{ reservation.numeroPlace }}</td>
+            <td>{{ reservation.dateSeance }} {{ reservation.heureSeance }}</td>
+            <td>{{ reservation.numeroSalle }}</td>
+            <td>{{ reservation.statut }}</td>
+            <td>{{ reservation.prix }}€</td>
+            <td>{{ reservation.userId }}</td>
+            <td>{{ reservation.contenuId || '-' }}</td>
+            <td>
+              <div class="action-row">
+                <button class="action-btn" (click)="editReservation(reservation)">Edit</button>
+                <button class="action-btn" (click)="deleteReservation(reservation.id)">Delete</button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="reservations.length === 0">
+            <td colspan="9" class="empty-cell">No reservations found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,159 @@
+<div class="profile-selection-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-section">
+      <h1 class="logo">🎬 ShowMatchGoOn</h1>
+    </div>
+    <div class="greeting-section">
+      <p class="greeting">Bonjour ! Choisissez qui regarde</p>
+      <h2 class="user-name">{{ userName() }}</h2>
+    </div>
+  </div>
+
+  <!-- Profiles Grid -->
+  <div class="profiles-container">
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="loading-state">
+      <div class="spinner"></div>
+      <p>Chargement des profils...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading() && profiles().length === 0" class="empty-state">
+      <div class="empty-icon">📭</div>
+      <p>Aucun profil trouvé</p>
+      <button (click)="openAddProfileModal()" class="btn-add-profile">
+        Créer un profil
+      </button>
+    </div>
+
+    <!-- Profiles Grid -->
+    <div *ngIf="!isLoading() && profiles().length > 0" class="profiles-grid">
+      <!-- Profile Cards -->
+      <div
+        *ngFor="let profile of profiles()"
+        (mouseenter)="setHoveredProfile(profile.id)"
+        (mouseleave)="setHoveredProfile(null)"
+        (click)="selectProfile(profile)"
+        class="profile-card clickable"
+        [style.animation-delay]="(profiles().indexOf(profile) * 0.1) + 's'"
+      >
+        <div class="profile-avatar" [style.background]="getProfileColor(profile)">
+          <img [src]="profile.avatar" [alt]="profile.name" class="avatar-image" />
+        </div>
+        <h3 class="profile-name">{{ profile.name }}</h3>
+        <p class="profile-type">{{ getProfileTypeLabel(profile.type) }}</p>
+
+        <!-- Hover Overlay -->
+        <div
+          *ngIf="hoveredProfileId() === profile.id"
+          class="hover-overlay animate-fade-in"
+        >
+          <span class="play-icon">▶️</span>
+          <span class="hover-text">Regarder</span>
+        </div>
+      </div>
+
+      <!-- Add Profile Button -->
+      <div
+        (mouseenter)="setHoveredProfile('add-profile')"
+        (mouseleave)="setHoveredProfile(null)"
+        (click)="openAddProfileModal()"
+        class="profile-card add-profile-card clickable"
+      >
+        <div class="profile-avatar add-avatar">
+          <span class="plus-icon">➕</span>
+        </div>
+        <h3 class="profile-name">Ajouter un profil</h3>
+
+        <!-- Hover Overlay -->
+        <div
+          *ngIf="hoveredProfileId() === 'add-profile'"
+          class="hover-overlay animate-fade-in"
+        >
+          <span class="hover-text">Créer</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer Section -->
+  <div class="footer-section">
+    <!-- Profile Management -->
+    <button (click)="openProfileManagement()" class="btn-profile-management">
+      <span class="settings-icon">⚙️</span>
+      Gestion des profils
+    </button>
+
+    <!-- Child Mode Toggle -->
+    <div class="child-mode-toggle">
+      <span class="lock-icon">🔒</span>
+      <span class="toggle-label">Accéder au mode enfant</span>
+      <div class="toggle-switch">
+        <input type="checkbox" id="child-mode-toggle" />
+        <label for="child-mode-toggle" class="switch"></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Profile Modal -->
+  <div *ngIf="showAddProfileModal()" class="modal-overlay" (click)="closeAddProfileModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <!-- Close Button -->
+      <button (click)="closeAddProfileModal()" class="btn-close">❌</button>
+
+      <h2>Créer un nouveau profil</h2>
+
+      <!-- Profile Name Input -->
+      <div class="form-group">
+        <label>Nom du profil</label>
+        <input
+          type="text"
+          [ngModel]="newProfileName()"
+          (ngModelChange)="newProfileName.set($event)"
+          placeholder="Entrez le nom du profil"
+          class="input-field"
+          (keyup.enter)="createProfile()"
+        />
+      </div>
+
+      <!-- Profile Type Selection -->
+      <div class="form-group">
+        <label>Type de profil</label>
+        <div class="profile-type-options">
+          <button
+            *ngFor="let type of ['ADULT', 'KIDS', 'TEEN']"
+            (click)="newProfileType.set(type)"
+            [class.active]="newProfileType() === type"
+            class="type-option"
+          >
+            <span class="type-emoji">
+              <span *ngIf="type === 'ADULT'">👤</span>
+              <span *ngIf="type === 'KIDS'">🎮</span>
+              <span *ngIf="type === 'TEEN'">👨</span>
+            </span>
+            <span class="type-label">
+              <span *ngIf="type === 'ADULT'">Adulte</span>
+              <span *ngIf="type === 'KIDS'">Enfants</span>
+              <span *ngIf="type === 'TEEN'">Adolescent</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="form-actions">
+        <button (click)="closeAddProfileModal()" class="btn-cancel">
+          Annuler
+        </button>
+        <button
+          (click)="createProfile()"
+          [disabled]="!newProfileName().trim()"
+          class="btn-create"
+        >
+          Créer le profil
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

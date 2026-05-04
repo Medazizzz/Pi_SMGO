@@ -1,0 +1,544 @@
+<div class="h-screen overflow-hidden bg-[#0a0a0f] text-white flex flex-col" (click)="closePickers()">
+
+  <!-- ===== JOIN REQUEST TOAST ===== -->
+  <div *ngIf="approvalStatus === 'host' && pendingJoinRequests.length > 0"
+       class="fixed top-20 right-6 z-50 flex flex-col gap-3 w-[290px]">
+    <div *ngFor="let req of pendingJoinRequests"
+         class="rounded-2xl border border-[#8B5CF6]/40 bg-[#141420] p-4 shadow-2xl">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/30 flex items-center justify-center text-lg shrink-0">
+          👤
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-white">Join request</p>
+          <p class="text-[11px] text-gray-400">
+            <span class="text-[#8B5CF6] font-mono">{{ req.userId }}</span>
+            wants to join
+            <span class="text-white font-medium">{{ req.watchPartyTitre }}</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button (click)="approveRequest(req)"
+          class="flex-1 rounded-xl border border-green-500/30 bg-green-500/15 px-3 py-2 text-sm font-semibold text-green-300 hover:bg-green-500/25 transition">
+          ✓ Approve
+        </button>
+
+        <button (click)="rejectRequest(req)"
+          class="flex-1 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-300 hover:bg-red-500/20 transition">
+          ✕ Reject
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOPBAR ===== -->
+  <div class="h-14 shrink-0 flex items-center gap-4 px-6 bg-[#10101a] border-b border-white/10 relative">
+    <div class="absolute left-0 right-0 bottom-[-1px] h-px bg-gradient-to-r from-transparent via-[#8B5CF6] to-transparent opacity-50"></div>
+
+    <div class="flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full bg-[#8B5CF6] shadow-[0_0_10px_#8B5CF6] animate-pulse"></div>
+      <div class="font-extrabold tracking-tight text-[17px]">ShowMatchGoOn</div>
+    </div>
+
+    <div *ngIf="session && (approvalStatus === 'approved' || approvalStatus === 'host')"
+         class="flex items-center gap-2 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-red-400 font-mono">
+      <div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+      Live
+    </div>
+
+    <div *ngIf="session && (approvalStatus === 'approved' || approvalStatus === 'host')" class="ml-1">
+      <div class="text-[13px] font-semibold text-white">{{ session.titre }}</div>
+      <div class="text-[10px] font-mono text-gray-500">
+        {{ session.contenuId }} · ID: {{ session.id }}
+      </div>
+    </div>
+
+    <div *ngIf="approvalStatus === 'host'"
+         class="rounded-md border border-[#8B5CF6]/35 bg-[#8B5CF6]/10 px-3 py-1 text-[10px] font-mono tracking-[0.08em] text-[#a78bfa]">
+      HOST
+    </div>
+
+    <div class="ml-auto flex items-center gap-3">
+      <div *ngIf="session && (approvalStatus === 'approved' || approvalStatus === 'host')"
+           class="flex items-center gap-2 rounded-md border border-white/10 bg-[#1a1a2a] px-3 py-1.5 text-xs text-gray-300">
+        <span>👥</span>
+        <span>{{ session.participantIds?.length || 0 }} watching</span>
+      </div>
+
+      <button (click)="leaveSession()"
+        class="flex items-center gap-2 rounded-lg border border-red-500/25 bg-red-500/5 px-4 py-2 text-xs font-medium text-red-400 hover:bg-red-500/15 hover:text-white transition">
+        🚪 Leave
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== LOADING ===== -->
+  <div *ngIf="loading" class="flex-1 flex items-center justify-center">
+    <div class="text-center">
+      <div class="text-5xl mb-4 animate-bounce">🎬</div>
+      <p class="text-lg text-gray-400">Loading session...</p>
+    </div>
+  </div>
+
+  <!-- ===== ERROR ===== -->
+  <div *ngIf="!loading && errorMessage" class="flex-1 flex items-center justify-center px-4">
+    <div class="text-center max-w-md">
+      <div class="text-6xl mb-4">😕</div>
+      <h2 class="text-2xl font-bold text-white mb-2">Session unavailable</h2>
+      <p class="text-gray-400 mb-6">{{ errorMessage }}</p>
+      <button (click)="close()"
+        class="rounded-xl bg-[#8B5CF6] px-6 py-3 text-white font-semibold hover:bg-[#7C3AED] transition">
+        Back
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== WAITING ===== -->
+  <div *ngIf="!loading && !errorMessage && approvalStatus === 'waiting'"
+       class="flex-1 flex items-center justify-center px-4">
+    <div class="w-full max-w-md rounded-3xl border border-[#8B5CF6]/20 bg-[#141420] p-8 text-center shadow-2xl">
+      <div class="relative w-24 h-24 mx-auto mb-6">
+        <div class="absolute inset-0 rounded-full border-4 border-[#8B5CF6]/20"></div>
+        <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#8B5CF6] animate-spin"></div>
+        <div class="absolute inset-0 flex items-center justify-center text-3xl">⏳</div>
+      </div>
+
+      <h2 class="text-2xl font-bold text-white mb-2">Waiting for approval</h2>
+      <p class="text-sm text-gray-400 mb-6">
+        Your join request was sent to the session host.
+      </p>
+
+      <div *ngIf="session" class="rounded-2xl border border-white/10 bg-[#1a1a2a] p-4 mb-6 text-left">
+        <p class="text-sm font-semibold text-white mb-1">{{ session.titre }}</p>
+        <p class="text-xs font-mono text-gray-500">{{ session.contenuId }}</p>
+        <div class="mt-3 flex items-center gap-2 text-xs text-gray-400">
+          <span>👥</span>
+          <span>{{ session.participantIds?.length || 0 }} participant(s)</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-center gap-2 text-sm mb-6">
+        <span class="w-2 h-2 rounded-full bg-[#8B5CF6] animate-pulse"></span>
+        <span class="w-2 h-2 rounded-full bg-[#8B5CF6] animate-pulse" style="animation-delay: 0.2s"></span>
+        <span class="w-2 h-2 rounded-full bg-[#8B5CF6] animate-pulse" style="animation-delay: 0.4s"></span>
+        <span class="ml-2 text-gray-400">Awaiting host response...</span>
+      </div>
+
+      <button (click)="close()"
+        class="rounded-xl border border-[#8B5CF6]/20 bg-[#1C1F35] px-6 py-3 text-sm font-semibold text-gray-300 hover:bg-[#252847] transition">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== REJECTED ===== -->
+  <div *ngIf="!loading && !errorMessage && approvalStatus === 'rejected'"
+       class="flex-1 flex items-center justify-center px-4">
+    <div class="text-center max-w-md">
+      <div class="text-6xl mb-4">🚫</div>
+      <h2 class="text-2xl font-bold text-white mb-2">Request rejected</h2>
+      <p class="text-gray-400 mb-6">The session host did not approve your request.</p>
+      <button (click)="close()"
+        class="rounded-xl bg-[#8B5CF6] px-6 py-3 text-white font-semibold hover:bg-[#7C3AED] transition">
+        Back to sessions
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SESSION UI ===== -->
+  <div *ngIf="!loading && !errorMessage && (approvalStatus === 'approved' || approvalStatus === 'host') && session"
+       class="flex-1 flex overflow-hidden">
+
+    <!-- CENTER -->
+    <div class="flex-1 flex flex-col overflow-hidden bg-[#0a0a0f]">
+
+      <!-- CAMERAS -->
+      <div class="flex-1 min-h-0 flex items-center justify-center gap-4 p-5 flex-col xl:flex-row">
+        <!-- LOCAL -->
+        <div class="relative flex-1 max-w-[520px] w-full aspect-[16/10] rounded-2xl overflow-hidden border border-white/10 bg-[#10101a] hover:border-[#8B5CF6]/35 transition">
+          <div class="w-full h-full bg-black flex items-center justify-center">
+            <video #localVideo autoplay muted playsinline class="w-full h-full object-cover"></video>
+
+            <div *ngIf="!isCameraEnabled" class="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
+              <div class="w-12 h-12 rounded-full border border-white/10 bg-white/5 flex items-center justify-center mb-3">
+                <span class="text-2xl text-gray-400">📷</span>
+              </div>
+              <p class="text-xs font-mono text-gray-500">Camera disabled</p>
+            </div>
+          </div>
+
+          <div class="absolute top-3 left-3 flex items-center gap-2 rounded-md border border-white/10 bg-black/60 px-3 py-1 text-[11px] font-mono text-gray-300">
+            <div class="w-1.5 h-1.5 rounded-full bg-[#00e5a0]"></div>
+            You
+          </div>
+
+          <div class="absolute bottom-3 left-3 flex items-center gap-2 rounded-full border border-white/10 bg-black/70 px-3 py-1.5 text-[11px] text-white">
+            <div class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold bg-[#8B5CF6]/20 text-[#a78bfa]">
+              YO
+            </div>
+            <span>You</span>
+          </div>
+        </div>
+
+        <!-- REMOTE -->
+        <div class="relative flex-1 max-w-[520px] w-full aspect-[16/10] rounded-2xl overflow-hidden border border-white/10 bg-[#10101a] hover:border-[#8B5CF6]/35 transition">
+          <div class="w-full h-full bg-black flex items-center justify-center">
+            <video #remoteVideo autoplay playsinline class="w-full h-full object-cover"></video>
+
+            <div *ngIf="!session.participantIds || session.participantIds.length < 2"
+                 class="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
+              <div class="w-12 h-12 rounded-full border border-white/10 bg-white/5 flex items-center justify-center mb-3">
+                <span class="text-2xl text-gray-400">🎥</span>
+              </div>
+              <p class="text-xs font-mono text-gray-500">Awaiting stream...</p>
+            </div>
+          </div>
+
+          <div class="absolute top-3 left-3 flex items-center gap-2 rounded-md border border-white/10 bg-black/60 px-3 py-1 text-[11px] font-mono text-gray-300">
+            <div class="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]"></div>
+            Remote
+          </div>
+
+          <div class="absolute bottom-3 left-3 flex items-center gap-2 rounded-full border border-white/10 bg-black/70 px-3 py-1.5 text-[11px] text-white">
+            <div class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold bg-cyan-500/20 text-cyan-300">
+              {{
+                session.participantIds && session.participantIds.length > 1
+                  ? session.participantIds[1].toString().slice(0,2).toUpperCase()
+                  : 'NA'
+              }}
+            </div>
+            <span>
+              {{
+                session.participantIds && session.participantIds.length > 1
+                  ? session.participantIds[1]
+                  : 'Waiting user'
+              }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT STRIP -->
+      <div class="px-6 py-2 bg-[#141420] border-t border-white/10 text-center text-[11px] font-mono text-gray-500">
+        Content:
+        <span class="text-[#8B5CF6]">{{ session.contenuId }}</span>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="relative h-16 shrink-0 flex items-center gap-3 px-6 bg-[#10101a] border-t border-white/10">
+        <div class="absolute top-0 left-0 right-0 h-[2px] bg-white/5">
+          <div class="h-full w-1/3 rounded bg-gradient-to-r from-[#8B5CF6] to-[#a78bfa]"></div>
+        </div>
+
+        <button class="w-11 h-11 rounded-xl bg-[#8B5CF6] text-white flex items-center justify-center hover:bg-[#6844ee] transition">
+          ⏯
+        </button>
+
+        <button class="w-10 h-10 rounded-xl border border-white/10 bg-[#1a1a2a] text-gray-300 hover:border-[#8B5CF6]/30 hover:text-white transition">
+          ⏮
+        </button>
+
+        <button class="w-10 h-10 rounded-xl border border-white/10 bg-[#1a1a2a] text-gray-300 hover:border-[#8B5CF6]/30 hover:text-white transition">
+          ⏭
+        </button>
+
+        <button (click)="toggleMic()"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg border text-xs font-medium transition"
+          [ngClass]="isMicEnabled
+            ? 'bg-green-500/10 border-green-500/25 text-green-300 hover:bg-green-500/20'
+            : 'bg-red-500/10 border-red-500/25 text-red-300 hover:bg-red-500/20'">
+          <span>{{ isMicEnabled ? '🎤' : '🔇' }}</span>
+          <span>{{ isMicEnabled ? 'Mic on' : 'Mic off' }}</span>
+        </button>
+
+        <button (click)="toggleCamera()"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg border text-xs font-medium transition"
+          [ngClass]="isCameraEnabled
+            ? 'bg-green-500/10 border-green-500/25 text-green-300 hover:bg-green-500/20'
+            : 'bg-red-500/10 border-red-500/25 text-red-300 hover:bg-red-500/20'">
+          <span>{{ isCameraEnabled ? '📷' : '🚫' }}</span>
+          <span>{{ isCameraEnabled ? 'Camera on' : 'Camera off' }}</span>
+        </button>
+
+        <div class="ml-auto text-xs font-mono text-gray-500">00:00 / --:--</div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="w-[300px] shrink-0 bg-[#10101a] border-l border-white/10 flex flex-col overflow-hidden">
+      <!-- TABS -->
+      <div class="flex border-b border-white/10">
+        <button (click)="activeTab = 'members'"
+          class="flex-1 py-3 text-sm font-semibold transition relative"
+          [ngClass]="activeTab === 'members' ? 'text-white' : 'text-gray-500 hover:text-gray-300'">
+          Members
+          <span *ngIf="activeTab === 'members'" class="absolute left-[20%] right-[20%] bottom-0 h-[2px] bg-[#8B5CF6] rounded-t"></span>
+        </button>
+
+        <button (click)="activeTab = 'chat'"
+          class="flex-1 py-3 text-sm font-semibold transition relative"
+          [ngClass]="activeTab === 'chat' ? 'text-white' : 'text-gray-500 hover:text-gray-300'">
+          Chat
+          <span *ngIf="activeTab === 'chat'" class="absolute left-[20%] right-[20%] bottom-0 h-[2px] bg-[#8B5CF6] rounded-t"></span>
+        </button>
+      </div>
+
+      <!-- MEMBERS -->
+      <div *ngIf="activeTab === 'members'" class="flex-1 overflow-y-auto p-4">
+        <p class="mb-3 flex items-center gap-2 text-[10px] uppercase tracking-[0.12em] font-mono text-gray-500">
+          <span>In session ({{ session.participantIds?.length || 0 }})</span>
+          <span class="flex-1 h-px bg-white/10"></span>
+        </p>
+
+        <div *ngFor="let pid of session.participantIds; let i = index"
+             class="flex items-center gap-3 p-2.5 rounded-xl mb-1 hover:bg-[#1a1a2a] transition">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0"
+               [style.background]="memberColors[i % memberColors.length].bg"
+               [style.color]="memberColors[i % memberColors.length].text">
+            {{ pid.toString().slice(0, 2).toUpperCase() }}
+          </div>
+
+          <div>
+            <p class="text-sm font-medium text-white">
+              {{ pid }}
+              <span *ngIf="i === 0" class="ml-1 text-[10px] font-bold text-[#8B5CF6]">HOST</span>
+            </p>
+            <p class="text-xs text-gray-500">{{ i === 0 ? 'Watching now' : 'In session' }}</p>
+          </div>
+
+          <div class="ml-auto w-2 h-2 rounded-full"
+               [ngClass]="i === 0 ? 'bg-[#00e5a0] shadow-[0_0_6px_#00e5a0]' : 'bg-[#8B5CF6] shadow-[0_0_6px_#8B5CF6]'"></div>
+        </div>
+
+        <div *ngIf="!session.participantIds?.length" class="text-center text-sm text-gray-500 mt-8">
+          No participants yet.
+        </div>
+
+        <div class="mt-5 rounded-xl border border-white/10 bg-[#1a1a2a] p-4">
+          <p class="text-xs text-gray-400 mb-3">Share the session link to invite others to watch together.</p>
+          <button (click)="copySessionLink()"
+            [ngClass]="sessionLinkCopied ? 'bg-green-500/20 border border-green-500/30 text-green-300' : 'bg-[#8B5CF6] text-white hover:bg-[#6844ee]'"
+            class="w-full rounded-lg py-2.5 text-sm font-semibold transition">
+            {{ sessionLinkCopied ? '✓ Link copied' : 'Copy invite link' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div *ngIf="activeTab === 'chat'" class="flex-1 flex flex-col overflow-hidden">
+        <div class="flex-1 overflow-y-auto p-4 space-y-3 watchparty-chat-scroll" #chatContainer>
+          <div *ngFor="let msg of chatMessages"
+               class="flex gap-2 items-start"
+               [ngClass]="{
+                 'flex-row-reverse': msg.isMe,
+                 'justify-center': msg.type === 'JOIN' || msg.type === 'LEAVE'
+               }">
+
+            <!-- SYSTEM JOIN / LEAVE -->
+            <ng-container *ngIf="msg.type === 'JOIN' || msg.type === 'LEAVE'; else normalMessageBlock">
+              <div class="max-w-[220px]">
+                <div class="px-3 py-2 text-sm text-white text-center border border-[#8B5CF6]/20 bg-[#8B5CF6]/15 rounded-2xl">
+                  {{ msg.text }}
+                </div>
+                <p class="mt-1 text-[10px] font-mono text-gray-500 text-center">
+                  {{ msg.time }}
+                </p>
+              </div>
+            </ng-container>
+
+            <ng-template #normalMessageBlock>
+              <div class="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0"
+                   [style.background]="msg.isMe ? 'rgba(120,85,255,0.15)' : 'rgba(26,107,255,0.15)'"
+                   [style.color]="msg.isMe ? '#8B5CF6' : '#1a6bff'">
+                {{ msg.initials }}
+              </div>
+
+              <div class="max-w-[195px]" [ngClass]="{'flex flex-col items-end': msg.isMe}">
+                <p class="text-[10px] font-mono font-semibold mb-1"
+                   [ngClass]="msg.isMe ? 'text-right text-[#8B5CF6]' : 'text-[#1a6bff]'">
+                  {{ msg.author }}
+                </p>
+
+                <!-- TEXT MESSAGE -->
+                <div *ngIf="msg.type === 'CHAT' || !msg.type"
+                     class="px-3 py-2 text-sm text-white leading-relaxed break-words border"
+                     [ngClass]="msg.isMe
+                       ? 'bg-[#8B5CF6]/20 border-[#8B5CF6]/25 rounded-[12px_4px_12px_12px]'
+                       : 'bg-[#1a1a2a] border-white/10 rounded-[4px_12px_12px_12px]'">
+                  {{ msg.text }}
+                </div>
+
+                <!-- REACTION MESSAGE -->
+                <div *ngIf="msg.type === 'REACTION'"
+                     class="px-3 py-2 border text-center"
+                     [ngClass]="msg.isMe
+                       ? 'bg-[#8B5CF6]/20 border-[#8B5CF6]/25 rounded-[12px_4px_12px_12px]'
+                       : 'bg-[#1a1a2a] border-white/10 rounded-[4px_12px_12px_12px]'">
+                  <span class="text-3xl leading-none">{{ msg.reaction || msg.text }}</span>
+                </div>
+
+                <!-- GIF MESSAGE -->
+                <div *ngIf="msg.type === 'GIF'"
+                     class="p-2 border"
+                     [ngClass]="msg.isMe
+                       ? 'bg-[#8B5CF6]/20 border-[#8B5CF6]/25 rounded-[12px_4px_12px_12px]'
+                       : 'bg-[#1a1a2a] border-white/10 rounded-[4px_12px_12px_12px]'">
+                  <img
+                    [src]="msg.gifUrl || msg.text"
+                    alt="gif message"
+                    class="w-[150px] h-[120px] object-cover rounded-xl"
+                  />
+                </div>
+                <!-- VOICE MESSAGE -->
+<div *ngIf="msg.type === 'VOICE'"
+     class="px-3 py-2 border"
+     [ngClass]="msg.isMe
+       ? 'bg-[#8B5CF6]/20 border-[#8B5CF6]/25 rounded-[12px_4px_12px_12px]'
+       : 'bg-[#1a1a2a] border-white/10 rounded-[4px_12px_12px_12px]'">
+  <div class="flex items-center gap-2 mb-1 text-xs text-gray-300">
+    <span>🎤</span>
+    <span>Voice message</span>
+  </div>
+
+<audio controls [src]="getAudioUrl(msg.audioUrl || msg.text)" class="w-[170px]"></audio></div>
+
+                <p class="mt-1 text-[10px] font-mono text-gray-500" [ngClass]="{'text-right': msg.isMe}">
+                  {{ msg.time }}
+                </p>
+              </div>
+            </ng-template>
+          </div>
+
+          <div *ngIf="chatMessages.length === 0" class="text-center text-sm text-gray-500 mt-8">
+            No messages yet. Say hello 👋
+          </div>
+        </div>
+
+       <!-- INPUT + PICKERS -->
+<div class="relative p-3 border-t border-white/10" (click)="$event.stopPropagation()">
+
+  <div *ngIf="showReactionPicker"
+       class="absolute bottom-[68px] left-3 z-30 w-[220px] rounded-2xl border border-[#8B5CF6]/25 bg-[#141420] p-3 shadow-2xl">
+    <div class="grid grid-cols-4 gap-2">
+      <button *ngFor="let reaction of reactions" type="button" (click)="sendReaction(reaction)"
+        class="h-11 rounded-xl border border-white/10 bg-[#1a1a2a] text-2xl hover:border-[#8B5CF6]/35 hover:bg-[#221f3a] transition">
+        {{ reaction }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="showGifPicker"
+       class="absolute bottom-[68px] left-[58px] z-30 w-[230px] rounded-2xl border border-[#8B5CF6]/25 bg-[#141420] p-3 shadow-2xl">
+    <p class="text-[11px] font-mono text-gray-400 mb-2">Choose a GIF</p>
+    <div class="grid grid-cols-2 gap-2 max-h-[240px] overflow-y-auto watchparty-chat-scroll">
+      <button *ngFor="let gif of gifList" type="button" (click)="sendGif(gif.url)"
+        class="rounded-xl overflow-hidden border border-white/10 bg-[#1a1a2a] hover:border-[#8B5CF6]/35 transition">
+        <img [src]="gif.url" [alt]="gif.label" class="w-full h-[72px] object-cover" />
+        <div class="px-2 py-1 text-[10px] text-gray-300 text-left">{{ gif.label }}</div>
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="pendingVoiceUrl"
+       class="mb-2 flex items-center gap-2 rounded-xl border border-[#8B5CF6]/25 bg-[#8B5CF6]/10 p-2">
+    <span class="text-xs text-gray-300">🎤 Voice ready</span>
+    <audio controls [src]="pendingVoiceUrl" class="flex-1 h-8 min-w-0"></audio>
+    <button type="button" (click)="cancelPendingVoice()" class="text-red-300 text-lg px-1">
+      ✕
+    </button>
+  </div>
+
+  <div class="flex gap-2 items-center">
+    <button type="button" (click)="toggleReactionPicker(); $event.stopPropagation()"
+      class="w-10 h-10 rounded-xl border border-white/10 bg-[#1a1a2a] text-white flex items-center justify-center hover:border-[#8B5CF6]/35 hover:bg-[#221f3a] transition shrink-0">
+      😊
+    </button>
+
+    <button type="button" (click)="toggleGifPicker(); $event.stopPropagation()"
+      class="w-10 h-10 rounded-xl border border-white/10 bg-[#1a1a2a] text-[11px] font-bold text-white flex items-center justify-center hover:border-[#8B5CF6]/35 hover:bg-[#221f3a] transition shrink-0">
+      GIF
+    </button>
+
+    <button type="button" (click)="toggleVoiceRecording()"
+      [ngClass]="isRecordingVoice
+        ? 'bg-red-500/20 border-red-500/40 text-red-300 animate-pulse'
+        : 'bg-[#1a1a2a] border-white/10 text-white hover:border-[#8B5CF6]/35 hover:bg-[#221f3a]'"
+      class="w-10 h-10 rounded-xl border flex items-center justify-center transition shrink-0">
+      {{ isRecordingVoice ? '■' : '🎤' }}
+    </button>
+
+    <input
+      [(ngModel)]="chatInput"
+      (keydown.enter)="sendMessage()"
+      placeholder="Send a message..."
+      class="flex-1 min-w-0 rounded-xl border border-white/10 bg-[#1a1a2a] px-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-[#8B5CF6]/35 transition"
+    />
+
+   <button
+  *ngIf="pendingVoiceBlob"
+  type="button"
+  (click)="sendPendingVoice()"
+  class="w-10 h-10 rounded-xl bg-[#8B5CF6] text-white flex items-center justify-center hover:bg-[#6844ee] transition shrink-0">
+  ➤
+</button>
+
+<button
+  *ngIf="!pendingVoiceBlob"
+  type="button"
+  (click)="sendMessage()"
+  [disabled]="!chatInput.trim()"
+  class="w-10 h-10 rounded-xl bg-[#8B5CF6] text-white flex items-center justify-center hover:bg-[#6844ee] transition shrink-0 disabled:opacity-40">
+  ➤
+</button>
+  </div>
+</div>
+  </div>
+
+  <!-- ===== SUCCESS TOAST ===== -->
+  <div *ngIf="successMessage"
+       class="fixed bottom-6 right-6 z-40 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm font-mono text-green-300 shadow-lg">
+    ✓ {{ successMessage }}
+  </div>
+
+  <!-- ===== HOST LEAVE MODAL ===== -->
+  <div *ngIf="showHostLeaveModal"
+       class="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+    <div class="w-full max-w-md rounded-3xl border border-[#8B5CF6]/20 bg-[#141420] p-6 shadow-2xl">
+      <h2 class="text-2xl font-bold text-white mb-2">Leave session</h2>
+      <p class="text-sm text-gray-400 mb-6">
+        You are the host. Do you want to leave only for yourself, or close the session for everyone?
+      </p>
+
+      <div class="space-y-3">
+        <button
+          (click)="leaveOnlyMeAsHost()"
+          [disabled]="leavingInProgress"
+          class="w-full rounded-xl border border-white/10 bg-[#1a1a2a] px-4 py-3 text-left text-white hover:border-[#8B5CF6]/30 transition disabled:opacity-50">
+          <div class="font-semibold">Quit only for me</div>
+          <div class="text-sm text-gray-400 mt-1">
+            You leave the session, but the others can continue.
+          </div>
+        </button>
+
+        <button
+          (click)="closeForEveryoneAsHost()"
+          [disabled]="leavingInProgress"
+          class="w-full rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-left text-red-300 hover:bg-red-500/20 transition disabled:opacity-50">
+          <div class="font-semibold">Close session for everyone</div>
+          <div class="text-sm text-red-200/70 mt-1">
+            The session will be closed and all participants will be disconnected.
+          </div>
+        </button>
+
+        <button
+          (click)="closeHostLeaveModal()"
+          [disabled]="leavingInProgress"
+          class="w-full rounded-xl border border-[#8B5CF6]/20 bg-[#1C1F35] px-4 py-3 text-gray-300 hover:bg-[#252847] transition disabled:opacity-50">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

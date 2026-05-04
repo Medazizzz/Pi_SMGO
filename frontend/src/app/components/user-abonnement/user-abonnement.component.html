@@ -1,0 +1,66 @@
+<div class="space-y-8 p-6 max-w-5xl mx-auto">
+  <div class="text-center">
+    <h1 class="text-4xl text-white mb-3">Subscription Plans</h1>
+    <p class="text-gray-400 text-lg">Choose the plan that fits you</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="px-4 py-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-400 text-center">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="loading" class="flex justify-center py-16">
+    <div class="w-10 h-10 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+  <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div *ngFor="let a of abonnements"
+      [class]="'relative bg-[#141920] rounded-2xl p-8 border-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ' +
+        (isPremium(a)
+          ? 'border-yellow-500 hover:shadow-yellow-500/20'
+          : 'border-[#8B5CF6]/40 hover:border-[#8B5CF6] hover:shadow-[#8B5CF6]/20')">
+
+      <div *ngIf="isPremium(a)"
+        class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-yellow-500 text-black text-xs font-bold rounded-full uppercase tracking-wider">
+        Popular
+      </div>
+
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <div [class]="'inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border ' +
+            (isPremium(a) ? 'border-yellow-500/50 text-yellow-400 bg-yellow-500/10' : 'border-[#8B5CF6]/50 text-[#8B5CF6] bg-[#8B5CF6]/10')">
+            <span *ngIf="isPremium(a)" class="w-3.5 h-3.5"></span>
+            <span *ngIf="!isPremium(a)" class="w-3.5 h-3.5"></span>
+            {{ a.type }}
+          </div>
+        </div>
+        <div [class]="'p-3 rounded-xl ' + (isPremium(a) ? 'bg-yellow-500/20' : 'bg-[#8B5CF6]/20')">
+          <span
+            [class]="'w-5 h-5 ' + (isPremium(a) ? 'text-yellow-400' : 'text-[#8B5CF6]')">
+          </span>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="flex items-baseline gap-1">
+          <span class="text-5xl font-bold text-white">{{ a.prix | number:'1.2-2' }}</span>
+          <span class="text-gray-400 text-lg">USD/month</span>
+        </div>
+      </div>
+
+      <p class="text-gray-400 leading-relaxed mb-6">{{ a.description }}</p>
+
+      <div [class]="'h-px mb-6 ' + (isPremium(a) ? 'bg-yellow-500/20' : 'bg-[#8B5CF6]/20')"></div>
+
+      <button [class]="'w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 ' +
+        (isPremium(a)
+          ? 'bg-yellow-500 hover:bg-yellow-400 text-black'
+          : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white')">
+        Choose Plan
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && abonnements.length === 0" class="text-center py-16 text-gray-500">
+    No plans available right now.
+  </div>
+</div>

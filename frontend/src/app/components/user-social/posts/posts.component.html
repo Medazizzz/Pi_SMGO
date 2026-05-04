@@ -1,0 +1,45 @@
+<div class="min-h-screen bg-[#0B0E14] px-6 py-8 max-w-3xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-medium text-[#E4E6EB]">Forum</h2>
+    <button (click)="showAddForm = !showAddForm" class="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+      {{ showAddForm ? 'Cancel' : '+ New post' }}
+    </button>
+  </div>
+
+  <app-add-post *ngIf="showAddForm || selectedPost" [postToEdit]="selectedPost" (refresh)="clearSelection()"></app-add-post>
+
+  <div *ngFor="let post of posts" class="bg-[#141920] border border-[rgba(139,92,246,0.2)] rounded-xl p-5 mb-4">
+    <div class="flex items-start gap-3 mb-3">
+      <div class="w-8 h-8 rounded-full bg-[#8B5CF6]/20 border border-[#8B5CF6]/30 flex items-center justify-center flex-shrink-0">
+        <span class="text-xs font-medium text-[#8B5CF6]">{{ post.authorUsername ? post.authorUsername.charAt(0).toUpperCase() : '?' }}</span>
+      </div>
+      <div class="flex-1">
+        <h3 class="text-lg font-medium text-[#E4E6EB]">{{ post.titre }}</h3>
+        <span class="text-xs text-[#9CA3AF]/60">
+          By <span class="text-[#8B5CF6]">{{ post.authorUsername }}</span>
+          · {{ post.datePublication | date:'dd/MM/yyyy' }}
+        </span>
+      </div>
+      <div class="flex gap-2 flex-shrink-0">
+        <button (click)="editPost(post)" class="text-xs px-3 py-1.5 bg-[#252B38] hover:bg-[#1E2530] text-[#E4E6EB] rounded-lg transition-colors">Update</button>
+        <button (click)="deletePost(post.id!)" class="text-xs px-3 py-1.5 bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded-lg transition-colors">Delete</button>
+      </div>
+    </div>
+
+    <p class="text-[#9CA3AF] text-sm leading-relaxed mb-3 ml-11">{{ post.contenu }}</p>
+
+    <div class="border-t border-[rgba(139,92,246,0.1)] pt-3 ml-11">
+      <button (click)="toggleComments(post.id!)" class="flex items-center gap-2 text-xs text-[#9CA3AF] hover:text-[#8B5CF6] transition-colors">
+        {{ isExpanded(post.id!) ? 'Hide Comments' : 'View Comments' }}
+      </button>
+    </div>
+
+    <div *ngIf="isExpanded(post.id!)" class="ml-11">
+      <app-commentaires [postId]="post.id!"></app-commentaires>
+    </div>
+  </div>
+
+  <p *ngIf="posts.length === 0" class="text-center text-[#9CA3AF] text-sm py-12">
+    No posts yet. Be the first to publish.
+  </p>
+</div>
