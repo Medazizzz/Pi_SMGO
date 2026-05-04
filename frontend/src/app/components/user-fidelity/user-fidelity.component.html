@@ -1,0 +1,50 @@
+<div class="space-y-8 p-6 max-w-5xl mx-auto">
+  <div class="text-center">
+    <h1 class="text-4xl text-white mb-3">Loyalty Program</h1>
+    <p class="text-gray-400 text-lg">Explore every reward tier</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="px-4 py-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-400 text-center">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="loading" class="flex justify-center py-16">
+    <div class="w-10 h-10 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+  <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div *ngFor="let f of fidelities"
+      [class]="'relative bg-[#141920] rounded-2xl p-8 border-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ' + getLevelGlow(f.level)">
+
+      <div class="flex items-center justify-between mb-6">
+        <div [class]="'inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold border ' + getLevelColor(f.level) + ' ' + getLevelBg(f.level)">
+          <span class="w-3.5 h-3.5"></span>
+          {{ f.level }}
+        </div>
+        <div [class]="'p-3 rounded-xl ' + getLevelBg(f.level)">
+          <span [class]="'w-5 h-5 ' + getLevelColor(f.level)"></span>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="flex items-baseline gap-2">
+          <span class="w-6 h-6 text-yellow-500"></span>
+          <span class="text-4xl font-bold text-white">{{ f.points }}</span>
+          <span class="text-gray-400">required points</span>
+        </div>
+      </div>
+
+      <p class="text-gray-400 leading-relaxed mb-6">{{ f.description }}</p>
+
+      <div [class]="'h-px mb-6 ' + getLevelBg(f.level)"></div>
+
+      <button [class]="'w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 border-2 ' + getLevelColor(f.level) + ' hover:' + getLevelBg(f.level)">
+        Reach This Tier
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && fidelities.length === 0" class="text-center py-16 text-gray-500">
+    No loyalty levels available right now.
+  </div>
+</div>

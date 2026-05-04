@@ -1,0 +1,360 @@
+<div class="w-full text-white">
+
+  <div *ngIf="mode === 'user'" class="max-w-3xl mx-auto mt-8">
+    <div class="bg-[#111827] border border-[#8B5CF6]/20 rounded-2xl shadow-lg p-8">
+      <h2 class="text-3xl font-bold mb-6 text-white">Share your feedback</h2>
+
+      <div *ngIf="successMessage"
+           class="mb-4 rounded-lg bg-green-500/20 border border-green-500/30 px-4 py-3 text-green-300">
+        {{ successMessage }}
+      </div>
+
+      <div *ngIf="errorMessage"
+           class="mb-4 rounded-lg bg-red-500/20 border border-red-500/30 px-4 py-3 text-red-300">
+        {{ errorMessage }}
+      </div>
+
+      <form #feedbackForm="ngForm" (ngSubmit)="submit(feedbackForm)" class="space-y-5" novalidate>
+        <div>
+          <label class="block mb-2 text-sm text-gray-300">WatchParty</label>
+          <select
+            [(ngModel)]="watchPartyId"
+            #watchPartyIdCtrl="ngModel"
+            required
+            (change)="onWatchPartyChange()"
+            class="w-full rounded-xl border border-[#8B5CF6]/20 bg-[#0B0E14] px-4 py-3 text-white outline-none focus:border-[#8B5CF6]">
+            <option value="" disabled>-- Select a WatchParty --</option>
+            <option *ngFor="let w of watchParties" [value]="w.id">{{ w.titre }}</option>
+          </select>
+          <div *ngIf="watchPartyIdCtrl.invalid && watchPartyIdCtrl.touched" class="mt-2 text-sm text-red-400">
+            <div *ngIf="watchPartyIdCtrl.errors?.['required']">WatchParty is required.</div>
+          </div>
+        </div>
+
+        <ng-container *ngIf="watchPartyId">
+          <ng-container *ngIf="isParticipant; else notParticipant">
+            <div>
+              <label class="block mb-2 text-sm text-gray-300">Rating</label>
+              <div class="flex gap-2" (mouseleave)="resetHover()">
+                <span
+                  *ngFor="let star of stars"
+                  (mouseenter)="hoverStar(star)"
+                  (click)="setNote(star)"
+                  class="cursor-pointer text-4xl transition-transform duration-100"
+                  [ngStyle]="{
+                    'color': isStarActive(star) ? '#FBBF24' : '#374151',
+                    'transform': isStarActive(star) ? 'scale(1.2)' : 'scale(1)'
+                  }">★</span>
+              </div>
+              <p class="mt-2 text-sm text-gray-400" *ngIf="note">
+                You selected {{ note }} star{{ note > 1 ? 's' : '' }}
+              </p>
+              <p class="mt-2 text-sm text-red-400" *ngIf="!note && feedbackForm.submitted">
+                Please choose a rating.
+              </p>
+            </div>
+
+            <div>
+              <label class="block mb-2 text-sm text-gray-300">Comment</label>
+              <textarea
+                [(ngModel)]="commentaire"
+                #commentaireCtrl="ngModel"
+                required
+                minlength="5"
+                rows="5"
+                placeholder="Write your comment..."
+                class="w-full rounded-xl border border-[#8B5CF6]/20 bg-[#0B0E14] px-4 py-3 text-white outline-none focus:border-[#8B5CF6]">
+              </textarea>
+              <div *ngIf="commentaireCtrl.invalid && commentaireCtrl.touched" class="mt-2 text-sm text-red-400">
+                <div *ngIf="commentaireCtrl.errors?.['required']">Comment is required.</div>
+                <div *ngIf="commentaireCtrl.errors?.['minlength']">Comment must be at least 5 characters long.</div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="feedbackForm.invalid || !note"
+              class="rounded-xl bg-[#8B5CF6] px-6 py-3 font-semibold text-white transition hover:bg-[#7C3AED] disabled:opacity-50 disabled:cursor-not-allowed">
+              Submit
+            </button>
+          </ng-container>
+
+          <ng-template #notParticipant>
+            <div class="flex items-center gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-5 py-4 text-yellow-300">
+              <span class="text-2xl">🔒</span>
+              <div>
+                <p class="font-semibold">Restricted access</p>
+                <p class="text-sm text-yellow-200/80">Only participants can post feedback. You can still vote on existing feedback.</p>
+              </div>
+            </div>
+          </ng-template>
+
+          <div class="mt-8">
+            <h3 class="text-xl font-bold text-white mb-4">
+              Feedback
+              <span class="ml-2 text-sm font-normal text-gray-400">({{ feedbacks.length }} review{{ feedbacks.length !== 1 ? 's' : '' }})</span>
+            </h3>
+
+            <div *ngIf="feedbacks.length === 0"
+                 class="rounded-xl border border-[#8B5CF6]/20 bg-[#0B0E14] px-5 py-6 text-center text-gray-500">
+              No feedback for this WatchParty yet.
+            </div>
+
+            <div class="grid gap-4" *ngIf="feedbacks.length > 0">
+              <div *ngFor="let f of feedbacks"
+                   class="rounded-2xl border border-[#8B5CF6]/20 bg-[#0B0E14] p-5 shadow-md">
+
+                <div *ngIf="editingId !== f.id">
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="flex gap-1">
+                      <span *ngFor="let star of stars"
+                            class="text-xl"
+                            [ngStyle]="{ 'color': star <= f.note ? '#FBBF24' : '#374151' }">★</span>
+                    </div>
+                    <div class="text-xs text-gray-500" *ngIf="f.dateFeedback">
+                      {{ f.dateFeedback | date:'dd/MM/yyyy' }}
+                    </div>
+                  </div>
+
+                  <p class="text-gray-200 mb-4">{{ f.commentaire }}</p>
+
+                  <div class="flex items-center gap-4 mb-4">
+                    <button
+                      (click)="vote(f.id, 'like')"
+                      class="flex items-center gap-2 px-4 py-2 rounded-xl border transition"
+                      [ngClass]="f.likedByUserIds?.includes(currentUserId)
+                        ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                        : 'border-gray-700 text-gray-400 hover:border-green-500/50 hover:text-green-400'">
+                      <span class="text-lg">👍</span>
+                      <span class="font-semibold text-sm">{{ f.likes || 0 }}</span>
+                    </button>
+
+                    <button
+                      (click)="vote(f.id, 'dislike')"
+                      class="flex items-center gap-2 px-4 py-2 rounded-xl border transition"
+                      [ngClass]="f.dislikedByUserIds?.includes(currentUserId)
+                        ? 'bg-red-500/20 border-red-500/50 text-red-400'
+                        : 'border-gray-700 text-gray-400 hover:border-red-500/50 hover:text-red-400'">
+                      <span class="text-lg">👎</span>
+                      <span class="font-semibold text-sm">{{ f.dislikes || 0 }}</span>
+                    </button>
+
+                    <div class="flex-1" *ngIf="(f.likes || 0) + (f.dislikes || 0) > 0">
+                      <div class="flex justify-between text-xs text-gray-400 mb-1">
+                        <span>{{ f.likes || 0 }} useful</span>
+                        <span>{{ f.dislikes || 0 }} not useful</span>
+                      </div>
+                      <div class="w-full bg-gray-700 rounded-full h-1.5">
+                        <div class="bg-green-500 h-1.5 rounded-full transition-all duration-300"
+                             [ngStyle]="{ 'width': ((f.likes || 0) / ((f.likes || 0) + (f.dislikes || 0)) * 100) + '%' }">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div *ngIf="f.clientId === currentUserId" class="flex gap-3 pt-3 border-t border-[#8B5CF6]/10">
+                    <button
+                      (click)="startEdit(f)"
+                      class="flex items-center gap-2 rounded-lg bg-yellow-600/20 border border-yellow-600/40 px-4 py-2 text-yellow-400 hover:bg-yellow-600/30 transition text-sm font-medium">
+                      Edit
+                    </button>
+                    <button
+                      (click)="deleteFeedback(f.id)"
+                      class="flex items-center gap-2 rounded-lg bg-red-600/20 border border-red-600/40 px-4 py-2 text-red-400 hover:bg-red-600/30 transition text-sm font-medium">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+
+                <div *ngIf="editingId === f.id" class="space-y-4">
+                  <h3 class="text-lg font-semibold text-white">Edit my feedback</h3>
+
+                  <div>
+                    <label class="block mb-2 text-sm text-gray-300">Rating</label>
+                    <div class="flex gap-2" (mouseleave)="resetEditHover()">
+                      <span
+                        *ngFor="let star of stars"
+                        (mouseenter)="hoverEditStar(star)"
+                        (click)="setEditNote(star)"
+                        class="cursor-pointer text-4xl transition-transform duration-100"
+                        [ngStyle]="{
+                          'color': isEditStarActive(star) ? '#FBBF24' : '#374151',
+                          'transform': isEditStarActive(star) ? 'scale(1.2)' : 'scale(1)'
+                        }">★</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block mb-2 text-sm text-gray-300">Comment</label>
+                    <textarea
+                      [(ngModel)]="editCommentaire"
+                      rows="4"
+                      class="w-full rounded-xl border border-[#8B5CF6]/20 bg-[#111827] px-4 py-3 text-white outline-none focus:border-[#8B5CF6]">
+                    </textarea>
+                  </div>
+
+                  <div class="flex gap-3">
+                    <button
+                      (click)="saveEdit(f.id)"
+                      class="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 transition text-sm font-medium">
+                      Save
+                    </button>
+                    <button
+                      (click)="cancelEdit()"
+                      class="flex items-center gap-2 rounded-lg bg-gray-600 px-4 py-2 text-white hover:bg-gray-700 transition text-sm font-medium">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </form>
+    </div>
+  </div>
+
+  <div *ngIf="mode === 'admin'" class="w-full">
+    <div class="mb-6">
+      <h2 class="text-3xl font-bold text-white">Feedback list</h2>
+      <p class="text-gray-400 mt-2">All user feedback</p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-[#111827] border border-[#8B5CF6]/20 rounded-2xl p-4">
+        <p class="text-gray-400 text-xs mb-1">Total feedback</p>
+        <p class="text-white text-2xl font-bold">{{ statsTotal }}</p>
+      </div>
+      <div class="bg-[#111827] border border-[#8B5CF6]/20 rounded-2xl p-4">
+        <p class="text-gray-400 text-xs mb-1">Average rating</p>
+        <p class="text-white text-2xl font-bold">{{ statsMoyenne }}</p>
+        <p class="text-yellow-400 text-sm mt-1">{{ starsArray }}</p>
+      </div>
+      <div class="bg-[#111827] border border-[#8B5CF6]/20 rounded-2xl p-4">
+        <p class="text-gray-400 text-xs mb-1">Best rating</p>
+        <p class="text-green-400 text-2xl font-bold">{{ statsMeilleure }} / 5</p>
+      </div>
+      <div class="bg-[#111827] border border-[#8B5CF6]/20 rounded-2xl p-4">
+        <p class="text-gray-400 text-xs mb-1">Lowest rating</p>
+        <p class="text-red-400 text-2xl font-bold">{{ statsPire }} / 5</p>
+      </div>
+    </div>
+
+    <div class="bg-[#111827] border border-[#8B5CF6]/20 rounded-2xl p-5 mb-6" *ngIf="statsTotal > 0">
+      <p class="text-gray-300 text-sm font-semibold mb-4">Rating distribution</p>
+      <div style="position: relative; height: 220px;">
+        <canvas #ratingChart></canvas>
+      </div>
+    </div>
+
+    <div *ngIf="successMessage"
+         class="mb-4 rounded-lg bg-green-500/20 border border-green-500/30 px-4 py-3 text-green-300">
+      {{ successMessage }}
+    </div>
+
+    <div *ngIf="errorMessage"
+         class="mb-4 rounded-lg bg-red-500/20 border border-red-500/30 px-4 py-3 text-red-300">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="feedbacks.length === 0 && !errorMessage"
+         class="rounded-2xl border border-[#8B5CF6]/20 bg-[#111827] p-6 text-gray-400">
+      No feedback found.
+    </div>
+
+    <div class="grid gap-4" *ngIf="feedbacks.length > 0">
+      <div *ngFor="let f of feedbacks"
+           class="rounded-2xl border border-[#8B5CF6]/20 bg-[#111827] p-5 shadow-md">
+
+        <div *ngIf="editingId !== f.id">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex gap-1">
+              <span *ngFor="let star of stars"
+                    class="text-2xl"
+                    [ngStyle]="{ 'color': star <= f.note ? '#FBBF24' : '#374151' }">★</span>
+            </div>
+            <div class="text-sm text-gray-400" *ngIf="f.dateFeedback">
+              {{ f.dateFeedback | date:'dd/MM/yyyy' }}
+            </div>
+          </div>
+
+          <p class="text-white text-lg mb-3">{{ f.commentaire }}</p>
+
+          <div class="grid md:grid-cols-2 gap-3 text-sm text-gray-300 mb-4">
+            <div><span class="font-semibold text-white">WatchParty ID:</span> {{ f.watchPartyId || 'Undefined' }}</div>
+            <div><span class="font-semibold text-white">Client ID:</span> {{ f.clientId || 'Undefined' }}</div>
+          </div>
+
+          <div class="flex items-center gap-4 mb-4">
+            <div class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-700 text-gray-400">
+              <span class="text-lg">👍</span>
+              <span class="font-semibold text-sm">{{ f.likes || 0 }}</span>
+            </div>
+            <div class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-700 text-gray-400">
+              <span class="text-lg">👎</span>
+              <span class="font-semibold text-sm">{{ f.dislikes || 0 }}</span>
+            </div>
+            <div class="flex-1" *ngIf="(f.likes || 0) + (f.dislikes || 0) > 0">
+              <div class="flex justify-between text-xs text-gray-400 mb-1">
+                <span>{{ f.likes || 0 }} useful</span>
+                <span>{{ f.dislikes || 0 }} not useful</span>
+              </div>
+              <div class="w-full bg-gray-700 rounded-full h-1.5">
+                <div class="bg-green-500 h-1.5 rounded-full transition-all duration-300"
+                     [ngStyle]="{ 'width': ((f.likes || 0) / ((f.likes || 0) + (f.dislikes || 0)) * 100) + '%' }">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-3">
+            <button (click)="startEdit(f)" class="rounded-lg bg-yellow-600 px-4 py-2 text-white hover:bg-yellow-700 transition">
+              Edit
+            </button>
+            <button (click)="deleteFeedback(f.id)" class="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700 transition">
+              Delete
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="editingId === f.id" class="space-y-4">
+          <h3 class="text-xl font-semibold text-white">Edit feedback</h3>
+
+          <div>
+            <label class="block mb-2 text-sm text-gray-300">Rating</label>
+            <div class="flex gap-2" (mouseleave)="resetEditHover()">
+              <span
+                *ngFor="let star of stars"
+                (mouseenter)="hoverEditStar(star)"
+                (click)="setEditNote(star)"
+                class="cursor-pointer text-4xl transition-transform duration-100"
+                [ngStyle]="{
+                  'color': isEditStarActive(star) ? '#FBBF24' : '#374151',
+                  'transform': isEditStarActive(star) ? 'scale(1.2)' : 'scale(1)'
+                }">★</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block mb-2 text-sm text-gray-300">Comment</label>
+            <textarea
+              [(ngModel)]="editCommentaire"
+              rows="4"
+              class="w-full rounded-xl border border-[#8B5CF6]/20 bg-[#0B0E14] px-4 py-3 text-white outline-none focus:border-[#8B5CF6]">
+            </textarea>
+          </div>
+
+          <div class="flex gap-3">
+            <button (click)="saveEdit(f.id)" class="rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 transition">
+              Save
+            </button>
+            <button (click)="cancelEdit()" class="rounded-lg bg-gray-600 px-4 py-2 text-white hover:bg-gray-700 transition">
+              Cancel
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

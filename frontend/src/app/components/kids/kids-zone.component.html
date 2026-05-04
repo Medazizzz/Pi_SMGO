@@ -1,0 +1,129 @@
+<div class="kids-zone-wrapper">
+  <!-- Fun Header -->
+  <div class="kids-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1 class="kids-title">🎮 KIDS ZONE 🎮</h1>
+        <p class="profile-name">Welcome, {{ selectedProfile() }}! 👋</p>
+      </div>
+
+      <!-- Control Buttons -->
+      <div class="header-controls">
+        <button (click)="goBackToProfiles()" class="btn-back" title="Back to profiles">
+          🏠 Back
+        </button>
+        <button (click)="logout()" class="btn-logout" title="Logout">
+          🚪 Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Fun Decorations -->
+    <div class="fun-decorations">
+      <span class="decoration">�</span>
+      <span class="decoration">🎥</span>
+      <span class="decoration">📺</span>
+      <span class="decoration">🍿</span>
+      <span class="decoration">🎭</span>
+      <span class="decoration">🎪</span>
+    </div>
+  </div>
+
+  <!-- Main Content Container -->
+  <div class="kids-content-container">
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="loading-state">
+      <div class="loading-spinner">🎬</div>
+      <h2>Loading your fun movies and shows...</h2>
+      <div class="loading-text">Just a moment! 🍿</div>
+    </div>
+
+    <!-- Content Grid -->
+    <div *ngIf="!isLoading()" class="content-grid">
+      <!-- Content Cards -->
+      <div
+        *ngFor="let item of content()"
+        (mouseenter)="setHoveredContent(item.id)"
+        (mouseleave)="setHoveredContent(null)"
+        class="content-card"
+      >
+        <!-- Image Container -->
+        <div class="content-image-wrapper">
+          <img [src]="item.image" [alt]="item.title" class="content-image" />
+
+          <!-- Content Type Badge -->
+          <div class="content-badge">
+            <span class="badge-emoji">{{ getContentTypeEmoji(item.contentType) }}</span>
+            <span class="badge-text">{{ item.contentType }}</span>
+          </div>
+
+          <!-- Age Group Badge -->
+          <div class="age-badge">{{ getAgeGroupEmoji(item.ageGroup) }} {{ item.ageGroup }}</div>
+
+          <!-- Play Button (on hover) -->
+          <div
+            *ngIf="hoveredContentId() === item.id"
+            class="play-overlay"
+          >
+            <button (click)="watchContent(item)" class="btn-play-large">
+              ▶️ WATCH NOW!
+            </button>
+            <p class="watch-text">Tap to watch! 🎉</p>
+          </div>
+        </div>
+
+        <!-- Content Info -->
+        <div class="content-info">
+          <h3 class="content-title">{{ item.title }}</h3>
+
+          <!-- Rating -->
+          <div class="rating">
+            <span class="stars">{{ getRatingStars(item.rating) }}</span>
+            <span class="rating-number">{{ item.rating | number: '1.1-1' }}</span>
+          </div>
+
+          <!-- Description -->
+          <p class="content-description">{{ item.description }}</p>
+
+          <!-- Duration and Genre -->
+          <div class="content-meta">
+            <span class="duration">⏱️ {{ item.duration }}</span>
+            <span class="genre">🎬 {{ item.genre }}</span>
+          </div>
+
+          <!-- Watch Button -->
+          <button
+            (click)="watchContent(item)"
+            class="btn-watch"
+            [class.hovered]="hoveredContentId() === item.id"
+          >
+            ▶️ Watch Now!
+          </button>
+        </div>
+
+        <!-- Fun Corner Emoji -->
+        <div class="fun-corner">🎈</div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading() && content().length === 0" class="empty-state">
+      <div class="empty-icon">🎪</div>
+      <h2>No movies or shows available yet!</h2>
+      <p>Check back soon for more fun! 🎉</p>
+    </div>
+  </div>
+
+  <!-- Fun Footer -->
+  <div class="kids-footer">
+    <div class="footer-decoration">
+      <span class="footer-emoji">🎮</span>
+      <span class="footer-emoji">🎨</span>
+      <span class="footer-emoji">🎭</span>
+      <span class="footer-emoji">🎪</span>
+      <span class="footer-emoji">🎡</span>
+      <span class="footer-emoji">🎢</span>
+    </div>
+    <p class="footer-text">Have fun watching! 🍿 Remember to take breaks! 👀</p>
+  </div>
+</div>

@@ -1,0 +1,153 @@
+<div class="space-y-8 p-6 max-w-7xl mx-auto">
+  <!-- Hero Section -->
+  <div class="relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden animate-fade-in">
+    <img
+      src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200"
+      alt="Featured"
+      class="w-full h-full object-cover"
+    />
+    <div class="absolute inset-0 bg-gradient-to-t from-[#0B0E14] via-[#0B0E14]/60 to-transparent"></div>
+    <div class="absolute bottom-0 left-0 right-0 p-8 md:p-12">
+      <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#8B5CF6] text-white text-sm mb-4">
+        <span class="w-3 h-3"></span>
+        Trending Now
+      </span>
+      <h1 class="text-3xl md:text-5xl mb-4 text-white">
+        Welcome Back to ShowMatchGoOn
+      </h1>
+      <p class="text-lg text-gray-300 mb-6 max-w-2xl">
+        Your personalized entertainment hub. Discover what to watch tonight across all your streaming services and local theaters.
+      </p>
+      <div class="flex flex-wrap gap-4">
+        <button class="flex items-center gap-2 px-6 py-3 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg transition-all">
+          <span class="w-4 h-4"></span>
+          Explore Now
+        </button>
+        <button class="px-6 py-3 border border-[#8B5CF6] text-white hover:bg-[#8B5CF6]/10 rounded-lg transition-all">
+          My Watchlist
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Streaming Section -->
+  <div>
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-2xl mb-1 text-white flex items-center gap-2">
+          <span class="w-6 h-6 text-[#8B5CF6]"></span>
+          Streaming Libraries
+        </h2>
+        <p class="text-gray-400">Across Netflix, Prime, Disney+ & more</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div
+        *ngFor="let content of streamingData; let i = index"
+        (mouseenter)="setHoveredStream(content.id)"
+        (mouseleave)="setHoveredStream(null)"
+        [style.animation-delay]="(i * 0.1) + 's'"
+        class="animate-fade-in">
+        <div class="relative overflow-hidden bg-[#141920] border border-[#8B5CF6]/20 hover:border-[#8B5CF6] rounded-lg transition-all duration-300 group cursor-pointer">
+          <div class="relative h-[320px] overflow-hidden">
+            <img
+              [src]="content.image"
+              [alt]="content.title"
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+            <span
+              *ngIf="content.trending"
+              class="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#8B5CF6] text-white text-xs">
+              <span class="w-3 h-3"></span>
+              Trending
+            </span>
+            <div
+              [class.opacity-100]="hoveredStream() === content.id"
+              [class.opacity-0]="hoveredStream() !== content.id"
+              class="absolute inset-0 bg-gradient-to-t from-[#0B0E14] via-transparent to-transparent transition-opacity duration-300">
+              <div class="absolute bottom-0 left-0 right-0 p-4">
+                <button class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg transition-all">
+                  <span class="w-4 h-4"></span>
+                  Play Now
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="p-4">
+            <h3 class="text-white mb-2 truncate">{{ content.title }}</h3>
+            <div class="flex items-center justify-between text-sm text-gray-400">
+              <span class="text-[#8B5CF6]">{{ content.platform }}</span>
+              <div class="flex items-center gap-3">
+                <span class="flex items-center gap-1">
+                  <span class="w-3 h-3 text-yellow-500 fill-yellow-500"></span>
+                  {{ content.rating }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <span class="w-3 h-3"></span>
+                  {{ content.duration }}
+                </span>
+              </div>
+            </div>
+            <span class="inline-block mt-2 px-2 py-1 border border-[#8B5CF6]/30 text-gray-400 text-xs rounded">
+              {{ content.genre }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cinema Section -->
+  <div>
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-2xl mb-1 text-white flex items-center gap-2">
+          <span class="w-6 h-6 text-[#8B5CF6]"></span>
+          Now in Theaters
+        </h2>
+        <p class="text-gray-400">Book tickets for nearby showtimes</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div
+        *ngFor="let showtime of cinemaData; let i = index"
+        (mouseenter)="setHoveredCinema(showtime.id)"
+        (mouseleave)="setHoveredCinema(null)"
+        [style.animation-delay]="(i * 0.1) + 's'"
+        class="animate-fade-in">
+        <div class="bg-[#141920] border border-[#8B5CF6]/20 hover:border-[#8B5CF6] rounded-lg transition-all duration-300 overflow-hidden group cursor-pointer">
+          <div class="flex flex-col md:flex-row">
+            <div class="relative w-full md:w-48 h-64 md:h-auto overflow-hidden">
+              <img
+                [src]="showtime.image"
+                [alt]="showtime.title"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+            <div class="p-6 flex-1">
+              <h3 class="text-xl text-white mb-2">{{ showtime.title }}</h3>
+              <div class="flex items-center gap-2 text-sm text-gray-400 mb-4">
+                <span class="w-4 h-4 text-[#8B5CF6]"></span>
+                <span>{{ showtime.theater }}</span>
+                <span class="text-[#8B5CF6]">• {{ showtime.distance }}</span>
+              </div>
+              <div class="mb-4">
+                <p class="text-sm text-gray-400 mb-2">Showtimes Today</p>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    *ngFor="let time of showtime.times"
+                    class="px-3 py-1 border border-[#8B5CF6]/30 text-white hover:bg-[#8B5CF6] hover:border-[#8B5CF6] rounded text-sm transition-all">
+                    {{ time }}
+                  </button>
+                </div>
+              </div>
+              <button class="w-full md:w-auto px-6 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg transition-all">
+                Book Tickets
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

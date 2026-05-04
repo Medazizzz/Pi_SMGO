@@ -1,0 +1,148 @@
+<div class="space-y-6 p-6 max-w-7xl mx-auto">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h1 class="text-3xl text-white mb-2">Notification Hub</h1>
+      <p class="text-gray-400">Manage and send notifications to users</p>
+    </div>
+    <button (click)="openForm()" class="flex items-center gap-2 px-4 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg transition-all">
+      <span class="w-4 h-4"></span>
+      Send Notification
+    </button>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg">
+    {{ error }}
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6">
+      <span class="w-10 h-10 text-[#8B5CF6] mb-4"></span>
+      <h3 class="text-xl text-white mb-2">Total Notifications</h3>
+      <p class="text-3xl text-white mb-2">{{ sentThisWeek }}</p>
+      <p class="text-sm text-gray-400">All time</p>
+    </div>
+    
+    <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6">
+      <span class="w-10 h-10 text-[#8B5CF6] mb-4"></span>
+      <h3 class="text-xl text-white mb-2">Unread</h3>
+      <p class="text-3xl text-white mb-2">{{ unreadCount }}</p>
+      <p class="text-sm text-gray-400">New messages</p>
+    </div>
+    
+    <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6">
+      <span class="w-10 h-10 text-[#8B5CF6] mb-4"></span>
+      <h3 class="text-xl text-white mb-2">Status</h3>
+      <p class="text-3xl text-white mb-2">Active</p>
+      <p class="text-sm text-gray-400">System operational</p>
+    </div>
+  </div>
+
+  <!-- Notifications Table -->
+  <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-[#0B0E14] border-b border-[#8B5CF6]/20">
+          <tr>
+            <th class="px-6 py-4 text-left text-sm text-gray-400">Title</th>
+            <th class="px-6 py-4 text-left text-sm text-gray-400">Message</th>
+            <th class="px-6 py-4 text-left text-sm text-gray-400">Status</th>
+            <th class="px-6 py-4 text-right text-sm text-gray-400">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#8B5CF6]/10">
+          <tr *ngFor="let notif of notifications" class="hover:bg-[#0B0E14]/50 transition-colors" [class]="isNotificationRead(notif) ? '' : 'bg-[#8B5CF6]/5'">
+            <td class="px-6 py-4 text-white font-medium">{{ notif.title || 'Notification' }}</td>
+            <td class="px-6 py-4 text-gray-400 max-w-xs truncate">{{ notif.message }}</td>
+            <td class="px-6 py-4">
+              <span [class]="isNotificationRead(notif) ? 'text-green-500' : 'text-yellow-500'" class="text-xs font-medium">
+                {{ isNotificationRead(notif) ? 'Read' : 'Unread' }}
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center justify-end gap-2">
+                <button 
+                  *ngIf="!isNotificationRead(notif)"
+                  (click)="markAsRead(notif.id!)"
+                  class="px-2 py-1 text-xs text-gray-400 hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 rounded transition-all">
+                  Mark Read
+                </button>
+                <button (click)="deleteNotification(notif.id!)" title="Delete notification" aria-label="Delete notification" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all">
+                  <span class="w-4 h-4"></span>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="notifications.length === 0">
+            <td colspan="4" class="px-6 py-8 text-center text-gray-400">
+              No notifications yet. <button (click)="openForm()" class="text-[#8B5CF6] hover:underline">Send one</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Notification Modal -->
+<div *ngIf="showForm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+  <div class="bg-[#141920] border border-[#8B5CF6]/30 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between p-6 border-b border-[#8B5CF6]/20">
+      <h2 class="text-2xl text-white">Send New Notification</h2>
+      <button (click)="closeForm()" title="Close form" aria-label="Close form" class="text-gray-400 hover:text-white">
+        <span class="w-5 h-5"></span>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <form [formGroup]="notificationForm" class="p-6 space-y-4">
+      <!-- Title -->
+      <div>
+        <label class="block text-sm text-gray-300 mb-2">Title <span class="text-red-500">*</span></label>
+        <input
+          type="text"
+          formControlName="title"
+          placeholder="Notification title"
+          class="w-full px-4 py-2 bg-[#0B0E14] border border-[#8B5CF6]/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#8B5CF6]"
+          [class.border-red-500]="notificationForm.get('title')?.invalid && notificationForm.get('title')?.touched"
+        />
+        <p *ngIf="notificationForm.get('title')?.invalid && notificationForm.get('title')?.touched" class="text-red-500 text-sm mt-1">
+          {{ getFieldError('title') }}
+        </p>
+      </div>
+
+      <!-- Message -->
+      <div>
+        <label class="block text-sm text-gray-300 mb-2">Message <span class="text-red-500">*</span></label>
+        <textarea
+          formControlName="message"
+          placeholder="Notification message"
+          rows="6"
+          class="w-full px-4 py-2 bg-[#0B0E14] border border-[#8B5CF6]/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#8B5CF6]"
+          [class.border-red-500]="notificationForm.get('message')?.invalid && notificationForm.get('message')?.touched"
+        ></textarea>
+        <p *ngIf="notificationForm.get('message')?.invalid && notificationForm.get('message')?.touched" class="text-red-500 text-sm mt-1">
+          {{ getFieldError('message') }}
+        </p>
+      </div>
+    </form>
+
+    <!-- Modal Footer -->
+    <div class="flex items-center justify-end gap-3 p-6 border-t border-[#8B5CF6]/20">
+      <button
+        (click)="closeForm()"
+        class="px-4 py-2 rounded-lg border border-[#8B5CF6]/30 text-gray-300 hover:bg-[#8B5CF6]/10 transition-all"
+      >
+        Cancel
+      </button>
+      <button
+        (click)="saveNotification()"
+        [disabled]="!notificationForm.valid || loading"
+        class="px-4 py-2 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {{ loading ? 'Sending...' : 'Send' }}
+      </button>
+    </div>
+  </div>
+</div>

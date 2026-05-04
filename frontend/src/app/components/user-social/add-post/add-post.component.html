@@ -1,0 +1,43 @@
+<div class="bg-[#141920] border border-[rgba(139,92,246,0.2)] rounded-xl p-6 mb-6 animate-fade-in">
+  <h3 class="text-lg font-medium text-[#E4E6EB] mb-4">
+    {{ isEditMode ? 'Edit Post' : 'New Post' }}
+  </h3>
+
+  <form [formGroup]="postForm" (ngSubmit)="onSubmit()" class="space-y-4">
+    <div class="flex flex-col gap-1">
+      <label class="text-sm text-[#9CA3AF]">Title</label>
+      <input
+        type="text"
+        formControlName="titre"
+        placeholder="Post title"
+        [ngClass]="postForm.get('titre')?.invalid && postForm.get('titre')?.touched ? 'border-red-500/50' : 'border-[rgba(139,92,246,0.2)]'"
+        class="bg-[#1A1F2B] border text-[#E4E6EB] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#8B5CF6] transition-colors placeholder:text-[#9CA3AF]"/>
+      <small class="text-red-400 text-xs" *ngIf="postForm.get('titre')?.invalid && postForm.get('titre')?.touched">
+        Title is required (min 3 characters)
+      </small>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-sm text-[#9CA3AF]">Content</label>
+      <textarea
+        formControlName="contenu"
+        rows="5"
+        placeholder="Share your thoughts..."
+        [ngClass]="postForm.get('contenu')?.invalid && postForm.get('contenu')?.touched ? 'border-red-500/50' : 'border-[rgba(139,92,246,0.2)]'"
+        class="bg-[#1A1F2B] border text-[#E4E6EB] rounded-lg px-4 py-2.5 text-sm outline-none resize-none focus:border-[#8B5CF6] transition-colors placeholder:text-[#9CA3AF]"></textarea>
+      <small class="text-red-400 text-xs" *ngIf="postForm.get('contenu')?.invalid && postForm.get('contenu')?.touched">
+        Content is required (min 10 characters)
+      </small>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" [disabled]="postForm.invalid" class="bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:bg-[#8B5CF6]/40 disabled:cursor-not-allowed text-white rounded-lg px-6 py-2.5 text-sm font-medium transition-colors">
+        {{ isEditMode ? 'Update' : 'Publish' }}
+      </button>
+
+      <button type="button" (click)="postForm.reset(); refresh.emit()" class="bg-[#252B38] hover:bg-[#1E2530] text-[#9CA3AF] rounded-lg px-6 py-2.5 text-sm transition-colors">
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>

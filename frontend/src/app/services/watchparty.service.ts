@@ -1,0 +1,43 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class WatchpartyService {
+
+  private apiUrl = 'http://localhost:8090/watchparty';
+
+  constructor(private http: HttpClient) {}
+
+  getAll(): Observable<any[]> {
+    return this.http.get<any[]>(this.apiUrl);
+  }
+
+  getById(id: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${id}`);
+  }
+
+  add(data: { titre: string; contenuId: string }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/create`, data);
+  }
+
+  join(id: string, userId?: string): Observable<any> {
+    const query = userId ? `?userId=${encodeURIComponent(userId)}` : '';
+    return this.http.post<any>(`${this.apiUrl}/${id}/join${query}`, {});
+  }
+
+  leave(id: string, userId?: string): Observable<any> {
+    const query = userId ? `?userId=${encodeURIComponent(userId)}` : '';
+    return this.http.post<any>(`${this.apiUrl}/${id}/leave${query}`, {});
+  }
+
+  getParticipants(id: string): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/${id}/participants`);
+  }
+
+  delete(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${id}`);
+  }
+}

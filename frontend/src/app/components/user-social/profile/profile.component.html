@@ -1,0 +1,65 @@
+<div class="min-h-screen bg-[#0B0E14] px-6 py-8 max-w-2xl mx-auto">
+  <h2 class="text-2xl font-medium text-[#E4E6EB] mb-8">My Profile</h2>
+
+  <div *ngIf="user" class="space-y-6">
+    <div class="bg-[#141920] border border-[rgba(139,92,246,0.2)] rounded-xl p-6">
+      <div class="flex items-center gap-6 mb-6">
+        <div class="w-20 h-20 rounded-full border-2 border-[#8B5CF6]/40 flex-shrink-0 overflow-hidden">
+          <img *ngIf="user.photoUrl" [src]="user.photoUrl" alt="profile picture" class="w-full h-full object-cover"/>
+          <div *ngIf="!user.photoUrl" class="w-full h-full bg-[#8B5CF6]/20 flex items-center justify-center">
+            <span class="text-3xl font-medium text-[#8B5CF6]">{{ user.username ? user.username.charAt(0).toUpperCase() : '?' }}</span>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-medium text-[#E4E6EB]">{{ user.username }}</h3>
+          <p class="text-sm text-[#9CA3AF]">{{ user.email }}</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 pt-4 border-t border-[rgba(139,92,246,0.1)]">
+        <div>
+          <p class="text-xs text-[#9CA3AF] mb-1">Member since</p>
+          <p class="text-sm text-[#E4E6EB]">{{ user.createdAt | date:'dd/MM/yyyy' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-[#141920] border border-[rgba(139,92,246,0.2)] rounded-xl p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-medium text-[#E4E6EB]">Edit Profile</h3>
+        <button (click)="isEditing = !isEditing" class="text-xs px-3 py-1.5 border border-[#8B5CF6]/30 text-[#8B5CF6] rounded-lg hover:bg-[#8B5CF6]/10 transition-colors">
+          {{ isEditing ? 'Cancel' : 'Edit' }}
+        </button>
+      </div>
+
+      <form *ngIf="isEditing" [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="space-y-4">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-[#9CA3AF]">Username</label>
+          <input type="text" formControlName="username" class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)] text-[#E4E6EB] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#8B5CF6] transition-colors"/>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-[#9CA3AF]">Email</label>
+          <input type="email" formControlName="email" class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)] text-[#E4E6EB] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#8B5CF6] transition-colors"/>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-sm text-[#9CA3AF]">Profile Picture URL</label>
+          <input type="url" formControlName="photoUrl" placeholder="https://example.com/my-photo.jpg" class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)] text-[#E4E6EB] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#8B5CF6] transition-colors placeholder:text-[#9CA3AF]"/>
+        </div>
+
+        <div *ngIf="errorMessage" class="bg-red-900/30 border border-red-500/30 text-red-400 rounded-lg px-4 py-2.5 text-sm">{{ errorMessage }}</div>
+
+        <button type="submit" [disabled]="profileForm.invalid || loading" class="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:bg-[#8B5CF6]/40 disabled:cursor-not-allowed text-white rounded-lg py-2.5 text-sm font-medium transition-colors">
+          {{ loading ? 'Updating...' : 'Save' }}
+        </button>
+      </form>
+
+      <div *ngIf="successMessage" class="bg-green-900/30 border border-green-500/30 text-green-400 rounded-lg px-4 py-2.5 text-sm mt-4">{{ successMessage }}</div>
+    </div>
+  </div>
+
+  <div *ngIf="!user && !errorMessage" class="text-center text-[#9CA3AF] py-12">Loading profile...</div>
+  <div *ngIf="errorMessage && !user" class="bg-red-900/30 border border-red-500/30 text-red-400 rounded-lg px-4 py-3 text-sm">{{ errorMessage }}</div>
+</div>

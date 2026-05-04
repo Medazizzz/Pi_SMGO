@@ -1,0 +1,511 @@
+<div class="cinema-shell">
+  <div *ngIf="error" class="cinema-error">{{ error }}</div>
+
+  <section *ngIf="activeModule === 'cinema'" class="module-panel">
+    <div class="module-head">
+      <div>
+        <h2>Cinema List</h2>
+        <p>Select a cinema from the available establishments and find the nearest one on the map.</p>
+      </div>
+      <div class="head-actions">
+        <span class="count-pill">Total : {{ cinemas.length }}</span>
+        <button (click)="findNearestCinema()" class="refresh-btn" [disabled]="locatingNearestCinema">
+          {{ locatingNearestCinema ? 'Locating...' : 'Find nearest cinema' }}
+        </button>
+        <button (click)="refreshCinemaData()" class="refresh-btn">Refresh</button>
+      </div>
+    </div>
+
+    <div class="nearest-panel" *ngIf="nearestCinema">
+      <div class="nearest-info">
+        <span class="cinema-kicker">Nearest cinema</span>
+        <h3>{{ nearestCinema.nom }}</h3>
+        <p><strong>Address:</strong> {{ nearestCinema.adresse }}</p>
+        <p><strong>City:</strong> {{ nearestCinema.ville }}</p>
+        <p><strong>Approx. distance:</strong> {{ nearestCinema.distanceKm | number:'1.0-1' }} km</p>
+        <a class="ghost-map" [href]="nearestCinemaDirectionsUrl" target="_blank" rel="noopener noreferrer">
+          Open directions
+        </a>
+      </div>
+
+      <div class="nearest-map">
+        <iframe
+          *ngIf="nearestCinemaMapUrl"
+          [src]="nearestCinemaMapUrl"
+          title="Nearest cinema map"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+        ></iframe>
+      </div>
+    </div>
+
+    <div class="cinema-grid">
+      <article class="cinema-card" *ngFor="let cinema of cinemas">
+        <div class="cinema-card-head">
+          <span class="cinema-kicker">Cinéma</span>
+          <span class="icon-dot">◉</span>
+        </div>
+        <h3>{{ cinema.nom }}</h3>
+        <p><strong>Adresse :</strong> {{ cinema.adresse }}</p>
+        <p><strong>Ville :</strong> {{ cinema.ville }}</p>
+      </article>
+    </div>
+  </section>
+
+  <section *ngIf="activeModule === 'sessions'" class="module-panel sessions-panel">
+    <header class="sessions-header">
+      <h2>Sessions & Screenings</h2>
+      <p>Browse all upcoming movie sessions across our partner cinemas</p>
+    </header>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <span>Total Sessions</span>
+        <strong>{{ filteredSeances.length }}</strong>
+      </div>
+      <div class="stat-box">
+        <span>Available</span>
+        <strong class="text-green">{{ availableSessions }}</strong>
+      </div>
+      <div class="stat-box">
+        <span>Avg Rating</span>
+        <strong class="text-gold">{{ averageSessionRating }}★</strong>
+      </div>
+    </div>
+
+    <div class="filter-block">
+      <label>Filter by Cinema</label>
+      <input [(ngModel)]="sessionSearch" placeholder="Search cinema name..." />
+    </div>
+
+    <div class="cinema-groups">
+      <div class="cinema-group" *ngFor="let cinemaEntry of filteredCinemaGroups | keyvalue">
+        <h3 class="cinema-group-title">{{ cinemaEntry.key }}</h3>
+        <div class="session-grid">
+          <article class="session-card" *ngFor="let seance of cinemaEntry.value; let i = index">
+            <div class="session-head">
+              <div>
+                <h3>{{ seance.contenuId || 'Untitled' }}</h3>
+                <p>{{ seance.nomCinema || 'Unknown Cinema' }}</p>
+              </div>
+              <span class="session-badge" [class.limited]="sessionStatus(i) !== 'Available'">{{ sessionStatus(i) }}</span>
+            </div>
+
+            <div class="session-meta">✶ {{ seance.dateSeance }} at {{ seance.heureSeance }}</div>
+            <div class="session-meta">⌂ Hall: {{ seance.numeroSalle || 'Unknown Hall' }}</div>
+            <div class="session-meta">◔ {{ sessionWatching(i) }} watching</div>
+            <div class="session-rating">★ {{ sessionRating(i) }}/5.0</div>
+
+            <button class="cta-gradient" (click)="selectSessionForBooking(seance)">Book Now</button>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section *ngIf="activeModule === 'halls'" class="hall-grid">
+    <article class="hall-card" *ngFor="let salle of salles; let i = index">
+      <div class="hall-top">
+        <div>
+          <h3>{{ salle.name }}</h3>
+          <p>{{ i % 2 === 0 ? 'Standard' : 'Premium' }}</p>
+        </div>
+        <span class="session-badge" [class.limited]="hallStatus(i) !== 'Available'">{{ hallStatus(i) }}</span>
+      </div>
+
+      <div class="hall-row">··· Capacity: <strong>{{ salle.capacity }} seats</strong></div>
+      <div class="hall-row">··· Layout: <strong>{{ salle.rowCount || '-' }} rows x {{ salle.seatsPerRow || '-' }} seats</strong></div>
+      <div class="hall-row">⌁ Occupancy <span class="occupancy-value">{{ hallOccupancy(i) }}%</span></div>
+      <div class="occupancy-track"><span [style.width.%]="hallOccupancy(i)"></span></div>
+
+      <div class="amenities-title">Amenities:</div>
+      <div class="amenities">
+        <span>Dolby Atmos</span>
+        <span *ngIf="i % 2 === 0">Reclining Seats</span>
+      </div>
+
+      <button class="cta-gradient">View Details</button>
+    </article>
+  </section>
+
+  <section *ngIf="activeModule === 'reservations'" class="module-panel">
+    <div class="module-head reservations-head">
+      <h2>My Reservations</h2>
+      <div class="head-actions">
+        <span class="current-user-label" *ngIf="currentUserName || currentUserId">Connected user: {{ currentUserName || currentUserId }}</span>
+        <span class="current-user-label" *ngIf="!currentUserId">Please log in to see your reservations.</span>
+      </div>
+    </div>
+
+    <div class="filter-block" *ngIf="currentUserId && !ticketReservation">
+      <label>Choose Session</label>
+      <select [(ngModel)]="selectedSeanceId" (change)="onSelectedReservationSessionChange()">
+        <option value="">Choose a session</option>
+        <option *ngFor="let seance of seances" [value]="seance.id">
+          {{ seance.nomCinema }} - {{ seance.numeroSalle }} - {{ seance.dateSeance }} {{ seance.heureSeance }}
+        </option>
+      </select>
+    </div>
+
+    <div class="reservation-form-card" *ngIf="currentUserId && selectedSeanceId && !ticketReservation">
+      <h4>Make reservation</h4>
+      <p class="form-help">Choose your seat and validate your reservation.</p>
+      <p *ngIf="editingReservationId" class="form-help"><strong>Edit mode:</strong> update the seat or price, then save.</p>
+      <div class="seat-map-header">
+        <div>
+          <strong>{{ selectedSeance?.numeroSalle || 'Session selected' }}</strong>
+          <p>{{ availableSeatCount }} places libres</p>
+        </div>
+        <div class="seat-map-summary" *ngIf="selectedSeatNumbers.length > 0">
+          Selected: {{ selectedSeatNumbers.join(', ') }}
+        </div>
+      </div>
+      <div class="seat-map-legend">
+        <span><i class="legend-seat available"></i> Available</span>
+        <span><i class="legend-seat reserved"></i> Reserved</span>
+        <span><i class="legend-seat selected"></i> Selected</span>
+      </div>
+
+      <div class="seat-map-card" *ngIf="seatMapRows.length > 0; else noSeatMap">
+        <div class="seat-map-screen">
+          <span>Écran</span>
+        </div>
+
+        <div class="seat-map-grid">
+          <div class="seat-map-row" *ngFor="let row of seatMapRows">
+            <div class="seat-row-label">{{ row.label }}</div>
+
+            <div class="seat-row-block seat-row-block-left">
+              <button
+                type="button"
+                class="seat-box"
+                *ngFor="let seat of getSeatLeftBlock(row.seats)"
+                [class.available]="!isSeatReserved(seat.id) && !isSeatSelected(seat.id)"
+                [class.reserved]="isSeatReserved(seat.id)"
+                [class.selected]="isSeatSelected(seat.id)"
+                [disabled]="isSeatReserved(seat.id)"
+                (click)="toggleSeatSelection(seat.id, seat.reserved)"
+              >
+                {{ seat.id }}
+              </button>
+            </div>
+
+            <div class="seat-aisle"></div>
+
+            <div class="seat-row-block seat-row-block-center">
+              <button
+                type="button"
+                class="seat-box"
+                *ngFor="let seat of getSeatCenterBlock(row.seats)"
+                [class.available]="!isSeatReserved(seat.id) && !isSeatSelected(seat.id)"
+                [class.reserved]="isSeatReserved(seat.id)"
+                [class.selected]="isSeatSelected(seat.id)"
+                [disabled]="isSeatReserved(seat.id)"
+                (click)="toggleSeatSelection(seat.id, seat.reserved)"
+              >
+                {{ seat.id }}
+              </button>
+            </div>
+
+            <div class="seat-aisle"></div>
+
+            <div class="seat-row-block seat-row-block-right">
+              <button
+                type="button"
+                class="seat-box"
+                *ngFor="let seat of getSeatRightBlock(row.seats)"
+                [class.available]="!isSeatReserved(seat.id) && !isSeatSelected(seat.id)"
+                [class.reserved]="isSeatReserved(seat.id)"
+                [class.selected]="isSeatSelected(seat.id)"
+                [disabled]="isSeatReserved(seat.id)"
+                (click)="toggleSeatSelection(seat.id, seat.reserved)"
+              >
+                {{ seat.id }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noSeatMap>
+        <div class="seat-map-empty">Loading seat map for the selected session...</div>
+      </ng-template>
+
+      <div class="form-row">
+        <label>Selected Seat Number(s)</label>
+        <input [value]="numeroPlace" readonly placeholder="Select seats from the map above" />
+      </div>
+      <div class="form-row">
+        <label>Price</label>
+        <input type="number" [(ngModel)]="prix" min="1" />
+      </div>
+      <div class="form-actions">
+        <button type="button" class="cta-gradient" (click)="reserveSeat()">{{ editingReservationId ? 'Update reservation' : 'Reserve seat' }}</button>
+        <button type="button" *ngIf="editingReservationId" class="ghost-btn" (click)="cancelReservationEdit()">Cancel edit</button>
+      </div>
+
+      <p *ngIf="reservationMessage" class="form-help" style="color: #ffcc7a; margin-top: 10px;">
+        {{ reservationMessage }}
+      </p>
+
+      <div class="form-actions" *ngIf="showWaitlistSuggestion && !editingReservationId">
+        <div class="form-row" style="margin-bottom: 10px; width: 100%;">
+          <label>Email for waitlist notification</label>
+          <input [(ngModel)]="waitlistEmail" placeholder="you@example.com" type="email" />
+        </div>
+        <button type="button" class="ghost-btn" [disabled]="waitlistJoinLoading" (click)="joinWaitlistForCurrentSession()">
+          {{ waitlistJoinLoading ? 'Joining waitlist...' : 'Join waitlist' }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="showMockPaymentPanel && pendingMockPayment && !ticketReservation" class="payment-modal-overlay" (click)="cancelMockPayment()">
+      <div class="payment-modal" (click)="$event.stopPropagation()">
+        <div class="payment-modal-header">
+          <h4>Payment process</h4>
+          <button class="ghost-btn" (click)="cancelMockPayment()">X</button>
+        </div>
+
+        <p class="form-help">Complete payment details, then confirm payment.</p>
+        <p *ngIf="reservationMessage" class="form-help" style="color: #ffcc7a;">{{ reservationMessage }}</p>
+        <p class="form-help" style="color: #8df0b6;" *ngIf="paymentHoldSecondsRemaining > 0">
+          Hold expires in {{ formatCountdown(paymentHoldSecondsRemaining) }}
+        </p>
+        <p class="form-help" style="color: #ff8f8f;" *ngIf="paymentHoldSecondsRemaining === 0">
+          This hold is no longer active.
+        </p>
+
+        <div>
+          <strong>Session:</strong>
+          <p>{{ pendingMockPayment.sessionLabel }}</p>
+        </div>
+        <div>
+          <strong>User:</strong>
+          <p>{{ pendingMockPayment.userName || pendingMockPayment.userId }}</p>
+        </div>
+        <div>
+          <strong>Seat:</strong>
+          <p>{{ pendingMockPayment.seats.join(', ') }}</p>
+        </div>
+        <div>
+          <strong>Amount:</strong>
+          <p>{{ pendingMockPayment.totalPrice }}€</p>
+        </div>
+
+        <div class="form-row">
+          <label>Payment method</label>
+          <select [(ngModel)]="mockPaymentMethod" title="Payment method">
+            <option value="card">Card</option>
+            <option value="paypal">PayPal</option>
+          </select>
+        </div>
+
+        <ng-container *ngIf="mockPaymentMethod === 'card'">
+          <div class="form-row">
+            <label>Card holder</label>
+            <input [(ngModel)]="mockCardHolder" placeholder="Card holder name" />
+          </div>
+          <div class="form-row">
+            <label>Card number</label>
+            <input [(ngModel)]="mockCardNumber" placeholder="Card number (16 digits)" />
+          </div>
+          <div class="form-row">
+            <label>Expiry</label>
+            <input [(ngModel)]="mockCardExpiry" placeholder="MM/YY" />
+          </div>
+          <div class="form-row">
+            <label>CVV</label>
+            <input [(ngModel)]="mockCardCvv" placeholder="CVV" />
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="mockPaymentMethod === 'paypal'">
+          <div class="form-row">
+            <label>PayPal email</label>
+            <input [(ngModel)]="mockPaypalEmail" placeholder="PayPal email" />
+          </div>
+        </ng-container>
+
+        <div class="form-actions">
+          <button class="cta-gradient" type="button" [disabled]="loading || paymentHoldSecondsRemaining === 0" (click)="confirmMockPayment()">
+            {{ loading ? 'Processing...' : 'Confirm payment' }}
+          </button>
+          <button class="ghost-btn" type="button" [disabled]="loading" (click)="cancelMockPayment()">Cancel payment</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="showEditReservationModal" class="payment-modal-overlay" (click)="closeEditReservationModal()">
+      <div class="payment-modal" (click)="$event.stopPropagation()">
+        <div class="payment-modal-header">
+          <h4>Edit reservation</h4>
+          <button class="ghost-btn" type="button" (click)="closeEditReservationModal()">X</button>
+        </div>
+
+        <p class="form-help">Update session, seat, and price, then save.</p>
+
+        <div class="form-row">
+          <label>Session</label>
+          <select [(ngModel)]="editReservationSeanceId" (change)="onEditReservationSessionChange()" title="Edit reservation session">
+            <option value="">Choose a session</option>
+            <option *ngFor="let seance of seances" [value]="seance.id">
+              {{ seance.nomCinema }} - {{ seance.numeroSalle }} - {{ seance.dateSeance }} {{ seance.heureSeance }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label>Seat Number</label>
+          <input [(ngModel)]="editReservationSeat" placeholder="Ex: A12" />
+        </div>
+
+        <div class="form-row">
+          <label>Price</label>
+          <input type="number" [(ngModel)]="editReservationPrice" min="1" />
+        </div>
+
+        <div class="form-actions">
+          <button class="cta-gradient" type="button" [disabled]="loading" (click)="saveEditReservationModal()">
+            {{ loading ? 'Saving...' : 'Save changes' }}
+          </button>
+          <button class="ghost-btn" type="button" [disabled]="loading" (click)="closeEditReservationModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!selectedSeance" class="session-availability-card">
+      <h3>Select a session to see available seats</h3>
+      <p>Choose a session and reserve your seat.</p>
+    </div>
+
+    <div class="filter-block" *ngIf="currentUserId">
+      <label>Search All Reservations</label>
+      <input [(ngModel)]="reservationSearchTerm" placeholder="Search by cinema, hall, date, content..." (input)="searchReservations()" />
+      <div *ngIf="isSearchingReservations" class="loading-indicator">Searching...</div>
+    </div>
+
+    <div *ngIf="searchedReservations.length > 0" class="search-results">
+      <h3>Search Results ({{ searchedReservations.length }} found)</h3>
+      <article class="reservation-card" *ngFor="let reservation of searchedReservations">
+        <div class="reservation-header">
+          <div>
+            <span class="field-label">Cinema</span>
+            <p class="field-strong">{{ reservation.nomCinema }}</p>
+          </div>
+          <div>
+            <span class="field-label">Hall</span>
+            <p class="field-strong">{{ reservation.numeroSalle }}</p>
+          </div>
+          <div>
+            <span class="field-label">Date</span>
+            <p class="field-strong">{{ reservation.dateSeance }}</p>
+          </div>
+          <div>
+            <span class="field-label">Time</span>
+            <p class="field-strong">{{ reservation.heureSeance }}</p>
+          </div>
+        </div>
+        <div class="reservation-body">
+          <div>
+            <span class="field-label">Seat</span>
+            <p class="field-strong">{{ getReservationSeatLabel(reservation) }}</p>
+          </div>
+          <div>
+            <span class="field-label">Status</span>
+            <p class="field-strong">{{ reservation.statut }}</p>
+          </div>
+          <div>
+            <span class="field-label">Price</span>
+            <p class="price">{{ reservation.prix }}€</p>
+          </div>
+        </div>
+        <div class="reservation-footer">
+          <div>
+            <span class="field-label">Content ID</span>
+            <p>{{ reservation.contenuId || '-' }}</p>
+          </div>
+          <div>
+            <span class="field-label">User</span>
+            <p>{{ reservation.userName || reservation.userId }}</p>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div *ngIf="showTicketModal && ticketReservation" class="payment-modal-overlay ticket-modal-overlay" (click)="closeTicketModal()">
+      <div class="payment-modal ticket-modal" (click)="$event.stopPropagation()">
+        <div class="payment-modal-header">
+          <h4>Reservation ticket</h4>
+          <button class="ghost-btn" type="button" (click)="closeTicketModal()">X</button>
+        </div>
+        <div class="ticket-body">
+          <div class="ticket-details">
+            <p><strong>Reservation ID:</strong> {{ ticketReservation.id }}</p>
+            <p><strong>Session:</strong> {{ ticketReservation.nomCinema }} — {{ ticketReservation.numeroSalle }}</p>
+            <p><strong>Date:</strong> {{ ticketReservation.dateSeance }} {{ ticketReservation.heureSeance }}</p>
+            <p><strong>Seat(s):</strong> {{ getReservationSeatLabel(ticketReservation) }}</p>
+            <p><strong>Price:</strong> {{ ticketReservation.prix }}€</p>
+            <button class="ghost-btn" type="button" (click)="downloadReservationPdf(ticketReservation)">Download PDF</button>
+          </div>
+          <div *ngIf="ticketQrCodeDataUrl" class="ticket-qr-card">
+            <img [src]="ticketQrCodeDataUrl" alt="Digital Ticket QR code" class="ticket-qr" />
+            <p class="qr-label">Présentez ce QR code à l’entrée.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <article class="reservation-card" *ngFor="let reservation of reservations">
+      <div class="reservation-grid">
+        <div>
+          <span class="field-label">Reservation Date</span>
+          <p class="field-strong">{{ reservation.dateReservation }}</p>
+        </div>
+        <div>
+          <span class="field-label">Session</span>
+          <p>{{ reservation.dateSeance }} {{ reservation.heureSeance }}</p>
+        </div>
+        <div>
+          <span class="field-label">Seat Number</span>
+          <p class="field-strong">{{ getReservationSeatLabel(reservation) }}</p>
+        </div>
+        <div>
+          <span class="field-label">Hall</span>
+          <p>{{ reservation.numeroSalle }}</p>
+        </div>
+        <div>
+          <span class="field-label">Status</span>
+          <p class="field-strong">{{ reservation.statut }}</p>
+        </div>
+        <div>
+          <span class="field-label">Price</span>
+          <p class="price">{{ reservation.prix }}€</p>
+        </div>
+      </div>
+
+      <div class="reservation-footer">
+        <div>
+          <span class="field-label">Content ID</span>
+          <p>{{ reservation.contenuId || '-' }}</p>
+        </div>
+        <div>
+          <span class="field-label">Watch Party ID</span>
+          <p>-</p>
+        </div>
+        <div>
+          <span class="field-label">User</span>
+          <p>{{ reservation.userName || reservation.userId }}</p>
+        </div>
+      </div>
+      <div class="reservation-actions">
+        <button class="ghost-btn" (click)="editReservation(reservation)">Edit reservation</button>
+        <button class="ghost-btn" (click)="showTicket(reservation)">Voir le ticket</button>
+        <button class="ghost-btn" (click)="cancelReservation(reservation.id)">Cancel reservation</button>
+      </div>
+    </article>
+
+    <p *ngIf="reservations.length === 0" class="empty-msg">No reservations available.</p>
+  </section>
+
+  <p *ngIf="reservationMessage" class="status-msg">{{ reservationMessage }}</p>
+</div>

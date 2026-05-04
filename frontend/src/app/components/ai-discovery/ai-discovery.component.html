@@ -1,0 +1,141 @@
+<div class="prediction-shell">
+  <section class="hero-card">
+    <div class="hero-copy">
+      <p class="eyebrow">IA de prédiction</p>
+      <h2>Analyse de remplissage séance</h2>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h3>Entrées modèle</h3>
+      <p>Les valeurs par défaut sont juste un point de départ. Tu peux les modifier avant d’analyser.</p>
+    </div>
+
+    <div class="form-grid">
+      <label>
+        <span>Capacité salle</span>
+        <input type="number" [(ngModel)]="seance.salle_capacity" min="1" />
+      </label>
+
+      <label>
+        <span>Places réservées</span>
+        <input type="number" [(ngModel)]="seance.seats_reserved" min="0" />
+      </label>
+
+      <label>
+        <span>Heure</span>
+        <input type="number" [(ngModel)]="seance.heure_num" min="0" max="23" />
+      </label>
+
+      <label>
+        <span>Jour semaine</span>
+        <input type="number" [(ngModel)]="seance.day_of_week_num" min="0" max="6" />
+      </label>
+
+      <label>
+        <span>Mois</span>
+        <input type="number" [(ngModel)]="seance.month" min="1" max="12" />
+      </label>
+
+      <label>
+        <span>Weekend</span>
+        <select [(ngModel)]="seance.is_weekend">
+          <option [ngValue]="0">Non</option>
+          <option [ngValue]="1">Oui</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Jour férié</span>
+        <select [(ngModel)]="seance.is_holiday">
+          <option [ngValue]="0">Non</option>
+          <option [ngValue]="1">Oui</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Vacances scolaires</span>
+        <select [(ngModel)]="seance.is_school_vacation">
+          <option [ngValue]="0">Non</option>
+          <option [ngValue]="1">Oui</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Avant jour férié</span>
+        <select [(ngModel)]="seance.is_before_holiday">
+          <option [ngValue]="0">Non</option>
+          <option [ngValue]="1">Oui</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Taux moyen cinéma</span>
+        <input type="number" [(ngModel)]="seance.avg_taux_cinema" min="0" max="1" step="0.01" />
+      </label>
+
+      <label>
+        <span>Taux moyen salle</span>
+        <input type="number" [(ngModel)]="seance.avg_taux_salle" min="0" max="1" step="0.01" />
+      </label>
+
+      <label>
+        <span>Taux moyen créneau</span>
+        <input type="number" [(ngModel)]="seance.avg_taux_creneau" min="0" max="1" step="0.01" />
+      </label>
+
+      <label>
+        <span>Taux moyen contenu</span>
+        <input type="number" [(ngModel)]="seance.avg_taux_contenu" min="0" max="1" step="0.01" />
+      </label>
+
+      <label>
+        <span>Historique cinéma</span>
+        <input type="number" [(ngModel)]="seance.history_cinema" min="0" />
+      </label>
+
+      <label>
+        <span>Historique salle</span>
+        <input type="number" [(ngModel)]="seance.history_salle" min="0" />
+      </label>
+    </div>
+
+    <button type="button" class="btn-predict" (click)="predict()" [disabled]="loading">
+      {{ loading ? 'Analyse en cours...' : 'Lancer la prédiction' }}
+    </button>
+
+    <div class="error-box" *ngIf="error">
+      {{ error }}
+    </div>
+  </section>
+
+  <section class="panel result-panel" *ngIf="result">
+    <div class="panel-header">
+      <h3>Résultat</h3>
+      <p>Le backend a renvoyé la prédiction du modèle.</p>
+    </div>
+
+    <div class="result-grid">
+      <article class="result-card">
+        <span class="label">Prédiction</span>
+        <span class="badge" [style.background]="getBadgeColor()">{{ result.prediction }}</span>
+      </article>
+
+      <article class="result-card">
+        <span class="label">Confiance</span>
+        <span class="value">{{ (result.confiance * 100).toFixed(0) }}%</span>
+      </article>
+
+      <article class="result-card">
+        <span class="label">Action recommandée</span>
+        <span class="badge" [style.background]="getActionColor()">{{ result.action }}</span>
+      </article>
+
+      <article class="result-card result-detail">
+        <span class="label">Conseil</span>
+        <p>{{ result.detail }}</p>
+      </article>
+    </div>
+  </section>
+</div>
