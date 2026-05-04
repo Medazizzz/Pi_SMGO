@@ -97,58 +97,109 @@
     </article>
   </section>
 
-  <section *ngIf="activeModule === 'reservations'" class="module-panel">
-    <div class="module-head reservations-head">
-      <h2>My Reservations</h2>
-      <button class="refresh-btn" (click)="loadUserReservations()">Refresh</button>
+ <section *ngIf="activeModule === 'reservations'" class="module-panel">
+  <div class="module-head reservations-head">
+    <h2>My Reservations</h2>
+    <button class="refresh-btn" (click)="loadUserReservations()">Refresh</button>
+  </div>
+
+  <!-- ✅ Bannière promo active -->
+  <div *ngIf="activePromo"
+       class="mb-4 p-4 rounded-lg bg-green-900/20 border border-green-500/30
+              flex items-center justify-between">
+    <div>
+      <p class="text-green-400 text-sm font-medium">
+        🎁 Promo {{ activePromo.code }} applied — {{ activePromo.pourcentageReduction }}% off
+      </p>
+      <p class="text-xs mt-1">
+        Original: {{ prixOriginal }}€ →
+        <span class="text-green-400 font-medium">Final: {{ prixFinal }}€</span>
+        (saving {{ promoDiscount }}€)
+      </p>
+    </div>
+    <button (click)="removePromo()" class="text-xs text-red-400 hover:text-red-300">
+      ✕ Remove
+    </button>
+  </div>
+
+  <!-- ✅ Formulaire de réservation -->
+  <div class="reservation-form mb-6">
+    <h3>Book a Seat</h3>
+    <div class="reservation-grid">
+      <div>
+        <span class="field-label">User ID</span>
+        <input [(ngModel)]="currentUserId" placeholder="Your user ID"
+               class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)]
+                      text-[#E4E6EB] rounded-lg px-3 py-2 text-sm w-full"/>
+      </div>
+      <div>
+        <span class="field-label">Seat Number</span>
+        <input [(ngModel)]="numeroPlace" placeholder="Ex: A12"
+               class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)]
+                      text-[#E4E6EB] rounded-lg px-3 py-2 text-sm w-full"/>
+      </div>
+      <div>
+        <span class="field-label">Price (€)</span>
+        <input type="number" [(ngModel)]="prix" (ngModelChange)="onPrixChange()"
+               class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)]
+                      text-[#E4E6EB] rounded-lg px-3 py-2 text-sm w-full"/>
+        <p *ngIf="activePromo" class="text-xs text-green-400 mt-1">
+          ✓ Final price after discount: {{ prixFinal }}€
+        </p>
+      </div>
+    </div>
+    <button (click)="reserveSeat()" [disabled]="loading"
+            class="cta-gradient mt-3">
+      {{ loading ? 'Booking...' : '🎬 Confirm Reservation' }}
+    </button>
+  </div>
+
+  <!-- Liste des réservations -->
+  <article class="reservation-card" *ngFor="let reservation of reservations">
+    <div class="reservation-grid">
+      <div>
+        <span class="field-label">Reservation Date</span>
+        <p class="field-strong">{{ reservation.dateReservation }}</p>
+      </div>
+      <div>
+        <span class="field-label">Session</span>
+        <p>{{ reservation.dateSeance }} {{ reservation.heureSeance }}</p>
+      </div>
+      <div>
+        <span class="field-label">Seat Number</span>
+        <p class="field-strong">{{ reservation.numeroPlace }}</p>
+      </div>
+      <div>
+        <span class="field-label">Hall</span>
+        <p>{{ reservation.numeroSalle }}</p>
+      </div>
+      <div>
+        <span class="field-label">Status</span>
+        <p class="field-strong">{{ reservation.statut }}</p>
+      </div>
+      <div>
+        <span class="field-label">Price</span>
+        <p class="price">{{ reservation.prix }}€</p>
+      </div>
     </div>
 
-    <article class="reservation-card" *ngFor="let reservation of reservations">
-      <div class="reservation-grid">
-        <div>
-          <span class="field-label">Reservation Date</span>
-          <p class="field-strong">{{ reservation.dateReservation }}</p>
-        </div>
-        <div>
-          <span class="field-label">Session</span>
-          <p>{{ reservation.dateSeance }} {{ reservation.heureSeance }}</p>
-        </div>
-        <div>
-          <span class="field-label">Seat Number</span>
-          <p class="field-strong">{{ reservation.numeroPlace }}</p>
-        </div>
-        <div>
-          <span class="field-label">Hall</span>
-          <p>{{ reservation.numeroSalle }}</p>
-        </div>
-        <div>
-          <span class="field-label">Status</span>
-          <p class="field-strong">{{ reservation.statut }}</p>
-        </div>
-        <div>
-          <span class="field-label">Price</span>
-          <p class="price">{{ reservation.prix }}€</p>
-        </div>
+    <div class="reservation-footer">
+      <div>
+        <span class="field-label">Content ID</span>
+        <p>{{ reservation.contenuId || '-' }}</p>
       </div>
-
-      <div class="reservation-footer">
-        <div>
-          <span class="field-label">Content ID</span>
-          <p>{{ reservation.contenuId || '-' }}</p>
-        </div>
-        <div>
-          <span class="field-label">Watch Party ID</span>
-          <p>-</p>
-        </div>
-        <div>
-          <span class="field-label">User ID</span>
-          <p>{{ reservation.userId }}</p>
-        </div>
+      <div>
+        <span class="field-label">Watch Party ID</span>
+        <p>-</p>
       </div>
-    </article>
+      <div>
+        <span class="field-label">User ID</span>
+        <p>{{ reservation.userId }}</p>
+        <p *ngIf="reservationMessage" class="status-msg">{{ reservationMessage }}</p>
 
-    <p *ngIf="reservations.length === 0" class="empty-msg">No reservations available.</p>
-  </section>
+      </div>
+    </div>
+  </article>
 
-  <p *ngIf="reservationMessage" class="status-msg">{{ reservationMessage }}</p>
-</div>
+  <p *ngIf="reservations.length === 0" class="empty-msg">No reservations available.</p>
+</section>

@@ -8,6 +8,8 @@ export interface Commentaire {
   postId: string;
   authorUsername?: string;
   dateCommentaire?: string;
+  reactionCounts?: Record<string, number>;
+  userReaction?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

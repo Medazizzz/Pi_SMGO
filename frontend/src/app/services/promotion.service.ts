@@ -11,6 +11,21 @@ export interface Promotion {
   active?: boolean;
 }
 
+export interface EngagementResult {
+  userId: string;
+  username: string;
+  postsCount: number;
+  commentairesCount: number;
+  reactionsCount: number;
+  totalScore: number;
+  level: {
+    label: string;
+    discountPercent: number;
+    minScore: number;
+    maxScore: number;
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class PromotionService {
   private http = inject(HttpClient);
@@ -43,4 +58,24 @@ export class PromotionService {
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  // ✅ Promotion intelligente
+  generatePersonalizedPromotion(): Observable<Promotion> {
+    return this.http.post<Promotion>(`${this.apiUrl}/personalized`, {});
+  }
+
+  getEngagementScore(): Observable<EngagementResult> {
+    return this.http.get<EngagementResult>(`${this.apiUrl}/engagement`);
+  }
+  // ✅ Vérification fraude ML
+checkFraud(promoId: string): Observable<any> {
+  return this.http.post<any>(`${this.apiUrl}/${promoId}/check-fraud`, {});
+}
+analyzeAllFraud(): Observable<any[]> {
+  return this.http.post<any[]>(`${this.apiUrl}/analyze-all-fraud`, {});
+}
+
+analyzeOneFraud(promoId: string): Observable<any> {
+  return this.http.post<any>(`${this.apiUrl}/${promoId}/analyze-fraud`, {});
+}
 }

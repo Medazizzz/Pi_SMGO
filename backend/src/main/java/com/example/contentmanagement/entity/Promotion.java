@@ -1,26 +1,24 @@
 package com.example.contentmanagement.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
 import java.util.Date;
 
 @Document(collection = "promotions")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@ToString @AllArgsConstructor @NoArgsConstructor
 public class Promotion {
-    @Id
-    private String id;
 
-    private String code;
-    private double pourcentageReduction;
-    private Date dateExpiration;
-    private String clientId;
-    private boolean active = true;
+    @Id
+    String id;
+
+    String code;
+    double pourcentageReduction;
+    Date dateExpiration;
+    String clientId;       // null = promo globale, non-null = promo ciblée
+
+    boolean active = true; // ✅ Ajout pour US-P06
 }

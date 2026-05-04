@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Tag, Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-angular';
 import { PromotionService, Promotion } from '../../services/promotion.service';
 
 @Component({
@@ -11,12 +10,6 @@ import { PromotionService, Promotion } from '../../services/promotion.service';
   templateUrl: './admin-promotions.component.html'
 })
 export class AdminPromotionsComponent implements OnInit {
-  readonly TagIcon = Tag;
-  readonly PlusIcon = Plus;
-  readonly TrashIcon = Trash2;
-  readonly ToggleLeftIcon = ToggleLeft;
-  readonly ToggleRightIcon = ToggleRight;
-
   promotions: Promotion[] = [];
   showForm = false;
   promoForm: FormGroup;
@@ -24,6 +17,12 @@ export class AdminPromotionsComponent implements OnInit {
   loading = false;
   successMessage = '';
   errorMessage = '';
+
+  // ✅ Fraud Detection
+  fraudResults: Map<string, any> = new Map();
+  analyzingId: string | null = null;
+  analyzingAll = false;
+  fraudStats = { total: 0, fraud: 0, suspicious: 0, safe: 0 };
 
   constructor(
     private promotionService: PromotionService,
@@ -43,30 +42,83 @@ export class AdminPromotionsComponent implements OnInit {
   loadPromotions(): void {
     this.loading = true;
     this.promotionService.getAll().subscribe({
-      next: (data) => {
-        this.promotions = data;
-        this.loading = false;
-      },
-      error: () => {
-        this.errorMessage = 'Unable to load promotions.';
-        this.loading = false;
-      }
+      next: (data) => { this.promotions = data; this.loading = false; },
+      error: () => { this.errorMessage = 'Unable to load promotions.'; this.loading = false; }
     });
   }
 
-  get totalPromos(): number {
-    return this.promotions.length;
+  get totalPromos(): number { return this.promotions.length; }
+  get activePromos(): number { return this.promotions.filter(p => p.active).length; }
+
+  // ✅ Analyser une promo
+  analyzeOne(promoId: string): void {
+    this.analyzingId = promoId;
+    this.promotionService.analyzeOneFraud(promoId).subscribe({
+      next: (result) => {
+        this.fraudResults.set(promoId, result);
+        this.analyzingId = null;
+        if (!result.isFraud || result.alertLevel === 'SAFE') {
+          // Reload si promo désactivée
+          this.loadPromotions();
+        }
+      },
+      error: () => this.analyzingId = null
+    });
   }
 
-  get activePromos(): number {
-    return this.promotions.filter(p => p.active).length;
+  // ✅ Analyser toutes les promos
+  analyzeAll(): void {
+    this.analyzingAll = true;
+    this.fraudResults.clear();
+    this.promotionService.analyzeAllFraud().subscribe({
+      next: (results) => {
+        results.forEach(r => {
+          if (r.promoId) this.fraudResults.set(r.promoId, r);
+        });
+        this.updateFraudStats();
+        this.analyzingAll = false;
+        this.loadPromotions();
+      },
+      error: () => this.analyzingAll = false
+    });
+  }
+
+  updateFraudStats(): void {
+    const values = Array.from(this.fraudResults.values());
+    this.fraudStats = {
+      total: values.length,
+      fraud: values.filter(r => r.alertLevel === 'FRAUD' || r.alertLevel === 'CRITICAL_FRAUD').length,
+      suspicious: values.filter(r => r.alertLevel === 'SUSPICIOUS').length,
+      safe: values.filter(r => r.alertLevel === 'SAFE').length
+    };
+  }
+
+  getFraudResult(promoId: string): any {
+    return this.fraudResults.get(promoId);
+  }
+
+  getFraudBadgeClass(alertLevel: string): string {
+    switch (alertLevel) {
+      case 'SAFE': return 'bg-green-900/30 text-green-400';
+      case 'SUSPICIOUS': return 'bg-amber-900/30 text-amber-400';
+      case 'FRAUD': return 'bg-orange-900/30 text-orange-400';
+      case 'CRITICAL_FRAUD': return 'bg-red-900/30 text-red-400';
+      default: return 'bg-gray-900/30 text-gray-400';
+    }
+  }
+
+  getFraudEmoji(alertLevel: string): string {
+    switch (alertLevel) {
+      case 'SAFE': return '✅';
+      case 'SUSPICIOUS': return '⚠️';
+      case 'FRAUD': return '🚨';
+      case 'CRITICAL_FRAUD': return '🔴';
+      default: return '';
+    }
   }
 
   onSubmit(): void {
-    if (this.promoForm.invalid) {
-      return;
-    }
-
+    if (this.promoForm.invalid) return;
     this.loading = true;
     const isUpdate = !!this.editingId;
     const payload = {
@@ -74,11 +126,9 @@ export class AdminPromotionsComponent implements OnInit {
       active: true,
       dateExpiration: new Date(this.promoForm.value.dateExpiration).toISOString()
     };
-
     const request$ = this.editingId
       ? this.promotionService.update(this.editingId, payload)
       : this.promotionService.create(payload);
-
     request$.subscribe({
       next: () => {
         this.loadPromotions();
@@ -86,13 +136,10 @@ export class AdminPromotionsComponent implements OnInit {
         this.showForm = false;
         this.editingId = null;
         this.loading = false;
-        this.successMessage = isUpdate ? 'Promotion updated successfully.' : 'Promotion created successfully.';
+        this.successMessage = isUpdate ? 'Promotion updated.' : 'Promotion created.';
         setTimeout(() => this.successMessage = '', 3000);
       },
-      error: () => {
-        this.errorMessage = 'Unable to save promotion.';
-        this.loading = false;
-      }
+      error: () => { this.errorMessage = 'Unable to save promotion.'; this.loading = false; }
     });
   }
 
@@ -116,5 +163,3 @@ export class AdminPromotionsComponent implements OnInit {
     }
   }
 }
-
-
