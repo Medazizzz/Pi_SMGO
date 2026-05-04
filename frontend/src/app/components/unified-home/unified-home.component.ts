@@ -48,12 +48,12 @@ export class UnifiedHomeComponent implements OnInit {
 
   hoveredStream = signal<string | null>(null);
   hoveredCinema = signal<string | null>(null);
-  topTenContent = signal<ContentAnalyticsDTO[]>([]);
+  topFiveContent = signal<ContentAnalyticsDTO[]>([]);
 
   constructor(private contentService: ContentService) {}
 
   ngOnInit(): void {
-    this.loadTopTenContent();
+    this.loadTopFiveContent();
   }
 
   streamingData: StreamingContent[] = [
@@ -196,10 +196,10 @@ get recommendedStreamingData(): StreamingContent[] {
     this.hoveredCinema.set(id);
   }
 
-  loadTopTenContent(): void {
-    this.contentService.getTop10Content(undefined, undefined).subscribe({
-      next: (data) => this.topTenContent.set(Array.isArray(data) ? data.slice(0, 10) : []),
-      error: () => this.topTenContent.set([]),
+  loadTopFiveContent(): void {
+    this.contentService.getTop5Content().subscribe({
+      next: (data) => this.topFiveContent.set(Array.isArray(data) ? data : []),
+      error: () => this.topFiveContent.set([]),
     });
   }
 }

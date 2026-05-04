@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import jakarta.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
@@ -39,11 +38,6 @@ public class EmailSchedulerService {
 
     private final Random random = new Random();
 
-    /**
-     * Scheduled task to send varied emails to random users
-     * Runs every 2 minutes (120000 ms) with random delay
-     */
-    @Scheduled(fixedDelayString = "${app.email-scheduler.interval-ms:120000}")
     public void sendScheduledEmails() {
         if (!emailSchedulerEnabled) {
             log.debug("Email scheduler is disabled");

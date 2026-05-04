@@ -246,11 +246,32 @@ export class ContentService {
       .pipe(catchError(error => this.handleError('read', 'Top 10 content', error)));
   }
 
+  getTop5Content(): Observable<ContentAnalyticsDTO[]> {
+    return this.http.get<ContentAnalyticsDTO[]>(`${this.contentsBaseUrl}/top5`)
+      .pipe(catchError(error => this.handleError('read', 'Top 5 content', error)));
+  }
+
   getContentRecommendations(userId?: string, limit: number = 6): Observable<ContentRecommendationDTO[]> {
     let url = `${this.contentsBaseUrl}/recommendations?limit=${limit}`;
     if (userId) url += `&userId=${encodeURIComponent(userId)}`;
     return this.http.get<ContentRecommendationDTO[]>(url)
       .pipe(catchError(error => this.handleError('read', 'Content recommendations', error)));
+  }
+
+  // NEW: Get recommendations based on dynamic answers to questions
+  getContentRecommendationsByAnswers(preferences: any, limit: number = 6): Observable<ContentRecommendationDTO[]> {
+    const payload = {
+      user: {
+        preferredCategories: preferences.preferredCategories || [],
+        preferredTypes: preferences.preferredTypes || [],
+        preferredGenres: preferences.preferredGenres || [],
+      },
+      limit: limit,
+    };
+    return this.http.post<ContentRecommendationDTO[]>(
+      `${this.contentsBaseUrl}/recommendations/dynamic`,
+      payload
+    ).pipe(catchError(error => this.handleError('read', 'Dynamic content recommendations', error)));
   }
 
   advancedContentSearch(keyword?: string, genreKeyword?: string, category?: string, limit: number = 30): Observable<ContentSearchResultDTO[]> {

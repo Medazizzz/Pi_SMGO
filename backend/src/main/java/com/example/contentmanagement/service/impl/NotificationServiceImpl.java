@@ -12,6 +12,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -29,15 +34,18 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
+    private final MongoTemplate mongoTemplate;
     @Autowired(required = false)
     private FirebaseMessagingService firebaseMessagingService;
 
     public NotificationServiceImpl(NotificationRepository notificationRepository,
                                    UserRepository userRepository,
-                                   JavaMailSender mailSender) {
+                                   JavaMailSender mailSender,
+                                   MongoTemplate mongoTemplate) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
         this.mailSender = mailSender;
+        this.mongoTemplate = mongoTemplate;
     }
 
     @Value("${app.notifications.email-fallback-delay-seconds:300}")
@@ -162,6 +170,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found: " + id));
         notification.setIsRead(true);
         notification.setEmailFallbackSent(true);
+        notification.setEmailFallbackProcessingAt(null);
         notificationRepository.save(notification);
     }
 
@@ -216,21 +225,28 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        List<Notification> pending = notificationRepository
-                .findByIsReadFalseAndEmailFallbackSentFalseAndEmailFallbackDueAtLessThanEqual(now);
-
-        if (pending.isEmpty()) {
-            return 0;
-        }
-
         int processed = 0;
 
-        for (Notification notification : pending) {
+        // Atomically claim and process notifications one-by-one to avoid duplicate sends
+        while (true) {
+            Query query = new Query();
+            query.addCriteria(Criteria.where("isRead").is(false)
+                    .and("emailFallbackSent").is(false)
+                    .and("emailFallbackProcessingAt").isNull()
+                    .and("emailFallbackDueAt").lte(now));
+
+            Update update = new Update().set("emailFallbackProcessingAt", now);
+
+            Notification notification = mongoTemplate.findAndModify(query, update, Notification.class);
+            if (notification == null) {
+                break; // no more pending notifications to process
+            }
+
             String email = notification.getUser() != null ? notification.getUser().getEmail() : null;
             if (!isDeliverableEmail(email)) {
-                notification.setEmailFallbackSent(true);
-                notification.setEmailFallbackSentAt(now);
-                notificationRepository.save(notification);
+                Query clearQ = Query.query(Criteria.where("_id").is(notification.getId()));
+                Update clearU = new Update().set("emailFallbackSent", true).set("emailFallbackSentAt", now).unset("emailFallbackProcessingAt");
+                mongoTemplate.updateFirst(clearQ, clearU, Notification.class);
                 processed++;
                 continue;
             }
@@ -240,12 +256,16 @@ public class NotificationServiceImpl implements NotificationService {
                     : "SMGO Notification";
             try {
                 sendEmail(email, subject, notification.getMessage());
-                notification.setEmailFallbackSent(true);
-                notification.setEmailFallbackSentAt(now);
-                notificationRepository.save(notification);
+                Query clearQ = Query.query(Criteria.where("_id").is(notification.getId()));
+                Update clearU = new Update().set("emailFallbackSent", true).set("emailFallbackSentAt", now).unset("emailFallbackProcessingAt");
+                mongoTemplate.updateFirst(clearQ, clearU, Notification.class);
                 processed++;
             } catch (Exception ex) {
                 log.error("Failed to send fallback email for notification {}: {}", notification.getId(), ex.getMessage(), ex);
+                // Clear processing flag so it can be retried later
+                Query clearQ = Query.query(Criteria.where("_id").is(notification.getId()));
+                Update clearU = new Update().unset("emailFallbackProcessingAt");
+                mongoTemplate.updateFirst(clearQ, clearU, Notification.class);
             }
         }
 

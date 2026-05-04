@@ -16,6 +16,10 @@ import com.example.contentmanagement.service.NewsletterCampaignService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -25,7 +29,12 @@ import jakarta.mail.internet.MimeMessage;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -45,6 +54,7 @@ public class NewsletterCampaignServiceImpl implements NewsletterCampaignService 
     private final ContentRepository contentRepository;
     private final GenreRepository genreRepository;
     private final JavaMailSender mailSender;
+    private final MongoTemplate mongoTemplate;
 
     @Value("${app.notifications.email-from:no-reply@smgo.local}")
     private String fromEmail;
@@ -69,6 +79,7 @@ public class NewsletterCampaignServiceImpl implements NewsletterCampaignService 
         if (!saved.getScheduledAt().isAfter(LocalDateTime.now())) {
             return dispatchCampaign(saved.getId());
         }
+
         return mapToDTO(saved);
     }
 
@@ -82,46 +93,56 @@ public class NewsletterCampaignServiceImpl implements NewsletterCampaignService 
     @Override
     @Transactional
     public NewsletterCampaignDTO dispatchCampaign(String campaignId) {
-        NewsletterCampaign campaign = newsletterCampaignRepository.findById(campaignId)
-                .orElseThrow(() -> new IllegalArgumentException("Newsletter campaign not found: " + campaignId));
+        NewsletterCampaign campaign = claimCampaignForDispatch(campaignId)
+                .orElseGet(() -> newsletterCampaignRepository.findById(campaignId)
+                        .orElseThrow(() -> new IllegalArgumentException("Newsletter campaign not found: " + campaignId)));
 
-        if ("DISPATCHED".equalsIgnoreCase(campaign.getStatus())) {
+        if (!"DISPATCHING".equalsIgnoreCase(campaign.getStatus())) {
             return mapToDTO(campaign);
         }
 
-        List<User> recipients = resolveRecipients(campaign);
-        int delivered = 0;
-        String subject = campaign.getTitle();
         LocalDateTime now = LocalDateTime.now();
 
-        for (User user : recipients) {
-            try {
-                Notification notification = Notification.builder()
-                        .title(campaign.getTitle())
-                        .message(campaign.getMessage())
-                        .type("INFO")
-                        .createdAt(now)
-                        .isRead(false)
-                        .emailFallbackSent(true)
-                        .emailFallbackSentAt(now)
-                        .user(user)
-                        .build();
-                notificationRepository.save(notification);
-                if (Boolean.TRUE.equals(campaign.getSendEmail())) {
-                    sendEmail(user.getEmail(), subject, campaign.getMessage());
-                }
-                delivered++;
-            } catch (Exception ex) {
-                log.error("Failed to deliver newsletter {} to {}: {}", campaign.getId(), user.getEmail(), ex.getMessage(), ex);
-            }
-        }
+        try {
+            List<User> recipients = resolveRecipients(campaign);
+            int delivered = 0;
+            String subject = campaign.getTitle();
 
-        campaign.setStatus("DISPATCHED");
-        campaign.setDispatchedAt(now);
-        campaign.setRecipientCount(delivered);
-        campaign.setLastError(delivered == 0 ? "No recipients matched the audience filter" : null);
-        newsletterCampaignRepository.save(campaign);
-        return mapToDTO(campaign);
+            for (User user : recipients) {
+                try {
+                    Notification notification = Notification.builder()
+                            .title(campaign.getTitle())
+                            .message(campaign.getMessage())
+                            .type("INFO")
+                            .createdAt(now)
+                            .isRead(false)
+                            .emailFallbackSent(true)
+                            .emailFallbackSentAt(now)
+                            .user(user)
+                            .build();
+                    notificationRepository.save(notification);
+                    if (Boolean.TRUE.equals(campaign.getSendEmail())) {
+                        sendEmail(user.getEmail(), subject, campaign.getMessage());
+                    }
+                    delivered++;
+                } catch (Exception ex) {
+                    log.error("Failed to deliver newsletter {} to {}: {}", campaign.getId(), user.getEmail(), ex.getMessage(), ex);
+                }
+            }
+
+            campaign.setStatus("DISPATCHED");
+            campaign.setDispatchedAt(now);
+            campaign.setRecipientCount(delivered);
+            campaign.setLastError(delivered == 0 ? "No recipients matched the audience filter" : null);
+            newsletterCampaignRepository.save(campaign);
+            return mapToDTO(campaign);
+        } catch (Exception ex) {
+            log.error("Failed to dispatch newsletter campaign {}: {}", campaignId, ex.getMessage(), ex);
+            campaign.setStatus("SCHEDULED");
+            campaign.setLastError(ex.getMessage());
+            newsletterCampaignRepository.save(campaign);
+            throw ex;
+        }
     }
 
     @Scheduled(fixedDelayString = "${app.newsletters.scheduler-check-interval-ms:30000}")
@@ -139,11 +160,24 @@ public class NewsletterCampaignServiceImpl implements NewsletterCampaignService 
         int dispatched = 0;
         for (NewsletterCampaign campaign : dueCampaigns) {
             if (!campaign.getScheduledAt().isAfter(LocalDateTime.now())) {
-                dispatchCampaign(campaign.getId());
-                dispatched++;
+                try {
+                    dispatchCampaign(campaign.getId());
+                    dispatched++;
+                } catch (Exception ex) {
+                    log.error("Failed to dispatch due newsletter campaign {}: {}", campaign.getId(), ex.getMessage(), ex);
+                }
             }
         }
         return dispatched;
+    }
+
+    private java.util.Optional<NewsletterCampaign> claimCampaignForDispatch(String campaignId) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("_id").is(campaignId).and("status").is("SCHEDULED"));
+
+        Update update = new Update().set("status", "DISPATCHING");
+
+        return java.util.Optional.ofNullable(mongoTemplate.findAndModify(query, update, NewsletterCampaign.class));
     }
 
     private List<User> resolveRecipients(NewsletterCampaign campaign) {

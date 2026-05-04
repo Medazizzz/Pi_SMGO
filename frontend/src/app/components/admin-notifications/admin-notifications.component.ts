@@ -182,12 +182,12 @@ export class AdminNotificationsComponent implements OnInit {
       .filter((value: string) => value.length > 0);
 
     const scheduledAtValue = this.newsletterForm.value.scheduledAt;
-    const scheduledAtIso = scheduledAtValue ? new Date(scheduledAtValue).toISOString() : new Date().toISOString();
+    const scheduledAtLocal = scheduledAtValue ? String(scheduledAtValue).slice(0, 16) : new Date().toISOString().slice(0, 16);
 
     const payload: NewsletterCampaignDTO = {
       title: this.newsletterForm.value.title,
       message: this.newsletterForm.value.message,
-      scheduledAt: scheduledAtIso,
+      scheduledAt: scheduledAtLocal,
       targetCategory: this.newsletterForm.value.targetCategory || undefined,
       targetGenres,
       sendEmail: !!this.newsletterForm.value.sendEmail,

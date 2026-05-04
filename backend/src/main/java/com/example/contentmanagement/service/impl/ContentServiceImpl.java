@@ -9,6 +9,7 @@ import com.example.contentmanagement.repository.SeriesRepository;
 import com.example.contentmanagement.repository.DocumentaryRepository;
 import com.example.contentmanagement.repository.ReservationRepository;
 import com.example.contentmanagement.repository.UserRepository;
+import com.example.contentmanagement.repository.GenreRepository;
 import com.example.contentmanagement.service.ContentService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,6 +46,7 @@ public class ContentServiceImpl implements ContentService {
     private final DocumentaryRepository documentaryRepository;
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
+    private final GenreRepository genreRepository;
     private final ObjectMapper objectMapper;
 
     @Value("${app.ai.recommendation-base-url:http://localhost:5055}")
@@ -154,6 +156,76 @@ public class ContentServiceImpl implements ContentService {
     }
 
     @Override
+    public List<ContentAnalyticsDTO> getTop5Content() {
+        log.info("Getting top 5 content");
+        try {
+            List<Content> contents = contentRepository.findAll().stream()
+                    .filter(content -> content.getStatus() == ContentStatus.PUBLISHED && content.getVisible())
+                    .toList();
+
+            log.info("Found {} published and visible contents", contents.size());
+            if (contents.isEmpty()) {
+                return List.of();
+            }
+
+            // Get reservation counts
+            Map<String, Long> reservationCounts = reservationRepository.findAll().stream()
+                    .filter(reservation -> reservation.getContenuId() != null && !reservation.getContenuId().isBlank())
+                    .collect(Collectors.groupingBy(Reservation::getContenuId, Collectors.counting()));
+
+            log.info("Processing {} contents for analytics", contents.size());
+            List<ContentAnalyticsDTO> result = contents.stream()
+                    .map(content -> {
+                        try {
+                            Long reservationCount = reservationCounts.getOrDefault(content.getId(), 0L);
+
+                            // Calculate engagement score: viewCount * 0.7 + commentsCount * 3.0
+                            int viewCount = content.getViewCount();
+                            int commentsCount = content.getComments() != null ? content.getComments().size() : 0;
+                            double engagementScore = (viewCount * 0.7d) + (commentsCount * 3.0d);
+
+                            log.debug("Processing content: {} with viewCount: {}, commentsCount: {}, engagementScore: {}",
+                                     content.getTitle(), viewCount, commentsCount, engagementScore);
+
+                            return ContentAnalyticsDTO.builder()
+                                    .contentId(content.getId())
+                                    .title(content.getTitle())
+                                    .category(content.getCategory())
+                                    .genres(content.getGenreIds() != null ?
+                                        content.getGenreIds().stream()
+                                            .map(id -> {
+                                                try {
+                                                    return genreRepository.findById(id).map(Genre::getName).orElse("Unknown");
+                                                } catch (Exception e) {
+                                                    log.warn("Error getting genre name for id {}: {}", id, e.getMessage());
+                                                    return "Unknown";
+                                                }
+                                            })
+                                            .collect(Collectors.toList()) : List.of())
+                                    .viewCount(viewCount)
+                                    .commentsCount(commentsCount)
+                                    .engagementScore(engagementScore)
+                                    .build();
+                        } catch (Exception e) {
+                            log.error("Error processing content {}: {}", content.getId(), e.getMessage(), e);
+                            return null;
+                        }
+                    })
+                    .filter(dto -> dto != null)
+                    .sorted(Comparator.comparingDouble(ContentAnalyticsDTO::getEngagementScore).reversed()
+                            .thenComparing(ContentAnalyticsDTO::getViewCount, Comparator.reverseOrder()))
+                    .limit(5)
+                    .toList();
+
+            log.info("Successfully processed top 5 content, returning {} items", result.size());
+            return result;
+        } catch (Exception e) {
+            log.error("Error in getTop5Content: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    @Override
     public List<ContentRecommendationDTO> getContentRecommendations(String userId, int limit) {
         List<Content> contents = contentRepository.findAll();
         if (contents.isEmpty()) {
@@ -186,6 +258,29 @@ public class ContentServiceImpl implements ContentService {
                         .thenComparing(ContentRecommendationDTO::getTitle, String.CASE_INSENSITIVE_ORDER))
                 .limit(Math.max(1, limit))
                 .toList();
+    }
+
+    @Override
+    public List<ContentRecommendationDTO> getDynamicContentRecommendations(Map<String, Object> preferences) {
+        log.info("Getting dynamic recommendations based on Q&A answers");
+        List<Content> contents = contentRepository.findAll();
+        if (contents.isEmpty()) {
+            return List.of();
+        }
+
+        try {
+            // Call AI service with dynamic preferences from Q&A answers
+            List<ContentRecommendationDTO> aiRecommendations = callAiRecommendationsWithDynamicPreferences(preferences, contents, 6);
+            if (!aiRecommendations.isEmpty()) {
+                log.info("Returning {} dynamic AI recommendations", aiRecommendations.size());
+                return aiRecommendations;
+            }
+        } catch (Exception e) {
+            log.warn("AI recommendation service unavailable for dynamic preferences, using fallback: {}", e.getMessage());
+        }
+
+        // Fallback to analytics-based recommendations if AI service unavailable
+        return getContentRecommendations(null, 6);
     }
 
     @Override
@@ -405,6 +500,50 @@ public class ContentServiceImpl implements ContentService {
         }
 
         List<Map<String, Object>> responseItems = objectMapper.readValue(response.body(), new TypeReference<List<Map<String, Object>>>() {});
+        return responseItems.stream()
+                .map(this::mapAiRecommendation)
+                .collect(Collectors.toList());
+    }
+
+    private List<ContentRecommendationDTO> callAiRecommendationsWithDynamicPreferences(Map<String, Object> preferences, List<Content> contents, int limit) throws Exception {
+        log.info("Calling AI service with dynamic preferences from Q&A answers");
+        
+        // Extract preferences from the payload
+        Map<String, Object> userPreferences = (Map<String, Object>) preferences.get("user");
+        if (userPreferences == null) {
+            userPreferences = new HashMap<>();
+        }
+
+        // Build AI payload with dynamic preferences
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("limit", Math.max(1, limit));
+        
+        // Use the Q&A preferences directly, with fallback defaults
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("preferredCategories", userPreferences.getOrDefault("preferredCategories", new ArrayList<>()));
+        profile.put("preferredTypes", userPreferences.getOrDefault("preferredTypes", new ArrayList<>()));
+        profile.put("preferredGenres", userPreferences.getOrDefault("preferredGenres", new ArrayList<>()));
+        
+        payload.put("user", profile);
+        payload.put("contents", contents.stream().map(this::toAiContentPayload).collect(Collectors.toList()));
+
+        String requestBody = objectMapper.writeValueAsString(payload);
+        log.debug("Sending to AI service: {}", requestBody);
+        
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(recommendationServiceBaseUrl + "/recommend"))
+                .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(12))
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new IllegalStateException("AI service returned HTTP " + response.statusCode());
+        }
+
+        List<Map<String, Object>> responseItems = objectMapper.readValue(response.body(), new TypeReference<List<Map<String, Object>>>() {});
+        log.info("AI service returned {} recommendations for dynamic preferences", responseItems.size());
         return responseItems.stream()
                 .map(this::mapAiRecommendation)
                 .collect(Collectors.toList());

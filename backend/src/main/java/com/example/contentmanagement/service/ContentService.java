@@ -9,6 +9,7 @@ import com.example.contentmanagement.dto.FilmDTO;
 import com.example.contentmanagement.dto.SeriesDTO;
 import com.example.contentmanagement.dto.DocumentaryDTO;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Content Service Interface
@@ -26,7 +27,9 @@ public interface ContentService {
     List<ContentDTO> getAllContent();
     List<ContentAnalyticsDTO> getContentAnalytics(String category, String genreKeyword, int limit);
     List<ContentAnalyticsDTO> getTop10Content(String category, String genreKeyword);
+    List<ContentAnalyticsDTO> getTop5Content();
     List<ContentRecommendationDTO> getContentRecommendations(String userId, int limit);
+    List<ContentRecommendationDTO> getDynamicContentRecommendations(Map<String, Object> preferences);
     List<ContentSearchResultDTO> searchContentAdvanced(String keyword, String genreKeyword, String category, int limit);
     
     /**

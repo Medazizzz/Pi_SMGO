@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Content Management Controller
@@ -135,11 +136,30 @@ public class ContentController {
         return ResponseEntity.ok(contentService.getTop10Content(category, genreKeyword));
     }
 
+    @GetMapping("/top5")
+    public ResponseEntity<List<ContentAnalyticsDTO>> getTop5Content() {
+        return ResponseEntity.ok(contentService.getTop5Content());
+    }
+
     @GetMapping("/recommendations")
     public ResponseEntity<List<ContentRecommendationDTO>> getContentRecommendations(
             @RequestParam(required = false) String userId,
             @RequestParam(defaultValue = "6") int limit) {
         return ResponseEntity.ok(contentService.getContentRecommendations(userId, limit));
+    }
+
+    /**
+     * Get dynamic recommendations based on Q&A answers
+     * WHY: Provides real-time AI recommendations based on current user answers, not stored profile
+     * POST /api/contents/recommendations/dynamic
+     * @param payload User preferences from Q&A (categories, types, genres) and content list
+     * @return Personalized recommendations based on dynamic preferences
+     */
+    @PostMapping("/recommendations/dynamic")
+    public ResponseEntity<List<ContentRecommendationDTO>> getDynamicRecommendations(
+            @RequestBody Map<String, Object> payload) {
+        log.info("Received dynamic recommendation request with preferences");
+        return ResponseEntity.ok(contentService.getDynamicContentRecommendations(payload));
     }
 
     @GetMapping("/search/advanced")

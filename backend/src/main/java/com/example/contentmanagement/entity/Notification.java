@@ -34,6 +34,8 @@ public class Notification {
 
     private LocalDateTime emailFallbackSentAt;
 
+    private LocalDateTime emailFallbackProcessingAt;
+
     @Builder.Default
     private Boolean isRead = false;
 

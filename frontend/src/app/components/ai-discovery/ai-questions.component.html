@@ -1,0 +1,171 @@
+<div class="space-y-8 p-6 max-w-7xl mx-auto">
+  <!-- Header -->
+  <div class="text-center py-8">
+    <h1 class="text-4xl font-bold text-white mb-3">What Do You Want to Watch?</h1>
+    <p class="text-gray-400 text-lg">Answer a few quick questions and get AI recommendations tailored just for you</p>
+    
+    <!-- Progress Bar -->
+    <div class="mt-6 max-w-md mx-auto">
+      <div class="flex justify-between text-sm text-gray-400 mb-2">
+        <span>Answer 3 Questions</span>
+        <span>{{ progressPercentage() | number:'1.0-0' }}%</span>
+      </div>
+      <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+        <div 
+          class="h-full bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] transition-all duration-300"
+          [style.width.%]="progressPercentage()"
+        ></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Questions Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    
+    <!-- Question 1: Mood -->
+    <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6 space-y-4">
+      <div class="flex items-center gap-3">
+        <span class="w-8 h-8 rounded-full bg-[#8B5CF6]/20 flex items-center justify-center text-[#8B5CF6] font-bold">1</span>
+        <h2 class="text-xl text-white font-semibold">Current Mood</h2>
+      </div>
+      <p class="text-gray-400 text-sm">What's your mood right now?</p>
+      
+      <div class="space-y-2">
+        <button 
+          *ngFor="let mood of moods"
+          (click)="selectMood(mood)"
+          [class.active]="moodAnswer() === mood"
+          class="w-full py-3 px-4 rounded-lg border-2 transition-all text-left font-medium"
+          [ngClass]="moodAnswer() === mood
+            ? 'border-[#8B5CF6] bg-[#8B5CF6]/10 text-[#8B5CF6]'
+            : 'border-gray-600 bg-gray-800/30 text-gray-300 hover:border-[#8B5CF6]/50'"
+        >
+          {{ mood }}
+        </button>
+      </div>
+      <p *ngIf="moodAnswer() !== ''" class="text-xs text-[#8B5CF6]">
+        ✓ Mood: {{ moodAnswer() }} (auto-selected genres)
+      </p>
+    </div>
+
+    <!-- Question 2: Category -->
+    <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6 space-y-4">
+      <div class="flex items-center gap-3">
+        <span class="w-8 h-8 rounded-full bg-[#8B5CF6]/20 flex items-center justify-center text-[#8B5CF6] font-bold">2</span>
+        <h2 class="text-xl text-white font-semibold">Content Category</h2>
+      </div>
+      <p class="text-gray-400 text-sm">Which categories do you prefer? (Select one or more)</p>
+      
+      <div class="space-y-2">
+        <button 
+          *ngFor="let category of categories"
+          (click)="toggleCategory(category)"
+          [class.active]="categoryAnswer().includes(category)"
+          class="w-full py-3 px-4 rounded-lg border-2 transition-all text-left font-medium"
+          [ngClass]="categoryAnswer().includes(category)
+            ? 'border-[#8B5CF6] bg-[#8B5CF6]/10 text-[#8B5CF6]'
+            : 'border-gray-600 bg-gray-800/30 text-gray-300 hover:border-[#8B5CF6]/50'"
+        >
+          {{ category }}
+        </button>
+      </div>
+      <p *ngIf="categoryAnswer().length > 0" class="text-xs text-[#8B5CF6]">
+        ✓ Selected: {{ categoryAnswer().join(', ') }}
+      </p>
+    </div>
+
+    <!-- Question 3: Genres -->
+    <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6 space-y-4">
+      <div class="flex items-center gap-3">
+        <span class="w-8 h-8 rounded-full bg-[#8B5CF6]/20 flex items-center justify-center text-[#8B5CF6] font-bold">3</span>
+        <h2 class="text-xl text-white font-semibold">Genres</h2>
+      </div>
+      <p class="text-gray-400 text-sm">What genres do you love? (Multi-select)</p>
+      
+      <div class="grid grid-cols-2 gap-2">
+        <button 
+          *ngFor="let genre of genres"
+          (click)="toggleGenre(genre)"
+          [class.active]="genreAnswer().includes(genre)"
+          class="py-2 px-3 rounded-lg border transition-all text-sm font-medium"
+          [ngClass]="genreAnswer().includes(genre)
+            ? 'border-[#8B5CF6] bg-[#8B5CF6]/10 text-[#8B5CF6]'
+            : 'border-gray-600 bg-gray-800/30 text-gray-300 hover:border-[#8B5CF6]/50'"
+        >
+          {{ genre }}
+        </button>
+      </div>
+      <p *ngIf="genreAnswer().length > 0" class="text-xs text-[#8B5CF6]">
+        ✓ Selected: {{ getSelectedGenreCount() }} genres
+      </p>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="flex justify-center gap-4 mt-8">
+    <button 
+      (click)="resetAnswers()"
+      class="px-6 py-3 rounded-lg border border-gray-600 text-gray-300 hover:border-[#8B5CF6] hover:text-[#8B5CF6] transition-all font-medium"
+    >
+      Clear All
+    </button>
+    <button 
+      *ngIf="questionsCompleted()"
+      class="px-8 py-3 rounded-lg bg-[#8B5CF6] text-white font-medium animate-pulse hover:animate-none hover:bg-[#7C3AED] transition-all"
+    >
+      🎬 Getting Your Recommendations...
+    </button>
+  </div>
+
+  <!-- Live Recommendations Section -->
+  <div *ngIf="recommendations().length > 0" class="space-y-6">
+    <div class="border-t border-[#8B5CF6]/30 pt-8">
+      <h2 class="text-3xl font-bold text-white mb-2">Your AI Recommendations</h2>
+      <p class="text-gray-400">Based on your answers - refreshes instantly as you change preferences</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div 
+        *ngFor="let item of recommendations()" 
+        class="rounded-lg border border-[#8B5CF6]/15 bg-[#0B0E14] p-4 space-y-3 hover:border-[#8B5CF6]/50 transition-all"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 class="text-white text-lg font-semibold leading-tight">{{ item.title }}</h3>
+            <p class="text-sm text-gray-400 mt-1">{{ item.category }}</p>
+          </div>
+          <span class="rounded-full bg-[#8B5CF6]/10 px-3 py-1 text-xs text-[#8B5CF6] font-bold whitespace-nowrap">
+            {{ item.engagementScore | number:'1.0-1' }}/100
+          </span>
+        </div>
+
+        <p class="text-sm text-gray-300">
+          {{ item.description || 'This title matches your preferences perfectly.' }}
+        </p>
+
+        <p class="text-xs uppercase tracking-widest text-[#8B5CF6] font-semibold">
+          💡 {{ item.reason || 'recommended based on your answers' }}
+        </p>
+
+        <div class="flex flex-wrap gap-2 text-xs text-gray-400 pt-2">
+          <span class="rounded-full border border-[#8B5CF6]/20 px-2 py-1">👁️ {{ item.viewCount }} views</span>
+          <span class="rounded-full border border-[#8B5CF6]/20 px-2 py-1">🎭 {{ (item.genres || []).length }} genres</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-center text-gray-500 text-sm mt-8">
+      💬 Change your answers above to see different recommendations instantly!
+    </p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="questionsCompleted() && recommendations().length === 0" class="text-center py-12">
+    <p class="text-gray-400">Loading recommendations based on your answers...</p>
+  </div>
+
+  <!-- Initial State -->
+  <div *ngIf="!questionsCompleted()" class="text-center py-12">
+    <p class="text-gray-400">👆 Answer all 3 questions above to get personalized recommendations</p>
+  </div>
+</div>
