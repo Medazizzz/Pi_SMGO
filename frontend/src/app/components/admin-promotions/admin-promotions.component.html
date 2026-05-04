@@ -1,122 +1,199 @@
 <div class="space-y-6 p-6 max-w-7xl mx-auto">
+
+  <!-- Header -->
   <div class="flex items-center justify-between gap-4">
     <div>
       <h1 class="text-3xl text-white mb-2">Promotion Management</h1>
       <p class="text-gray-400">Create and manage promotional codes</p>
     </div>
-    <button
-      type="button"
-      (click)="showForm = !showForm"
-      class="flex items-center gap-2 px-4 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg transition-colors text-sm">
-      <span class="w-4 h-4"></span>
+    <button type="button" (click)="showForm = !showForm"
+            class="flex items-center gap-2 px-4 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED]
+                   text-white rounded-lg transition-colors text-sm">
       {{ showForm ? 'Cancel' : 'New Promotion' }}
     </button>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6">
-      <span class="w-10 h-10 text-[#8B5CF6] mb-4"></span>
-      <h3 class="text-lg text-white mb-2">Total promotions</h3>
-      <p class="text-3xl text-white mb-2">{{ totalPromos }}</p>
-      <p class="text-sm text-gray-400">Created promo codes</p>
+  <!-- Stats -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-5">
+      <h3 class="text-sm text-gray-400 mb-1">Total Promotions</h3>
+      <p class="text-3xl font-bold text-white">{{ totalPromos }}</p>
     </div>
-    <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-lg p-6">
-      <span class="w-10 h-10 text-green-400 mb-4"></span>
-      <h3 class="text-lg text-white mb-2">Active promotions</h3>
-      <p class="text-3xl text-white mb-2">{{ activePromos }}</p>
-      <p class="text-sm text-gray-400">Currently available</p>
+    <div class="bg-[#141920] border border-green-500/20 rounded-lg p-5">
+      <h3 class="text-sm text-gray-400 mb-1">Active</h3>
+      <p class="text-3xl font-bold text-green-400">{{ activePromos }}</p>
+    </div>
+    <div class="bg-[#141920] border border-red-500/20 rounded-lg p-5">
+      <h3 class="text-sm text-gray-400 mb-1">🚨 Frauds Detected</h3>
+      <p class="text-3xl font-bold text-red-400">{{ fraudStats.fraud }}</p>
+    </div>
+    <div class="bg-[#141920] border border-amber-500/20 rounded-lg p-5">
+      <h3 class="text-sm text-gray-400 mb-1">⚠️ Suspicious</h3>
+      <p class="text-3xl font-bold text-amber-400">{{ fraudStats.suspicious }}</p>
     </div>
   </div>
 
-  <div *ngIf="showForm" class="bg-[#141920] border border-[#8B5CF6]/20 rounded-xl p-6">
-    <h2 class="text-lg font-medium text-white mb-4">Create a Promotion</h2>
+  <!-- ✅ Fraud Dashboard -->
+  <div class="bg-[#141920] border border-[rgba(139,92,246,0.2)] rounded-xl p-5">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="text-sm font-semibold text-[#E4E6EB]">🤖 AI Fraud Detection</h2>
+        <p class="text-xs text-[#9CA3AF] mt-0.5">Powered by Isolation Forest ML Model</p>
+      </div>
+      <button (click)="analyzeAll()"
+              [disabled]="analyzingAll"
+              class="px-4 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:bg-[#8B5CF6]/40
+                     text-white rounded-lg text-sm font-medium transition-colors">
+        {{ analyzingAll ? '🤖 Analyzing...' : '🔍 Analyze All Promotions' }}
+      </button>
+    </div>
 
+    <!-- Résultats globaux -->
+    <div *ngIf="fraudStats.total > 0"
+         class="grid grid-cols-3 gap-3">
+      <div class="bg-green-900/10 border border-green-500/20 rounded-lg p-3 text-center">
+        <p class="text-2xl font-bold text-green-400">{{ fraudStats.safe }}</p>
+        <p class="text-xs text-[#9CA3AF]">✅ Safe</p>
+      </div>
+      <div class="bg-amber-900/10 border border-amber-500/20 rounded-lg p-3 text-center">
+        <p class="text-2xl font-bold text-amber-400">{{ fraudStats.suspicious }}</p>
+        <p class="text-xs text-[#9CA3AF]">⚠️ Suspicious</p>
+      </div>
+      <div class="bg-red-900/10 border border-red-500/20 rounded-lg p-3 text-center">
+        <p class="text-2xl font-bold text-red-400">{{ fraudStats.fraud }}</p>
+        <p class="text-xs text-[#9CA3AF]">🚨 Fraud</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div *ngIf="showForm" class="bg-[#141920] border border-[#8B5CF6]/20 rounded-xl p-6">
+    <h2 class="text-lg font-medium text-white mb-4">
+      {{ editingId ? 'Update Promotion' : 'Create a Promotion' }}
+    </h2>
     <form [formGroup]="promoForm" (ngSubmit)="onSubmit()" class="space-y-4">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="flex flex-col gap-1">
           <label class="text-sm text-[#9CA3AF]">Promo Code</label>
-          <input
-            type="text"
-            formControlName="code"
-            placeholder="Ex: SUMMER20"
-            class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)] text-[#E4E6EB] rounded-lg px-4 py-2.5 text-sm outline-none uppercase focus:border-[#8B5CF6] transition-colors" />
+          <input type="text" formControlName="code" placeholder="Ex: SUMMER20"
+                 class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)] text-[#E4E6EB]
+                        rounded-lg px-4 py-2.5 text-sm outline-none uppercase focus:border-[#8B5CF6]"/>
         </div>
-
         <div class="flex flex-col gap-1">
           <label class="text-sm text-[#9CA3AF]">Discount (%)</label>
-          <input
-            type="number"
-            formControlName="pourcentageReduction"
-            placeholder="Ex: 20"
-            min="1"
-            max="100"
-            title="Discount percentage"
-            class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)] text-[#E4E6EB] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#8B5CF6] transition-colors" />
+          <input type="number" formControlName="pourcentageReduction" placeholder="Ex: 20"
+                 class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)] text-[#E4E6EB]
+                        rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#8B5CF6]"/>
         </div>
-
         <div class="flex flex-col gap-1">
           <label class="text-sm text-[#9CA3AF]">Expiry Date</label>
-          <input
-            type="date"
-            formControlName="dateExpiration"
-            title="Expiry date"
-            class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)] text-[#E4E6EB] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#8B5CF6] transition-colors" />
+          <input type="date" formControlName="dateExpiration"
+                 class="bg-[#1A1F2B] border border-[rgba(139,92,246,0.2)] text-[#E4E6EB]
+                        rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#8B5CF6]"/>
         </div>
       </div>
-
-      <div *ngIf="errorMessage" class="bg-red-900/30 border border-red-500/30 text-red-400 rounded-lg px-4 py-2.5 text-sm">
-        {{ errorMessage }}
-      </div>
-
-      <button
-        type="submit"
-        [disabled]="promoForm.invalid || loading"
-        class="px-6 py-2.5 bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:bg-[#8B5CF6]/40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors">
-        {{ loading ? 'Saving...' : (editingId ? 'Update Promotion' : 'Create Promotion') }}
+      <button type="submit" [disabled]="promoForm.invalid || loading"
+              class="px-6 py-2.5 bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:bg-[#8B5CF6]/40
+                     text-white rounded-lg text-sm font-medium transition-colors">
+        {{ loading ? 'Saving...' : (editingId ? 'Update' : 'Create') }}
       </button>
     </form>
   </div>
 
-  <div *ngIf="successMessage" class="bg-green-900/30 border border-green-500/30 text-green-400 rounded-lg px-4 py-2.5 text-sm">
+  <div *ngIf="successMessage"
+       class="bg-green-900/30 border border-green-500/30 text-green-400 rounded-lg px-4 py-2.5 text-sm">
     {{ successMessage }}
   </div>
 
+  <!-- ✅ Promotions List avec Fraud -->
   <div class="bg-[#141920] border border-[#8B5CF6]/20 rounded-xl overflow-hidden">
     <div class="px-6 py-4 border-b border-[#8B5CF6]/20">
       <h2 class="text-lg font-medium text-white">Promotions List</h2>
     </div>
 
-    <div class="grid grid-cols-5 gap-4 px-6 py-3 border-b border-[rgba(139,92,246,0.2)] text-xs font-medium text-[#9CA3AF] uppercase tracking-wider">
+    <div class="grid grid-cols-6 gap-4 px-6 py-3 border-b border-[rgba(139,92,246,0.2)]
+                text-xs font-medium text-[#9CA3AF] uppercase tracking-wider">
       <span>Code</span>
       <span>Discount</span>
       <span>Expiry</span>
       <span>Status</span>
+      <span>Fraud Status</span>
       <span>Actions</span>
     </div>
 
-    <div *ngIf="loading" class="px-6 py-8 text-sm text-gray-400">Loading promotions...</div>
+    <div *ngIf="loading" class="px-6 py-8 text-sm text-gray-400">Loading...</div>
 
-    <div *ngFor="let promo of promotions" class="grid grid-cols-5 gap-4 px-6 py-4 border-b border-[rgba(139,92,246,0.1)] items-center hover:bg-[#1A1F2B] transition-colors">
-      <span class="text-sm font-mono text-[#8B5CF6] font-medium">{{ promo.code }}</span>
-      <span class="text-sm text-[#E4E6EB]">{{ promo.pourcentageReduction }}%</span>
-      <span class="text-sm text-[#9CA3AF]">{{ promo.dateExpiration | date:'dd/MM/yyyy' }}</span>
-      <span class="text-xs px-2 py-1 rounded-full w-fit" [ngClass]="promo.active ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'">
-        {{ promo.active ? 'Active' : 'Inactive' }}
-      </span>
-      <div class="flex gap-2">
-        <button *ngIf="promo.active" type="button" (click)="deactivate(promo.id!)" class="text-xs px-2 py-1 bg-amber-900/30 hover:bg-amber-900/50 text-amber-400 rounded-lg transition-colors">
-          Deactivate
-        </button>
-        <button type="button" (click)="editPromotion(promo)" class="text-xs px-2 py-1 bg-[#252B38] hover:bg-[#1E2530] text-[#E4E6EB] rounded-lg transition-colors">
-          Edit
-        </button>
-        <button type="button" (click)="delete(promo.id!)" class="text-xs px-2 py-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded-lg transition-colors">
-          Delete
-        </button>
+    <div *ngFor="let promo of promotions"
+         class="border-b border-[rgba(139,92,246,0.1)] hover:bg-[#1A1F2B] transition-colors">
+
+      <div class="grid grid-cols-6 gap-4 px-6 py-4 items-center">
+        <span class="text-sm font-mono text-[#8B5CF6] font-medium">{{ promo.code }}</span>
+        <span class="text-sm text-[#E4E6EB]">{{ promo.pourcentageReduction }}%</span>
+        <span class="text-sm text-[#9CA3AF]">{{ promo.dateExpiration | date:'dd/MM/yyyy' }}</span>
+        <span class="text-xs px-2 py-1 rounded-full w-fit"
+              [ngClass]="promo.active ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'">
+          {{ promo.active ? 'Active' : 'Inactive' }}
+        </span>
+
+        <!-- ✅ Fraud Badge -->
+        <div>
+          <span *ngIf="getFraudResult(promo.id!)"
+                class="text-xs px-2 py-1 rounded-full"
+                [ngClass]="getFraudBadgeClass(getFraudResult(promo.id!).alertLevel)">
+            {{ getFraudEmoji(getFraudResult(promo.id!).alertLevel) }}
+            {{ getFraudResult(promo.id!).alertLevel }}
+          </span>
+          <span *ngIf="!getFraudResult(promo.id!)"
+                class="text-xs text-[#9CA3AF]/50">
+            Not analyzed
+          </span>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-1.5 flex-wrap">
+          <button *ngIf="promo.active" type="button" (click)="deactivate(promo.id!)"
+                  class="text-xs px-2 py-1 bg-amber-900/30 hover:bg-amber-900/50
+                         text-amber-400 rounded-lg transition-colors">
+            Deactivate
+          </button>
+          <button type="button" (click)="editPromotion(promo)"
+                  class="text-xs px-2 py-1 bg-[#252B38] hover:bg-[#1E2530]
+                         text-[#E4E6EB] rounded-lg transition-colors">
+            Edit
+          </button>
+          <button type="button" (click)="delete(promo.id!)"
+                  class="text-xs px-2 py-1 bg-red-900/30 hover:bg-red-900/50
+                         text-red-400 rounded-lg transition-colors">
+            Delete
+          </button>
+          <button type="button" (click)="analyzeOne(promo.id!)"
+                  [disabled]="analyzingId === promo.id"
+                  class="text-xs px-2 py-1 bg-[#8B5CF6]/20 hover:bg-[#8B5CF6]/30
+                         text-[#8B5CF6] rounded-lg transition-colors disabled:opacity-40">
+            {{ analyzingId === promo.id ? '🤖...' : '🔍' }}
+          </button>
+        </div>
       </div>
+
+      <!-- ✅ Détails fraude si détectée -->
+      <div *ngIf="getFraudResult(promo.id!) && getFraudResult(promo.id!).reasons?.length > 0"
+           class="px-6 pb-3">
+        <div class="bg-red-900/10 border border-red-500/20 rounded-lg p-3">
+          <p class="text-xs text-red-400 font-medium mb-1">
+            🚨 Fraud Reasons — Score: {{ getFraudResult(promo.id!).anomalyScore }}
+            | Action: {{ getFraudResult(promo.id!).action }}
+          </p>
+          <ul class="space-y-0.5">
+            <li *ngFor="let reason of getFraudResult(promo.id!).reasons"
+                class="text-xs text-red-300">• {{ reason }}</li>
+          </ul>
+        </div>
+      </div>
+
     </div>
 
-    <p *ngIf="!loading && promotions.length === 0" class="text-center text-[#9CA3AF] text-sm py-8">
+    <p *ngIf="!loading && promotions.length === 0"
+       class="text-center text-[#9CA3AF] text-sm py-8">
       No promotions created yet
     </p>
   </div>

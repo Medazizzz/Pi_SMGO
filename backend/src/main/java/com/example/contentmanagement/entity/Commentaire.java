@@ -23,4 +23,5 @@ public class Commentaire {
     private String postId;
     private String authorId;
     private String authorUsername;
+    private boolean hidden = false;
 }

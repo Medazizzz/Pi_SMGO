@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { PromotionService, Promotion } from '../../../services/promotion.service';
+import { Router } from '@angular/router';
+import { PromotionService, Promotion, EngagementResult } from '../../../services/promotion.service';
+import { PromoCartService } from '../../../services/promo-cart.service';
 
 @Component({
   selector: 'app-promotions',
@@ -18,10 +20,16 @@ export class PromotionsComponent implements OnInit {
   searchCode = '';
   foundPromotion: Promotion | null = null;
   searchError = '';
+  personalizedPromo: Promotion | null = null;
+  engagementResult: EngagementResult | null = null;
+  loadingPersonalized = false;
+  
 
   constructor(
     private promotionService: PromotionService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router,
+    private promoCartService: PromoCartService
   ) {
     const userRole = (localStorage.getItem('userRole') || '').toUpperCase();
     this.isAdmin = userRole.includes('ADMIN');
@@ -36,6 +44,7 @@ export class PromotionsComponent implements OnInit {
 
   ngOnInit() {
     this.loadPromotions();
+    if (!this.isAdmin) this.loadEngagement();
   }
 
   loadPromotions() {
@@ -43,27 +52,103 @@ export class PromotionsComponent implements OnInit {
     call.subscribe(data => this.promotions = data);
   }
 
-  onSubmit() {
-    if (this.promotionForm.invalid) {
-      return;
-    }
+  loadEngagement() {
+    this.promotionService.getEngagementScore().subscribe({
+      next: result => this.engagementResult = result,
+      error: () => {}
+    });
+  }
 
+  generatePersonalized() {
+    this.loadingPersonalized = true;
+    this.promotionService.generatePersonalizedPromotion().subscribe({
+      next: promo => { this.personalizedPromo = promo; this.loadingPersonalized = false; },
+      error: () => this.loadingPersonalized = false
+    });
+  }
+
+  reserveWithPromo() {
+  if (this.personalizedPromo) {
+    this.promoCartService.setPromo(this.personalizedPromo);
+    this.router.navigate(['/user/cinema'], { queryParams: { module: 'sessions' } });
+  }
+}
+
+  // ✅ Basé sur score, pas sur label
+  getScore(): number {
+    return this.engagementResult?.totalScore ?? 0;
+  }
+
+  getLevelEmoji(): string {
+    const s = this.getScore();
+    if (s >= 51) return '💎';
+    if (s >= 31) return '🥇';
+    if (s >= 11) return '🥈';
+    return '🥉';
+  }
+
+  getLevelLabel(): string {
+    const s = this.getScore();
+    if (s >= 51) return 'Diamond';
+    if (s >= 31) return 'Gold';
+    if (s >= 11) return 'Silver';
+    return 'Bronze';
+  }
+
+  getLevelColor(): string {
+    const s = this.getScore();
+    if (s >= 51) return 'text-cyan-400';
+    if (s >= 31) return 'text-yellow-400';
+    if (s >= 11) return 'text-gray-300';
+    return 'text-amber-500';
+  }
+
+  getLevelGradient(): string {
+    const s = this.getScore();
+    if (s >= 51) return 'linear-gradient(to right, #06b6d4, #67e8f9)';
+    if (s >= 31) return 'linear-gradient(to right, #eab308, #fde047)';
+    if (s >= 11) return 'linear-gradient(to right, #9ca3af, #e5e7eb)';
+    return 'linear-gradient(to right, #d97706, #fbbf24)';
+  }
+
+  getLevelBadgeClass(): string {
+    const s = this.getScore();
+    if (s >= 51) return 'bg-cyan-900/20 border-cyan-500/40 text-cyan-400';
+    if (s >= 31) return 'bg-yellow-900/20 border-yellow-500/40 text-yellow-400';
+    if (s >= 11) return 'bg-gray-800/40 border-gray-500/40 text-gray-300';
+    return 'bg-amber-900/20 border-amber-600/40 text-amber-400';
+  }
+
+  getLevelBarClass(): string {
+    const s = this.getScore();
+    if (s >= 51) return 'bg-cyan-400';
+    if (s >= 31) return 'bg-yellow-400';
+    if (s >= 11) return 'bg-gray-400';
+    return 'bg-amber-500';
+  }
+
+  getDiscountPercent(): number {
+    const s = this.getScore();
+    if (s >= 51) return 20;
+    if (s >= 31) return 15;
+    if (s >= 11) return 10;
+    return 5;
+  }
+
+  onSubmit() {
+    if (this.promotionForm.invalid) return;
     const payload = {
       ...this.promotionForm.value,
       dateExpiration: new Date(this.promotionForm.value.dateExpiration).toISOString()
     };
-
     if (this.editingId) {
       this.promotionService.update(this.editingId, payload).subscribe(() => {
-        this.loadPromotions();
-        this.resetForm();
+        this.loadPromotions(); this.resetForm();
       });
       return;
     }
-
     this.promotionService.create(payload).subscribe(() => {
-      this.loadPromotions();
-      this.resetForm();
+      this.loadPromotions(); this.resetForm();
     });
   }
 
@@ -88,13 +173,9 @@ export class PromotionsComponent implements OnInit {
   }
 
   searchByCode() {
-    if (!this.searchCode.trim()) {
-      return;
-    }
-
+    if (!this.searchCode.trim()) return;
     this.searchError = '';
     this.foundPromotion = null;
-
     this.promotionService.getByCode(this.searchCode.trim()).subscribe({
       next: p => this.foundPromotion = p,
       error: () => this.searchError = 'Promo code not found.'
@@ -105,4 +186,6 @@ export class PromotionsComponent implements OnInit {
     this.editingId = null;
     this.promotionForm.reset();
   }
+
+
 }

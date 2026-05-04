@@ -105,12 +105,11 @@ public class CommentaireServiceImpl implements CommentaireService {
     }
 
     private CommentaireResponseDTO toResponse(Commentaire c) {
-        return new CommentaireResponseDTO(
-                c.getId(),
-                c.getContenu(),
-                c.getPostId(),
-                c.getAuthorUsername(),
-                c.getDateCommentaire()
-        );
-    }
-}
+        CommentaireResponseDTO dto = new CommentaireResponseDTO();
+        dto.setId(c.getId());
+        dto.setContenu(c.getContenu());
+        dto.setPostId(c.getPostId());
+        dto.setAuthorUsername(c.getAuthorUsername());
+        dto.setDateCommentaire(c.getDateCommentaire());
+        return dto;
+    }}
