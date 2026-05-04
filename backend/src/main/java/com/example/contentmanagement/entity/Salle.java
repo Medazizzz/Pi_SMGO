@@ -21,4 +21,6 @@ public class Salle {
 
     private String name;
     private int capacity;
+    private int rowCount;
+    private int seatsPerRow;
 }

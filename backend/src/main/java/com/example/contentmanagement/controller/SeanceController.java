@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/seances")
@@ -45,6 +46,11 @@ public class SeanceController {
         return ResponseEntity.ok(seanceService.findByCinemaId(cinemaId));
     }
 
+    @GetMapping("/grouped-by-cinema")
+    public ResponseEntity<Map<String, List<SeanceResponseDTO>>> findAllGroupedByCinema() {
+        return ResponseEntity.ok(seanceService.findAllGroupedByCinema());
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<SeanceResponseDTO> update(@PathVariable String id, @Valid @RequestBody SeanceRequestDTO request) {
         return ResponseEntity.ok(seanceService.update(id, request));
@@ -54,5 +60,10 @@ public class SeanceController {
     public ResponseEntity<Void> deleteById(@PathVariable String id) {
         seanceService.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/predict")
+    public ResponseEntity<SeanceResponseDTO> predictOccupancy(@RequestBody SeanceRequestDTO request) {
+        return ResponseEntity.ok(seanceService.predictOccupancy(request));
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -38,6 +39,14 @@ public class CinemaController {
     @GetMapping
     public ResponseEntity<List<CinemaResponseDTO>> findAll() {
         return ResponseEntity.ok(cinemaService.findAll());
+    }
+
+    @GetMapping("/nearest")
+    public ResponseEntity<CinemaResponseDTO> findNearestCinema(
+            @RequestParam double latitude,
+            @RequestParam double longitude
+    ) {
+        return ResponseEntity.ok(cinemaService.findNearestCinema(latitude, longitude));
     }
 
     @PutMapping("/{id}")

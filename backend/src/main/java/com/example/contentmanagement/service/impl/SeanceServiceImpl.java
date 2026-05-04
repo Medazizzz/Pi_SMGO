@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -77,6 +79,14 @@ public class SeanceServiceImpl implements SeanceService {
                 .toList();
     }
 
+    @Override
+    public Map<String, List<SeanceResponseDTO>> findAllGroupedByCinema() {
+        return seanceRepository.findAll().stream()
+                .map(this::toResponse)
+                .map(this::enrich)
+                .collect(Collectors.groupingBy(SeanceResponseDTO::getNomCinema));
+    }
+
     private SeanceResponseDTO toResponse(Seance seance) {
         return SeanceResponseDTO.builder()
                 .id(seance.getId())
@@ -86,6 +96,18 @@ public class SeanceServiceImpl implements SeanceService {
                 .numeroSalle(seance.getSalle())
                 .nomCinema(seance.getCinemaId())
                 .build();
+    }
+
+    @Override
+    public SeanceResponseDTO predictOccupancy(SeanceRequestDTO request) {
+        SeanceResponseDTO dto = SeanceResponseDTO.builder()
+                .dateSeance(request.getDateSeance())
+                .heureSeance(request.getHeureSeance())
+                .numeroSalle(request.getSalleId())
+                .nomCinema(request.getCinemaId())
+                .contenuId(request.getContenuId())
+                .build();
+        return enrich(dto);
     }
 
     private SeanceResponseDTO enrich(SeanceResponseDTO dto) {

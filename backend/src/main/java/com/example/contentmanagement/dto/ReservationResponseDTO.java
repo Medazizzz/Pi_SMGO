@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -16,12 +17,18 @@ import java.util.Date;
 @Builder
 public class ReservationResponseDTO {
     private String id;
+    private String seanceId;
     private Date dateReservation;
     private String numeroPlace;
+    private List<String> numeroPlaces;
     private String statut;
     private double prix;
     private String userId;
+    private String userName;
     private String contenuId;
+    private String salleId;
+    private String paymentSessionId;
+    private Date expiresAt;
     private String nomCinema;
     private String numeroSalle;
     private LocalDate dateSeance;

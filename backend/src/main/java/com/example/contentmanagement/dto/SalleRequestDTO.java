@@ -19,4 +19,7 @@ public class SalleRequestDTO {
 
     @Positive(message = "capacity must be positive")
     private int capacity;
+
+    private Integer rowCount;
+    private Integer seatsPerRow;
 }

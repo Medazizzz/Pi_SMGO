@@ -1,7 +1,9 @@
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MapPin, Building, Calendar, Plus, Edit2, Trash2 } from 'lucide-angular';
 import {
@@ -14,9 +16,11 @@ import {
   SeanceRequestDTO,
   SeanceResponseDTO,
   ReservationRequestDTO,
+  ReservationPaymentCheckoutRequestDTO,
 } from '../../services/cinema-api.service';
 
 type SarraModule = 'cinemas' | 'salles' | 'seances' | 'reservations';
+type MockPaymentMethod = 'card' | 'paypal';
 
 @Component({
   selector: 'app-admin-cinema',
@@ -26,6 +30,7 @@ type SarraModule = 'cinemas' | 'salles' | 'seances' | 'reservations';
   styleUrls: ['./admin-cinema.component.css'],
 })
 export class AdminCinemaComponent implements OnInit {
+  private readonly hallLayoutOverridesKey = 'hall-layout-overrides';
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -48,10 +53,26 @@ export class AdminCinemaComponent implements OnInit {
   editingSalleId: string | null = null;
   editingSeanceId: string | null = null;
   editingReservationId: string | null = null;
+  selectedSessionFilterId = '';
   showCinemaForm = false;
   showSalleForm = false;
   showSeanceForm = false;
   showReservationForm = false;
+  showMockPaymentPanel = false;
+  mockPaymentMethod: MockPaymentMethod = 'card';
+  mockCardHolder = '';
+  mockCardNumber = '';
+  mockCardExpiry = '';
+  mockCardCvv = '';
+  mockPaypalEmail = '';
+  pendingMockSessionId = '';
+  pendingDirectReservationPayload: ReservationRequestDTO | null = null;
+  pendingMockPayment: {
+    userId: string;
+    numeroPlace: string;
+    prix: number;
+    sessionLabel: string;
+  } | null = null;
 
   cinemaForm: CinemaRequestDTO = {
     nom: '',
@@ -62,6 +83,8 @@ export class AdminCinemaComponent implements OnInit {
   salleForm: SalleRequestDTO = {
     name: '',
     capacity: 60,
+    rowCount: 5,
+    seatsPerRow: 12,
   };
 
   seanceForm: SeanceRequestDTO = {
@@ -78,10 +101,12 @@ export class AdminCinemaComponent implements OnInit {
     numeroPlace: '',
     prix: 0,
     contenuId: '',
+    salleId: '',
   };
 
   constructor(
-    private readonly cinemaApi: CinemaApiService
+    private readonly cinemaApi: CinemaApiService,
+    private readonly router: Router
   ) {}
 
   ngOnInit() {
@@ -92,6 +117,18 @@ export class AdminCinemaComponent implements OnInit {
         this.activeTab = ['cinemas', 'salles', 'seances', 'reservations'].includes(requestedModule)
           ? requestedModule
           : 'cinemas';
+
+        const sessionId = params.get('sessionId');
+        const paymentSuccess = params.get('paymentSuccess') === '1';
+        if (sessionId && paymentSuccess) {
+          this.confirmReservationPayment(sessionId);
+          return;
+        }
+
+        if (params.get('paymentCanceled') === '1') {
+          this.error = 'Payment was canceled.';
+        }
+
         this.loadAll();
       });
   }
@@ -108,16 +145,7 @@ export class AdminCinemaComponent implements OnInit {
             this.cinemaApi.getSeances().subscribe({
               next: (seances) => {
                 this.seances = seances;
-                this.cinemaApi.getReservations().subscribe({
-                  next: (reservations) => {
-                    this.reservations = reservations;
-                    this.loading = false;
-                  },
-                  error: (err: unknown) => {
-                    this.loading = false;
-                    this.error = this.toErrorMessage(err, 'Failed to load reservations.');
-                  },
-                });
+                this.loadReservations();
               },
               error: (err: unknown) => {
                 this.loading = false;
@@ -136,6 +164,28 @@ export class AdminCinemaComponent implements OnInit {
         this.error = this.toErrorMessage(err, 'Failed to load cinemas.');
       },
     });
+  }
+
+  private loadReservations(): void {
+    const request$ = this.selectedSessionFilterId
+      ? this.cinemaApi.getReservationsBySeance(this.selectedSessionFilterId)
+      : this.cinemaApi.getReservations();
+
+    request$.subscribe({
+      next: (reservations) => {
+        this.reservations = reservations;
+        this.loading = false;
+      },
+      error: (err: unknown) => {
+        this.loading = false;
+        this.error = this.toErrorMessage(err, 'Failed to load reservations.');
+      },
+    });
+  }
+
+  onSessionFilterChange(): void {
+    this.loading = true;
+    this.loadReservations();
   }
 
   selectTab(tab: string): void {
@@ -178,14 +228,19 @@ export class AdminCinemaComponent implements OnInit {
   }
 
   openCreateCinema(): void {
+    this.editingCinemaId = null;
+    this.cinemaForm = {
+      nom: '',
+      adresse: '',
+      ville: '',
+    };
     this.showCinemaForm = true;
-    this.resetCinemaForm();
   }
 
   openCreateSalle(): void {
     this.showSalleForm = true;
     this.editingSalleId = null;
-    this.salleForm = { name: '', capacity: 60 };
+    this.salleForm = { name: '', capacity: 60, rowCount: 5, seatsPerRow: 12 };
   }
 
   openCreateSeance(): void {
@@ -209,15 +264,25 @@ export class AdminCinemaComponent implements OnInit {
       numeroPlace: '',
       prix: 0,
       contenuId: '',
+      salleId: '',
     };
   }
 
   editSalle(salle: SalleResponseDTO): void {
+    const rowCount = Number(salle.rowCount) > 0
+      ? Number(salle.rowCount)
+      : Math.max(1, Math.ceil((Number(salle.capacity) || 1) / 23));
+    const seatsPerRow = Number(salle.seatsPerRow) > 0
+      ? Number(salle.seatsPerRow)
+      : Math.max(1, Math.ceil((Number(salle.capacity) || 1) / rowCount));
+
     this.showSalleForm = true;
     this.editingSalleId = salle.id;
     this.salleForm = {
       name: salle.name,
-      capacity: salle.capacity
+      capacity: rowCount * seatsPerRow,
+      rowCount,
+      seatsPerRow,
     };
   }
 
@@ -237,7 +302,8 @@ export class AdminCinemaComponent implements OnInit {
   }
 
   editReservation(reservation: ReservationResponseDTO): void {
-    const matchedSeance = this.seances.find(
+    const reservationSeanceId = reservation.seanceId || '';
+    const matchedSeance = this.seances.find((s) => s.id === reservationSeanceId) || this.seances.find(
       (s) =>
         s.nomCinema === reservation.nomCinema &&
         s.numeroSalle === reservation.numeroSalle &&
@@ -245,52 +311,128 @@ export class AdminCinemaComponent implements OnInit {
         s.heureSeance === reservation.heureSeance
     );
 
+    const matchedSalle = this.salles.find(
+      (s) => s.id === matchedSeance?.salle || s.name === matchedSeance?.numeroSalle
+    );
+
     this.showReservationForm = true;
     this.editingReservationId = reservation.id;
     this.reservationForm = {
-      seanceId: matchedSeance?.id || '',
-      userId: reservation.userId,
-      numeroPlace: reservation.numeroPlace,
-      prix: reservation.prix,
-      contenuId: reservation.contenuId || '',
+      seanceId: reservationSeanceId || matchedSeance?.id || '',
+      userId: String(reservation.userId ?? ''),
+      numeroPlace: String(reservation.numeroPlace ?? ''),
+      prix: Number(reservation.prix ?? 0),
+      contenuId: String(reservation.contenuId ?? ''),
+      salleId: matchedSalle?.id || reservation.salleId || '',
     };
   }
 
+  onReservationSessionChange(): void {
+    const selectedSeance = this.seances.find((s) => s.id === this.reservationForm.seanceId);
+    if (!selectedSeance) {
+      this.reservationForm.salleId = '';
+      return;
+    }
+    const matchedSalle = this.salles.find((s) => s.name === selectedSeance.numeroSalle || s.id === selectedSeance.salle);
+    this.reservationForm.salleId = matchedSalle?.id || selectedSeance.salle || '';
+  }
+
   saveReservation(): void {
-    if (!this.reservationForm.seanceId || !this.reservationForm.userId.trim() || !this.reservationForm.numeroPlace.trim() || this.reservationForm.prix <= 0) {
+    const seanceId = String(this.reservationForm.seanceId ?? '').trim();
+    const userId = String(this.reservationForm.userId ?? '').trim();
+    const numeroPlace = String(this.reservationForm.numeroPlace ?? '').trim();
+    const prix = Number(this.reservationForm.prix ?? 0);
+
+    if (!seanceId || !userId || !numeroPlace || prix <= 0) {
       this.error = 'Session, user ID, seat number and positive price are required.';
       return;
     }
 
+    const selectedSeance = this.seances.find((s) => s.id === seanceId);
     const payload: ReservationRequestDTO = {
-      seanceId: this.reservationForm.seanceId,
-      userId: this.reservationForm.userId.trim(),
-      numeroPlace: this.reservationForm.numeroPlace.trim(),
-      prix: this.reservationForm.prix,
-      contenuId: this.reservationForm.contenuId?.trim() || undefined,
+      seanceId,
+      userId,
+      numeroPlace,
+      prix,
+      contenuId: String(this.reservationForm.contenuId ?? '').trim() || undefined,
+      salleId: String(this.reservationForm.salleId ?? '').trim() || selectedSeance?.salle || undefined,
     };
 
     this.loading = true;
-    const request$ = this.editingReservationId
-      ? this.cinemaApi.updateReservation(this.editingReservationId, payload)
-      : this.cinemaApi.createReservation(payload);
 
-    request$.subscribe({
-      next: () => {
-        this.showReservationForm = false;
-        this.editingReservationId = null;
-        this.reservationForm = {
-          seanceId: '',
-          userId: '',
-          numeroPlace: '',
-          prix: 0,
-          contenuId: '',
-        };
-        this.loadAll();
+    if (this.editingReservationId) {
+      this.cinemaApi.updateReservation(this.editingReservationId, payload).subscribe({
+        next: () => {
+          this.showReservationForm = false;
+          this.editingReservationId = null;
+          this.reservationForm = {
+            seanceId: '',
+            userId: '',
+            numeroPlace: '',
+            prix: 0,
+            contenuId: '',
+            salleId: '',
+          };
+          this.loadAll();
+        },
+        error: (err: unknown) => {
+          this.loading = false;
+          this.error = this.toErrorMessage(err, 'Failed to update reservation.');
+        },
+      });
+      return;
+    }
+
+    const paymentPayload: ReservationPaymentCheckoutRequestDTO = {
+      reservation: payload,
+      successUrl: `${window.location.origin}/admin/cinema?module=reservations&paymentSuccess=1`,
+      cancelUrl: `${window.location.origin}/admin/cinema?module=reservations&paymentCanceled=1`,
+    };
+
+    this.cinemaApi.createReservationCheckout(paymentPayload).subscribe({
+      next: (checkout) => {
+        this.loading = false;
+        if (checkout.sessionId?.startsWith('mock_')) {
+          this.resetMockPaymentInputs();
+          this.pendingMockSessionId = checkout.sessionId;
+          this.pendingDirectReservationPayload = null;
+          this.pendingMockPayment = {
+            userId,
+            numeroPlace,
+            prix,
+            sessionLabel: this.getSessionLabel(seanceId),
+          };
+          this.showMockPaymentPanel = true;
+          return;
+        }
+        if (checkout.checkoutUrl) {
+          window.location.href = checkout.checkoutUrl;
+          return;
+        }
+        this.error = 'Unable to start payment checkout.';
       },
       error: (err: unknown) => {
+        const backendMessage = this.toErrorMessage(err, 'Failed to start payment checkout.');
+        const lowered = backendMessage.toLowerCase();
+
+        if (lowered.includes('stripe is not configured') || lowered.includes('payment provider is not configured')) {
+          this.loading = false;
+          this.resetMockPaymentInputs();
+          this.pendingMockSessionId = '';
+          this.pendingDirectReservationPayload = payload;
+          this.pendingMockPayment = {
+            userId,
+            numeroPlace,
+            prix,
+            sessionLabel: this.getSessionLabel(seanceId),
+          };
+          this.showMockPaymentPanel = true;
+          this.error = null;
+          return;
+        }
+
         this.loading = false;
-        this.error = this.toErrorMessage(err, this.editingReservationId ? 'Failed to update reservation.' : 'Failed to create reservation.');
+        this.error = backendMessage;
       },
     });
   }
@@ -349,6 +491,7 @@ export class AdminCinemaComponent implements OnInit {
       this.cinemaApi.updateCinema(this.editingCinemaId, payload).subscribe({
         next: () => {
           this.resetCinemaForm();
+          this.notifyCinemaUpdated();
           this.loadAll();
         },
         error: (err: unknown) => {
@@ -360,6 +503,7 @@ export class AdminCinemaComponent implements OnInit {
       this.cinemaApi.createCinema(payload).subscribe({
         next: () => {
           this.resetCinemaForm();
+          this.notifyCinemaUpdated();
           this.loadAll();
         },
         error: (err: unknown) => {
@@ -378,6 +522,7 @@ export class AdminCinemaComponent implements OnInit {
     this.loading = true;
     this.cinemaApi.deleteCinema(id).subscribe({
       next: () => {
+        this.notifyCinemaUpdated();
         this.loadAll();
       },
       error: (err: unknown) => {
@@ -388,15 +533,20 @@ export class AdminCinemaComponent implements OnInit {
   }
 
   createSalle(): void {
-    if (!this.salleForm.name.trim() || this.salleForm.capacity <= 0) {
-      this.error = 'Salle name and positive capacity are required.';
+    const rowCount = Number(this.salleForm.rowCount ?? 0);
+    const seatsPerRow = Number(this.salleForm.seatsPerRow ?? 0);
+    if (!this.salleForm.name.trim() || rowCount <= 0 || seatsPerRow <= 0) {
+      this.error = 'Hall name, row count and seats per row are required.';
       return;
     }
 
     this.loading = true;
+    const capacity = rowCount * seatsPerRow;
     const payload: SalleRequestDTO = {
       name: this.salleForm.name.trim(),
-      capacity: this.salleForm.capacity,
+      capacity,
+      rowCount,
+      seatsPerRow,
     };
 
     const request$ = this.editingSalleId
@@ -405,9 +555,10 @@ export class AdminCinemaComponent implements OnInit {
 
     request$.subscribe({
       next: () => {
+        this.saveHallLayoutOverride(this.salleForm.name, rowCount, seatsPerRow);
         this.showSalleForm = false;
         this.editingSalleId = null;
-        this.salleForm = { name: '', capacity: 60 };
+        this.salleForm = { name: '', capacity: 60, rowCount: 5, seatsPerRow: 12 };
         this.loadAll();
       },
       error: (err: unknown) => {
@@ -490,11 +641,187 @@ export class AdminCinemaComponent implements OnInit {
     });
   }
 
+  private notifyCinemaUpdated(): void {
+    try {
+      localStorage.setItem('cinemas-updated', Date.now().toString());
+    } catch {
+      // Ignore storage errors.
+    }
+  }
+
   private toErrorMessage(err: unknown, fallback: string): string {
+    if (err instanceof HttpErrorResponse) {
+      const backendMessage = err.error?.message;
+      if (typeof backendMessage === 'string' && backendMessage.trim()) {
+        return backendMessage;
+      }
+      if (typeof err.error === 'string' && err.error.trim()) {
+        return err.error;
+      }
+      if (typeof err.message === 'string' && err.message.trim()) {
+        return err.message;
+      }
+      return fallback;
+    }
     if (err && typeof err === 'object' && 'message' in err && typeof err.message === 'string') {
       return err.message;
     }
     return fallback;
+  }
+
+  private saveHallLayoutOverride(hallName: string, rowCount: number, seatsPerRow: number): void {
+    const normalizedName = hallName.trim().toLowerCase();
+    if (!normalizedName || rowCount <= 0 || seatsPerRow <= 0) {
+      return;
+    }
+
+    try {
+      const raw = localStorage.getItem(this.hallLayoutOverridesKey);
+      const parsed = raw ? JSON.parse(raw) as Record<string, { rowCount: number; seatsPerRow: number }> : {};
+      parsed[normalizedName] = { rowCount, seatsPerRow };
+      localStorage.setItem(this.hallLayoutOverridesKey, JSON.stringify(parsed));
+      localStorage.setItem('halls-updated', Date.now().toString());
+    } catch {
+      // Ignore localStorage write issues.
+    }
+  }
+
+  private confirmReservationPayment(sessionId: string): void {
+    this.loading = true;
+    this.cinemaApi.confirmReservationPayment(sessionId).subscribe({
+      next: () => {
+        this.showMockPaymentPanel = false;
+        this.pendingMockSessionId = '';
+        this.pendingMockPayment = null;
+        this.showReservationForm = false;
+        this.editingReservationId = null;
+        this.reservationForm = {
+          seanceId: '',
+          userId: '',
+          numeroPlace: '',
+          prix: 0,
+          contenuId: '',
+          salleId: '',
+        };
+
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { module: 'reservations', paymentSuccess: null, sessionId: null, paymentCanceled: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
+
+        this.loadAll();
+      },
+      error: (err: unknown) => {
+        this.loading = false;
+        this.error = this.toErrorMessage(err, 'Payment was received but reservation confirmation failed.');
+      },
+    });
+  }
+
+  confirmMockPayment(): void {
+    if (!this.validateMockPaymentInputs()) {
+      return;
+    }
+
+    if (this.pendingMockSessionId) {
+      this.confirmReservationPayment(this.pendingMockSessionId);
+      return;
+    }
+
+    if (!this.pendingDirectReservationPayload) {
+      this.error = 'No pending payment session found.';
+      return;
+    }
+
+    this.loading = true;
+    this.cinemaApi.createReservation(this.pendingDirectReservationPayload).subscribe({
+      next: () => {
+        this.loading = false;
+        this.showMockPaymentPanel = false;
+        this.pendingMockSessionId = '';
+        this.pendingDirectReservationPayload = null;
+        this.pendingMockPayment = null;
+        this.resetMockPaymentInputs();
+        this.showReservationForm = false;
+        this.editingReservationId = null;
+        this.reservationForm = {
+          seanceId: '',
+          userId: '',
+          numeroPlace: '',
+          prix: 0,
+          contenuId: '',
+          salleId: '',
+        };
+        this.loadAll();
+      },
+      error: (err: unknown) => {
+        this.loading = false;
+        this.error = this.toErrorMessage(err, 'Failed to create reservation.');
+      },
+    });
+  }
+
+  cancelMockPayment(): void {
+    this.showMockPaymentPanel = false;
+    this.pendingMockSessionId = '';
+    this.pendingDirectReservationPayload = null;
+    this.pendingMockPayment = null;
+    this.resetMockPaymentInputs();
+    this.error = 'Payment canceled.';
+  }
+
+  private getSessionLabel(seanceId: string): string {
+    const seance = this.seances.find((item) => item.id === seanceId);
+    if (!seance) {
+      return seanceId;
+    }
+    return `${seance.nomCinema} - ${seance.numeroSalle} - ${seance.dateSeance} ${seance.heureSeance}`;
+  }
+
+  private validateMockPaymentInputs(): boolean {
+    if (this.mockPaymentMethod === 'card') {
+      if (!this.mockCardHolder.trim()) {
+        this.error = 'Card holder name is required.';
+        return false;
+      }
+
+      const cleanCardNumber = this.mockCardNumber.replace(/\s+/g, '');
+      if (!/^\d{16}$/.test(cleanCardNumber)) {
+        this.error = 'Card number must contain exactly 16 digits.';
+        return false;
+      }
+
+      if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(this.mockCardExpiry.trim())) {
+        this.error = 'Card expiry must be in MM/YY format.';
+        return false;
+      }
+
+      if (!/^\d{3,4}$/.test(this.mockCardCvv.trim())) {
+        this.error = 'CVV must contain 3 or 4 digits.';
+        return false;
+      }
+    }
+
+    if (this.mockPaymentMethod === 'paypal') {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.mockPaypalEmail.trim())) {
+        this.error = 'A valid PayPal email is required.';
+        return false;
+      }
+    }
+
+    this.error = null;
+    return true;
+  }
+
+  private resetMockPaymentInputs(): void {
+    this.mockPaymentMethod = 'card';
+    this.mockCardHolder = '';
+    this.mockCardNumber = '';
+    this.mockCardExpiry = '';
+    this.mockCardCvv = '';
+    this.mockPaypalEmail = '';
   }
 }
 

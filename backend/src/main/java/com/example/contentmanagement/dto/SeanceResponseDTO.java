@@ -21,3 +21,4 @@ public class SeanceResponseDTO {
     private String nomCinema;
     private String contenuId;
 }
+ 

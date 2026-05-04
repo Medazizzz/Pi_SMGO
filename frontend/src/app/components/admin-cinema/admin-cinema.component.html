@@ -31,7 +31,7 @@
     <div class="table-panel">
       <div class="table-head">
         <h2>Cinemas</h2>
-        <button class="refresh-btn" (click)="loadAll()">Refresh</button>
+        <button class="refresh-btn" (click)="loadAll()">Rafraichir</button>
       </div>
 
       <div *ngIf="showCinemaForm" class="inline-form form-grid-3">
@@ -48,9 +48,9 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>Name</th>
-            <th>City</th>
-            <th>Address</th>
+            <th>Nom</th>
+            <th>Ville</th>
+            <th>Adresse</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -109,8 +109,22 @@
       </div>
 
       <div *ngIf="showSalleForm" class="inline-form form-grid-2">
-        <input [(ngModel)]="salleForm.name" placeholder="Hall name" />
-        <input [(ngModel)]="salleForm.capacity" type="number" min="1" placeholder="Capacity" />
+        <div class="field-group">
+          <label>Hall name</label>
+          <input [(ngModel)]="salleForm.name" placeholder="Hall name" />
+        </div>
+        <div class="field-group">
+          <label>Rows</label>
+          <input [(ngModel)]="salleForm.rowCount" type="number" min="1" placeholder="Rows" />
+        </div>
+        <div class="field-group">
+          <label>Seats per row</label>
+          <input [(ngModel)]="salleForm.seatsPerRow" type="number" min="1" placeholder="Seats per row" />
+        </div>
+        <div class="field-group">
+          <label>Capacity</label>
+          <input [value]="(salleForm.rowCount || 0) * (salleForm.seatsPerRow || 0)" type="number" placeholder="Capacity" readonly />
+        </div>
         <div class="form-actions full-row">
           <button class="primary-btn" (click)="createSalle()">{{ editingSalleId ? 'Update' : 'Create' }}</button>
           <button class="ghost-btn" (click)="showSalleForm = false; editingSalleId = null">Cancel</button>
@@ -121,6 +135,8 @@
         <thead>
           <tr>
             <th>Name</th>
+            <th>Rows</th>
+            <th>Seats/Row</th>
             <th>Capacity</th>
             <th>Actions</th>
           </tr>
@@ -128,6 +144,8 @@
         <tbody>
           <tr *ngFor="let salle of salles">
             <td class="name-cell">{{ salle.name }}</td>
+            <td>{{ salle.rowCount || '-' }}</td>
+            <td>{{ salle.seatsPerRow || '-' }}</td>
             <td>{{ salle.capacity }} seats</td>
             <td>
               <div class="action-row">
@@ -137,7 +155,7 @@
             </td>
           </tr>
           <tr *ngIf="salles.length === 0">
-            <td colspan="3" class="empty-cell">No halls found</td>
+            <td colspan="5" class="empty-cell">No halls found</td>
           </tr>
         </tbody>
       </table>
@@ -232,9 +250,8 @@
     <header class="module-header">
       <div>
         <h1>Reservation</h1>
-        <p>Manage reservations and seats</p>
+        <p>View reservations by session</p>
       </div>
-      <button class="primary-btn" (click)="openCreateReservation()">+ New Reservation</button>
     </header>
 
     <div class="kpi-grid">
@@ -261,35 +278,26 @@
         <button class="refresh-btn" (click)="loadAll()">Refresh</button>
       </div>
 
-      <div *ngIf="showReservationForm" class="inline-form form-grid-2">
-        <select [(ngModel)]="reservationForm.seanceId" title="Session selection">
-          <option value="">Select session</option>
+      <div class="inline-form form-grid-2">
+        <select [(ngModel)]="selectedSessionFilterId" title="Session filter" (change)="onSessionFilterChange()" class="full-row">
+          <option value="">All sessions</option>
           <option *ngFor="let seance of seances" [value]="seance.id">
             {{ seance.nomCinema }} - {{ seance.numeroSalle }} - {{ seance.dateSeance }} {{ seance.heureSeance }}
           </option>
         </select>
-        <input [(ngModel)]="reservationForm.userId" title="User ID" placeholder="User ID" />
-        <input [(ngModel)]="reservationForm.numeroPlace" title="Seat number" placeholder="Seat number (e.g. A12)" />
-        <input [(ngModel)]="reservationForm.prix" title="Price" type="number" min="0.01" step="0.01" placeholder="Price" />
-        <input [(ngModel)]="reservationForm.contenuId" title="Content ID" placeholder="Content ID" class="full-row" />
-        <div class="form-actions full-row">
-          <button class="primary-btn" (click)="saveReservation()">{{ editingReservationId ? 'Update' : 'Create' }}</button>
-          <button class="ghost-btn" (click)="showReservationForm = false; editingReservationId = null">Cancel</button>
-        </div>
       </div>
 
       <table>
         <thead>
           <tr>
             <th>Date</th>
-            <th>Seat</th>
+            <th>Place</th>
             <th>Session</th>
             <th>Hall</th>
-            <th>Status</th>
-            <th>Price</th>
-            <th>User ID</th>
-            <th>Content ID</th>
-            <th>Actions</th>
+            <th>Statut</th>
+            <th>Prix</th>
+            <th>User</th>
+            <th>Contenu ID</th>
           </tr>
         </thead>
         <tbody>
@@ -300,17 +308,11 @@
             <td>{{ reservation.numeroSalle }}</td>
             <td>{{ reservation.statut }}</td>
             <td>{{ reservation.prix }}€</td>
-            <td>{{ reservation.userId }}</td>
+            <td>{{ reservation.userName || reservation.userId }}</td>
             <td>{{ reservation.contenuId || '-' }}</td>
-            <td>
-              <div class="action-row">
-                <button class="action-btn" (click)="editReservation(reservation)">Edit</button>
-                <button class="action-btn" (click)="deleteReservation(reservation.id)">Delete</button>
-              </div>
-            </td>
           </tr>
           <tr *ngIf="reservations.length === 0">
-            <td colspan="9" class="empty-cell">No reservations found</td>
+            <td colspan="8" class="empty-cell">No reservations found</td>
           </tr>
         </tbody>
       </table>

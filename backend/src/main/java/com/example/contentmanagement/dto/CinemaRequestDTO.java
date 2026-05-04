@@ -21,4 +21,7 @@ public class CinemaRequestDTO {
 
     @NotBlank(message = "ville is required")
     private String ville;
+
+    private Double latitude;
+    private Double longitude;
 }

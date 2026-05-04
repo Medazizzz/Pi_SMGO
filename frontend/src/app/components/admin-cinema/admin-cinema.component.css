@@ -70,7 +70,8 @@
 	background: rgba(18, 26, 45, 0.9);
 	border: 1px solid rgba(84, 101, 148, 0.24);
 	border-radius: 12px;
-	overflow: hidden;
+	overflow-x: auto;
+	overflow-y: hidden;
 }
 
 .table-head {
@@ -88,6 +89,7 @@
 
 table {
 	width: 100%;
+	min-width: 1000px;
 	border-collapse: collapse;
 }
 
@@ -117,7 +119,9 @@ tbody tr:hover {
 
 .action-row {
 	display: flex;
-	gap: 0.45rem;
+	gap: 0.7rem;
+	white-space: nowrap;
+	min-width: 180px;
 }
 
 .action-btn,
@@ -126,9 +130,11 @@ tbody tr:hover {
 .ghost-btn {
 	border: 0;
 	border-radius: 9px;
-	padding: 0.4rem 0.75rem;
+	padding: 0.5rem 1rem;
 	font-weight: 600;
 	cursor: pointer;
+	white-space: nowrap;
+	font-size: 0.9rem;
 }
 
 .action-btn,
@@ -136,6 +142,12 @@ tbody tr:hover {
 .refresh-btn {
 	background: linear-gradient(90deg, #7f56f0 0%, #9b62f5 100%);
 	color: #f2e9ff;
+	transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(127, 86, 240, 0.4);
 }
 
 .ghost-btn {
@@ -169,6 +181,19 @@ tbody tr:hover {
 	background: rgba(10, 15, 28, 0.95);
 	color: #eef1ff;
 	padding: 0.55rem 0.7rem;
+	color-scheme: dark;
+}
+
+.field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+.field-group label {
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: #b8c4e1;
 }
 
 .full-row {

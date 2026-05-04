@@ -22,4 +22,6 @@ public class Cinema {
     private String nom;
     private String adresse;
     private String ville;
+    private Double latitude;
+    private Double longitude;
 }

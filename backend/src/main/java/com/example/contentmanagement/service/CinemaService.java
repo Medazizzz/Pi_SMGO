@@ -11,4 +11,5 @@ public interface CinemaService {
     List<CinemaResponseDTO> findAll();
     CinemaResponseDTO update(String id, CinemaRequestDTO request);
     void deleteById(String id);
+    CinemaResponseDTO findNearestCinema(double latitude, double longitude);
 }

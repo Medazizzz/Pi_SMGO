@@ -15,6 +15,8 @@ export interface CinemaResponseDTO extends CinemaRequestDTO {
 export interface SalleRequestDTO {
   name: string;
   capacity: number;
+  rowCount?: number;
+  seatsPerRow?: number;
 }
 
 export interface SalleResponseDTO extends SalleRequestDTO {
@@ -36,29 +38,62 @@ export interface SeanceResponseDTO {
   numeroSalle: string;
   nomCinema: string;
   contenuId?: string;
+  salle?: string;
 }
 
 export interface ReservationRequestDTO {
   seanceId: string;
   userId: string;
   numeroPlace: string;
+  numeroPlaces?: string[];
   prix: number;
   contenuId?: string;
   watchPartyId?: string;
+  salleId?: string;
 }
 
 export interface ReservationResponseDTO {
   id: string;
+  seanceId?: string;
   dateReservation: string;
   numeroPlace: string;
+  numeroPlaces?: string[];
   statut: string;
   prix: number;
   userId: string;
+  userName?: string;
   contenuId?: string;
+  salleId?: string;
   nomCinema: string;
   numeroSalle: string;
   dateSeance: string;
   heureSeance: string;
+}
+
+export interface ReservationPaymentCheckoutRequestDTO {
+  reservation: ReservationRequestDTO;
+  successUrl?: string;
+  cancelUrl?: string;
+}
+
+export interface ReservationPaymentCheckoutResponseDTO {
+  sessionId: string;
+  checkoutUrl: string;
+  expiresAt?: string;
+}
+
+export interface WaitlistJoinRequestDTO {
+  seanceId: string;
+  userId?: string;
+  email?: string;
+}
+
+export interface WaitlistJoinResponseDTO {
+  waitlistEntryId: string;
+  seanceId: string;
+  email: string;
+  position: number;
+  message: string;
 }
 
 @Injectable({
@@ -109,6 +144,10 @@ export class CinemaApiService {
     return this.http.get<SeanceResponseDTO[]>(`${this.baseUrl}/seances/cinema/${cinemaId}`);
   }
 
+  getSeancesGroupedByCinema(): Observable<{ [cinemaName: string]: SeanceResponseDTO[] }> {
+    return this.http.get<{ [cinemaName: string]: SeanceResponseDTO[] }>(`${this.baseUrl}/seances/grouped-by-cinema`);
+  }
+
   createSeance(payload: SeanceRequestDTO): Observable<SeanceResponseDTO> {
     return this.http.post<SeanceResponseDTO>(`${this.baseUrl}/seances`, payload);
   }
@@ -129,6 +168,10 @@ export class CinemaApiService {
     return this.http.get<ReservationResponseDTO[]>(`${this.baseUrl}/reservations/user/${userId}`);
   }
 
+  getReservationsBySeance(seanceId: string): Observable<ReservationResponseDTO[]> {
+    return this.http.get<ReservationResponseDTO[]>(`${this.baseUrl}/reservations/session/${seanceId}`);
+  }
+
   createReservation(payload: ReservationRequestDTO): Observable<ReservationResponseDTO> {
     return this.http.post<ReservationResponseDTO>(`${this.baseUrl}/reservations`, payload);
   }
@@ -139,5 +182,25 @@ export class CinemaApiService {
 
   deleteReservation(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/reservations/${id}`);
+  }
+
+  searchReservations(keyword: string): Observable<ReservationResponseDTO[]> {
+    return this.http.get<ReservationResponseDTO[]>(`${this.baseUrl}/reservations/search`, {
+      params: { keyword }
+    });
+  }
+
+  createReservationCheckout(payload: ReservationPaymentCheckoutRequestDTO): Observable<ReservationPaymentCheckoutResponseDTO> {
+    return this.http.post<ReservationPaymentCheckoutResponseDTO>(`${this.baseUrl}/reservations/payment/checkout`, payload);
+  }
+
+  confirmReservationPayment(sessionId: string): Observable<ReservationResponseDTO> {
+    return this.http.post<ReservationResponseDTO>(`${this.baseUrl}/reservations/payment/confirm`, null, {
+      params: { sessionId }
+    });
+  }
+
+  joinReservationWaitlist(payload: WaitlistJoinRequestDTO): Observable<WaitlistJoinResponseDTO> {
+    return this.http.post<WaitlistJoinResponseDTO>(`${this.baseUrl}/reservations/waitlist/join`, payload);
   }
 }
