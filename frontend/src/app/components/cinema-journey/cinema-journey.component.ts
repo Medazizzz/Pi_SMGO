@@ -12,7 +12,8 @@ import {
   SalleResponseDTO,
   SeanceResponseDTO,
 } from '../../services/cinema-api.service';
-import { AuthService } from '../../services/auth.service';
+import { PromoCartService } from '../../services/promo-cart.service';
+import { Promotion } from '../../services/promotion.service';
 
 type SarraModule = 'cinema' | 'sessions' | 'halls' | 'reservations';
 
@@ -26,7 +27,6 @@ type SarraModule = 'cinema' | 'sessions' | 'halls' | 'reservations';
 export class CinemaJourneyComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly authService = inject(AuthService);
 
   readonly TicketIcon = Ticket;
   readonly MapPinIcon = MapPin;
@@ -52,10 +52,22 @@ export class CinemaJourneyComponent implements OnInit {
   error = '';
   sessionSearch = '';
 
-  constructor(private readonly cinemaApi: CinemaApiService) {}
+  // ✅ Promo appliquée automatiquement
+  activePromo: Promotion | null = null;
+  prixOriginal = 25;
+  prixFinal = 25;
+
+  constructor(
+    private readonly cinemaApi: CinemaApiService,
+    private readonly promoCartService: PromoCartService
+  ) {}
 
   ngOnInit(): void {
-    this.currentUserId = this.resolveCurrentUserId();
+    // ✅ Récupérer la promo depuis le service partagé
+    this.activePromo = this.promoCartService.getPromo();
+    if (this.activePromo) {
+      this.applyPromo();
+    }
 
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -68,10 +80,36 @@ export class CinemaJourneyComponent implements OnInit {
       });
   }
 
+  // ✅ Applique la réduction sur le prix
+  applyPromo(): void {
+    if (!this.activePromo) return;
+    this.prixOriginal = this.prix;
+    this.prixFinal = this.promoCartService.calculateFinalPrice(this.prix);
+  }
+
+  // ✅ Recalcule quand le prix change
+  onPrixChange(): void {
+    this.prixOriginal = this.prix;
+    this.prixFinal = this.activePromo
+      ? this.promoCartService.calculateFinalPrice(this.prix)
+      : this.prix;
+  }
+
+  // ✅ Retire la promo
+  removePromo(): void {
+    this.promoCartService.clearPromo();
+    this.activePromo = null;
+    this.prixFinal = this.prix;
+  }
+
+  get promoDiscount(): number {
+    if (!this.activePromo) return 0;
+    return Math.round((this.prixOriginal - this.prixFinal) * 100) / 100;
+  }
+
   refreshCinemaData(): void {
     this.loading = true;
     this.error = '';
-
     this.cinemaApi.getCinemas().subscribe({
       next: (cinemas) => {
         this.cinemas = cinemas;
@@ -87,7 +125,6 @@ export class CinemaJourneyComponent implements OnInit {
   loadHalls(): void {
     this.loading = true;
     this.error = '';
-
     this.cinemaApi.getSalles().subscribe({
       next: (salles) => {
         this.salles = salles;
@@ -116,10 +153,8 @@ export class CinemaJourneyComponent implements OnInit {
       this.reservationMessage = 'Enter your user id to fetch reservations.';
       return;
     }
-
     this.loadingReservations = true;
     this.reservationMessage = '';
-
     this.cinemaApi.getReservationsByUser(this.currentUserId.trim()).subscribe({
       next: (data) => {
         this.reservations = data;
@@ -133,28 +168,17 @@ export class CinemaJourneyComponent implements OnInit {
   }
 
   reserveSeat(): void {
-    if (!this.selectedSeanceId) {
-      this.reservationMessage = 'Select a seance first.';
-      return;
-    }
-    if (!this.currentUserId.trim()) {
-      this.reservationMessage = 'User id is required.';
-      return;
-    }
-    if (!this.numeroPlace.trim()) {
-      this.reservationMessage = 'Seat number is required.';
-      return;
-    }
-    if (this.prix <= 0) {
-      this.reservationMessage = 'Price must be greater than 0.';
-      return;
-    }
+    if (!this.selectedSeanceId) { this.reservationMessage = 'Select a seance first.'; return; }
+    if (!this.currentUserId.trim()) { this.reservationMessage = 'User id is required.'; return; }
+    if (!this.numeroPlace.trim()) { this.reservationMessage = 'Seat number is required.'; return; }
+    if (this.prix <= 0) { this.reservationMessage = 'Price must be greater than 0.'; return; }
 
+    // ✅ Utilise le prix final avec réduction
     const payload: ReservationRequestDTO = {
       seanceId: this.selectedSeanceId,
       userId: this.currentUserId.trim(),
       numeroPlace: this.numeroPlace.trim(),
-      prix: this.prix,
+      prix: this.activePromo ? this.prixFinal : this.prix,
     };
 
     this.loading = true;
@@ -163,8 +187,11 @@ export class CinemaJourneyComponent implements OnInit {
     this.cinemaApi.createReservation(payload).subscribe({
       next: (reservation) => {
         this.loading = false;
-        this.reservationMessage = `Reservation created: ${reservation.id}`;
+        this.reservationMessage = `✅ Reservation created${this.activePromo ? ` with ${this.activePromo.pourcentageReduction}% discount!` : '!'} ID: ${reservation.id}`;
         this.numeroPlace = '';
+        // ✅ Efface la promo après utilisation
+        this.promoCartService.clearPromo();
+        this.activePromo = null;
         this.loadUserReservations();
       },
       error: (err: unknown) => {
@@ -176,22 +203,16 @@ export class CinemaJourneyComponent implements OnInit {
 
   get moduleTitle(): string {
     switch (this.activeModule) {
-      case 'sessions':
-        return 'Sessions';
-      case 'halls':
-        return 'Halls';
-      case 'reservations':
-        return 'Reservations';
-      default:
-        return 'Cinema';
+      case 'sessions': return 'Sessions';
+      case 'halls': return 'Halls';
+      case 'reservations': return 'Reservations';
+      default: return 'Cinema';
     }
   }
 
   get filteredSeances(): SeanceResponseDTO[] {
     const query = this.sessionSearch.trim().toLowerCase();
-    if (!query) {
-      return this.seances;
-    }
+    if (!query) return this.seances;
     return this.seances.filter((item) => {
       const haystack = `${item.nomCinema} ${item.numeroSalle} ${item.dateSeance} ${item.heureSeance}`.toLowerCase();
       return haystack.includes(query);
@@ -203,19 +224,13 @@ export class CinemaJourneyComponent implements OnInit {
   }
 
   get averageSessionRating(): string {
-    if (this.filteredSeances.length === 0) {
-      return '0.0';
-    }
+    if (this.filteredSeances.length === 0) return '0.0';
     const total = this.filteredSeances.reduce((acc, _, i) => acc + Number(this.sessionRating(i)), 0);
     return (total / this.filteredSeances.length).toFixed(1);
   }
 
   sessionStatus(index: number): string {
-    const bucket = index % 3;
-    if (bucket === 1) {
-      return 'Most Seats Taken';
-    }
-    return 'Available';
+    return index % 3 === 1 ? 'Most Seats Taken' : 'Available';
   }
 
   sessionWatching(index: number): number {
@@ -223,8 +238,7 @@ export class CinemaJourneyComponent implements OnInit {
   }
 
   sessionRating(index: number): string {
-    const rating = 0.4 + (((index * 19) % 47) / 10);
-    return rating.toFixed(3);
+    return (0.4 + (((index * 19) % 47) / 10)).toFixed(3);
   }
 
   hallOccupancy(index: number): number {
@@ -239,18 +253,13 @@ export class CinemaJourneyComponent implements OnInit {
     this.selectedSeanceId = seance.id;
     this.selectedCinemaId = this.cinemas.find((c) => c.nom === seance.nomCinema)?.id ?? this.selectedCinemaId;
     this.activeModule = 'reservations';
-    this.reservationMessage = `Selected session ${seance.dateSeance} ${seance.heureSeance}. You can now complete your reservation.`;
-    if (this.currentUserId.trim()) {
-      this.loadUserReservations();
-    }
+    this.reservationMessage = `Selected session ${seance.dateSeance} ${seance.heureSeance}.${this.activePromo ? ' 🎁 Promo ' + this.activePromo.code + ' applied!' : ''}`;
+    if (this.currentUserId.trim()) this.loadUserReservations();
   }
 
   private loadSeancesForSelection(): void {
     const cinemaId = this.selectedCinemaId.trim();
-    const request$ = cinemaId
-      ? this.cinemaApi.getSeancesByCinema(cinemaId)
-      : this.cinemaApi.getSeances();
-
+    const request$ = cinemaId ? this.cinemaApi.getSeancesByCinema(cinemaId) : this.cinemaApi.getSeances();
     request$.subscribe({
       next: (seances) => {
         this.seances = seances;
@@ -268,51 +277,12 @@ export class CinemaJourneyComponent implements OnInit {
 
   private loadActiveModule(): void {
     switch (this.activeModule) {
-      case 'halls':
-        this.loadHalls();
-        break;
-      case 'reservations':
-        this.loadReservationsModule();
-        break;
+      case 'halls': this.loadHalls(); break;
+      case 'reservations': this.loadReservationsModule(); break;
       case 'sessions':
       case 'cinema':
-      default:
-        this.refreshCinemaData();
-        break;
+      default: this.refreshCinemaData(); break;
     }
-  }
-
-  private resolveCurrentUserId(): string {
-    const currentUser = this.authService.getCurrentUser();
-    if (currentUser?.userId) {
-      return currentUser.userId;
-    }
-
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        if (parsed?.userId) {
-          return String(parsed.userId);
-        }
-      } catch {
-        // Ignore malformed cache and continue with token fallback.
-      }
-    }
-
-    try {
-      const token = this.authService.getToken() || localStorage.getItem('authToken') || '';
-      if (token) {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload?.sub) {
-          return String(payload.sub);
-        }
-      }
-    } catch {
-      // No usable user id found.
-    }
-
-    return '';
   }
 
   private getErrorMessage(err: unknown, fallback: string): string {
@@ -322,5 +292,3 @@ export class CinemaJourneyComponent implements OnInit {
     return fallback;
   }
 }
-
-
