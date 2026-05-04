@@ -4,10 +4,10 @@ package com.example.contentmanagement.entity;
  * Niveaux de toxicité avec actions automatiques associées.
  */
 public enum ToxicityLevel {
-    SAFE(0, 20, "✅ Safe"),
-    WARNING(21, 40, "⚠️ Warning"),
-    HIDDEN(41, 70, "🔒 Hidden"),
-    DELETED(71, Integer.MAX_VALUE, "❌ Deleted");
+    SAFE(0, 5, "✅ Safe"),
+    WARNING(6, 25, "⚠️ Warning"),
+    HIDDEN(26, 45, "🔒 Hidden"),
+    DELETED(46, Integer.MAX_VALUE, "❌ Deleted");
 
     public final int minScore;
     public final int maxScore;
