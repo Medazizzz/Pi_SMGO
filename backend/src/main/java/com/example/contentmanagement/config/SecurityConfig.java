@@ -113,6 +113,8 @@ public class SecurityConfig {
                                 .requestMatchers("/watchparty/**").permitAll()
                                 .requestMatchers("/ws-watchparty/**").permitAll()
                                 .requestMatchers("/feedback/**").permitAll()
+                                .requestMatchers("/api/fidelity-discount/**").permitAll()
+
 
                                 .anyRequest().authenticated()
                 )
