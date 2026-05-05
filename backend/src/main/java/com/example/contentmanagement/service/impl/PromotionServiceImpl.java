@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import com.example.contentmanagement.service.EngagementService;
 import java.util.Calendar;
 import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
 
 @Service
@@ -20,6 +19,7 @@ import java.util.List;
 public class PromotionServiceImpl implements PromotionService {
 
     private final PromotionRepository promotionRepository;
+    private final EngagementService engagementService;
 
     @Override
     public PromotionResponseDTO createPromotion(PromotionRequestDTO dto) {
@@ -57,12 +57,10 @@ public class PromotionServiceImpl implements PromotionService {
     public PromotionResponseDTO updatePromotion(String id, PromotionRequestDTO dto) {
         Promotion existing = promotionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Promotion not found with id: " + id));
-
         existing.setCode(dto.getCode());
         existing.setPourcentageReduction(dto.getPourcentageReduction());
         existing.setDateExpiration(dto.getDateExpiration());
         existing.setClientId(dto.getClientId());
-
         return toResponse(promotionRepository.save(existing));
     }
 
@@ -90,7 +88,6 @@ public class PromotionServiceImpl implements PromotionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Promotion code not found: " + code));
         return toResponse(promotion);
     }
-    private final EngagementService engagementService;
 
     @Override
     public EngagementService.EngagementResult getEngagementScore(String userId) {
@@ -103,42 +100,32 @@ public class PromotionServiceImpl implements PromotionService {
         EngagementService.EngagementResult result = engagementService.calculateEngagement(userId);
         EngagementService.EngagementLevel level = result.level();
 
-        // ✅ Étape 2 — Vérifier si une promo personnalisée existe déjà
-        String promoCode = level.name() + "_" + userId.substring(0, 8).toUpperCase();
-
+        // ✅ Étape 2 — Désactiver TOUTES les anciennes promos de cet utilisateur
         List<Promotion> existing = promotionRepository.findByClientId(userId);
         for (Promotion p : existing) {
-            if (p.getCode().startsWith(level.name() + "_")) {
-                if (p.isActive()) {
-                    // Promo du même niveau existe → retourner l'existante
-                    return toResponse(p);
-                }
-            }
+            p.setActive(false);
+            promotionRepository.save(p);
         }
 
-        // ✅ Étape 3 — Désactiver les anciennes promos personnalisées
-        for (Promotion p : existing) {
-            if (p.getCode().contains("_" + userId.substring(0, 8).toUpperCase())) {
-                p.setActive(false);
-                promotionRepository.save(p);
-            }
-        }
+        // ✅ Étape 3 — Créer un code unique avec timestamp
+        String uniqueSuffix = userId.substring(Math.max(0, userId.length() - 8)).toUpperCase();
+        String timestamp = String.valueOf(System.currentTimeMillis() % 100000);
+        String promoCode = level.name() + "" + uniqueSuffix + "" + timestamp;
 
-        // ✅ Étape 4 — Créer la nouvelle promo personnalisée
+        // ✅ Étape 4 — Créer la nouvelle promo
         Promotion promo = new Promotion();
         promo.setCode(promoCode);
         promo.setPourcentageReduction(level.discountPercent);
         promo.setClientId(userId);
         promo.setActive(true);
 
-        // Valable 30 jours
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_MONTH, 30);
         promo.setDateExpiration(cal.getTime());
 
         Promotion saved = promotionRepository.save(promo);
 
-        log.info("✅ Promo personnalisée générée — User: {} | Level: {} | Code: {} | Discount: {}%",
+        log.info("✅ Promo régénérée — User: {} | Level: {} | Code: {} | Discount: {}%",
                 result.username(), level.label, promoCode, level.discountPercent);
 
         return toResponse(saved);

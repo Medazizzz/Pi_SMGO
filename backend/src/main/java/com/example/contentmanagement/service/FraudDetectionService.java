@@ -2,7 +2,7 @@ package com.example.contentmanagement.service;
 
 import com.example.contentmanagement.entity.Promotion;
 import com.example.contentmanagement.repository.PromotionRepository;
-import com.example.contentmanagement.repository.ToxicityLogRepository;
+import com.example.contentmanagement.repository.ReservationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -12,11 +12,6 @@ import org.springframework.web.client.RestTemplate;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Service de détection de fraude sur les promotions.
- * Appelle l'API FastAPI (Isolation Forest) pour analyser
- * le comportement d'un utilisateur sur une promo.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -25,12 +20,10 @@ public class FraudDetectionService {
     private final PromotionRepository promotionRepository;
     private final EngagementService engagementService;
     private final RestTemplate restTemplate;
+    private final ReservationRepository reservationRepository;
 
     private static final String ML_API_URL = "http://localhost:8000/predict";
 
-    /**
-     * Analyse si l'utilisation d'une promo est frauduleuse.
-     */
     public Map<String, Object> checkFraud(String promoId, String userId) {
         Promotion promo = promotionRepository.findById(promoId)
                 .orElseThrow(() -> new RuntimeException("Promo not found"));
@@ -40,17 +33,22 @@ public class FraudDetectionService {
 
         int levelMismatch = calculateLevelMismatch(promo.getCode(), engagement.totalScore());
 
-        // ✅ Valeurs réalistes
+        // ✅ Compte réel des promos générées par cet utilisateur
+        long totalPromos = promotionRepository.findByClientId(userId).size();
+
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("userId", userId);
         requestBody.put("promoLevel", extractLevel(promo.getCode()));
-        requestBody.put("usageCount", 1.0);           // ✅ première utilisation
-        requestBody.put("timeBetweenUsages", 600.0);  // ✅ 10 heures
+        // ✅ Compte réel des réservations de cet utilisateur
+        long totalReservations = reservationRepository.countByUserId(userId);
+        requestBody.put("usageCount", (double) totalReservations);
+        requestBody.put("timeBetweenUsages", 600.0);
         requestBody.put("engagementScore", (double) engagement.totalScore());
         requestBody.put("levelMismatch", levelMismatch);
-        requestBody.put("regenerationCount", 1.0);    // ✅ première génération
+        // ✅ Utilise le nombre réel de promos → fraude si > 4
+        requestBody.put("regenerationCount", (double) totalPromos);
         requestBody.put("hourOfDay", java.time.LocalTime.now().getHour());
-        requestBody.put("accountAgeDays", 60.0);      // ✅ 2 mois
+        requestBody.put("accountAgeDays", 60.0);
         requestBody.put("totalReservations", 0);
 
         try {
@@ -62,6 +60,8 @@ public class FraudDetectionService {
                     ML_API_URL, entity, Map.class);
 
             Map<String, Object> result = response.getBody();
+            log.info("🤖 Fraud check — User: {} | Promos: {} | Alert: {}",
+                    userId, totalPromos, result.get("alertLevel"));
             applyAction(promo, result);
             return result;
 
