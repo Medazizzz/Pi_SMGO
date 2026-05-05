@@ -298,7 +298,7 @@ export class LoginComponent implements OnInit {
   
   // USER : affiche page mode
   else {
-    this.router.navigate(['/mode']);
+    this.router.navigate(['/auth/select-profile']);
   }
 },
       error: (error) => {

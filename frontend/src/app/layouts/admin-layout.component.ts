@@ -147,6 +147,8 @@ export class AdminLayoutComponent {
 
   readonly adminTabs: TabItem[] = [
     { id: 'advanced', label: 'Advanced', icon: FileText, route: '/admin/advanced' },
+      { id: 'ai-discovery', label: 'AI Discovery', icon: FileText, route: '/admin/ai-discovery' },
+
     { id: 'content', label: 'Content', icon: FileText, route: '/admin/content' },
     { id: 'categories', label: 'Categories', icon: Tag, route: '/admin/categories' },
     { id: 'cinema', label: 'Cinema', icon: Ticket, route: '/admin/cinema' },

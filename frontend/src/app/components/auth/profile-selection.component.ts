@@ -92,11 +92,11 @@ export class ProfileSelectionComponent implements OnInit {
         this.router.navigate(['/user/home']);
       });
     } else {
-      console.log('Navigating to home...');
-      this.router.navigate(['/user/home']).catch(err => {
-        console.error('Navigation error:', err);
-      });
-    }
+  console.log('Navigating to mode page...');
+  this.router.navigate(['/mode']).catch(err => {
+    console.error('Navigation error:', err);
+  });
+}
   }
 
   /**
@@ -175,4 +175,8 @@ export class ProfileSelectionComponent implements OnInit {
     };
     return labels[type] || type;
   }
+  goToKids(): void {
+  this.closeAddProfileModal();
+  this.router.navigate(['/kids']);
+}
 }

@@ -11,6 +11,7 @@ import java.util.Optional;
 
 public interface ReservationRepository extends MongoRepository<Reservation, String> {
     List<Reservation> findByUserId(String userId);
+    Long countByUserId(String userId);
     List<Reservation> findBySeanceId(String seanceId);
     Optional<Reservation> findBySeanceIdAndNumeroPlace(String seanceId, String numeroPlace);
     List<Reservation> findByPaymentSessionId(String paymentSessionId);

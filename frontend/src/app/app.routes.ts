@@ -25,6 +25,18 @@ export const routes: Routes = [
     loadComponent: () => import('./components/auth/forgot-password.component').then(m => m.ForgotPasswordComponent),
     data: { title: 'Forgot Password' }
   },
+  {
+  path: 'auth/select-profile',
+  loadComponent: () => import('./components/auth/profile-selection.component').then(m => m.ProfileSelectionComponent),
+  data: { title: 'Select Profile' }
+},
+{
+    path: 'kids',
+    loadComponent: () => import('./components/kids/kids-zone.component').then(m => m.KidsZoneComponent),
+    canActivate: [userGuard],
+    data: { title: 'Kids Zone' }
+  },
+  
 
   // Admin panel
   {
@@ -47,6 +59,11 @@ export const routes: Routes = [
         loadComponent: () => import('./components/admin-advanced/admin-advanced.component').then(m => m.AdminAdvancedComponent),
         data: { title: 'Advanced' }
       },
+      {
+  path: 'ai-discovery',
+  loadComponent: () => import('./components/ai-discovery/ai-discovery.component').then(m => m.AiDiscoveryComponent),
+  data: { title: 'AI Discovery' }
+},
       {
         path: 'content',
         loadComponent: () => import('./components/admin-content/admin-content.component').then(m => m.AdminContentComponent),
@@ -192,6 +209,11 @@ export const routes: Routes = [
     loadComponent: () => import('./components/watchparty-session/watchparty-session.component').then(m => m.WatchpartySessionComponent),
     data: { title: 'WatchParty Session' }
   },
+  {
+  path: 'kids',
+  loadComponent: () => import('./components/kids/kids.component').then(m => m.KidsComponent),
+  data: { title: 'Kids' }
+},
   {
   path: 'mode',
   loadComponent: () =>

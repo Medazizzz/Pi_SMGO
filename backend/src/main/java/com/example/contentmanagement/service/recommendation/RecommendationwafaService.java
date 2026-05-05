@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RecommendationService {
+public class RecommendationwafaService {
 
     private final UserRepository userRepo;
     private final UserBehaviorAnalyzer analyzer;

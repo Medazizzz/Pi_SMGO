@@ -123,7 +123,7 @@
         <div class="profile-type-options">
           <button
             *ngFor="let type of ['ADULT', 'KIDS', 'TEEN']"
-            (click)="newProfileType.set(type)"
+            (click)="type === 'KIDS' ? goToKids() : newProfileType.set(type)"
             [class.active]="newProfileType() === type"
             class="type-option"
           >

@@ -2,7 +2,7 @@ package com.example.contentmanagement.service.scheduler;
 
 import com.example.contentmanagement.entity.User;
 import com.example.contentmanagement.repository.UserRepository;
-import com.example.contentmanagement.service.recommendation.RecommendationService;
+import com.example.contentmanagement.service.recommendation.RecommendationwafaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,7 +16,7 @@ import java.util.List;
 public class RecommendationScheduler {
 
     private final UserRepository userRepo;
-    private final RecommendationService recommendationService;
+    private final RecommendationwafaService recommendationService;
 
     // ── Recalcul chaque nuit à 02h00 ──────────────────
     @Scheduled(cron = "0 0 2 * * *")
