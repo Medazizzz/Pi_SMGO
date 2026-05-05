@@ -31,6 +31,12 @@ export class PaymentComponent implements OnInit {
   maskedCard   = '';
   checks:  any = null;
 
+  // 🆕 Remise fidélité
+  discountApplied = false;
+  originalPrice   = 0;
+  discountAmount  = 0;
+  finalPrice      = 0;
+
   constructor(
     private router:      Router,
     private http:        HttpClient,
@@ -44,6 +50,17 @@ export class PaymentComponent implements OnInit {
     } else {
       this.router.navigate(['/user/abonnements']);
     }
+
+    // 🆕 Lire remise fidélité depuis localStorage
+    this.discountApplied = localStorage.getItem('discountApplied') === 'true';
+    if (this.discountApplied) {
+      this.originalPrice  = parseFloat(localStorage.getItem('originalPrice')  || '0');
+      this.discountAmount = parseFloat(localStorage.getItem('discountAmount') || '0');
+      this.finalPrice     = parseFloat(localStorage.getItem('discountedPrice')|| '0');
+    } else {
+      // Pas de remise → prix normal de l'abonnement
+      this.finalPrice = this.abonnement?.prix ?? 0;
+    }
   }
 
   formatCardNumber(): void {
@@ -51,17 +68,16 @@ export class PaymentComponent implements OnInit {
     this.cardNumber = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
     this.checks     = null;
     this.error      = '';
-    // Détecter le type en temps réel
     this.detectCardTypeRealtime(digits);
   }
 
   detectCardTypeRealtime(digits: string): void {
-    if (digits.startsWith('4'))      this.cardType = 'VISA';
-    else if (/^5[1-5]/.test(digits)) this.cardType = 'MASTERCARD';
-    else if (/^2[2-7]/.test(digits)) this.cardType = 'MASTERCARD';
-    else if (/^3[47]/.test(digits))  this.cardType = 'AMEX';
-    else if (/^6(011|5)/.test(digits)) this.cardType = 'DISCOVER';
-    else                             this.cardType = '';
+    if (digits.startsWith('4'))        this.cardType = 'VISA';
+    else if (/^5[1-5]/.test(digits))  this.cardType = 'MASTERCARD';
+    else if (/^2[2-7]/.test(digits))  this.cardType = 'MASTERCARD';
+    else if (/^3[47]/.test(digits))   this.cardType = 'AMEX';
+    else if (/^6(011|5)/.test(digits))this.cardType = 'DISCOVER';
+    else                              this.cardType = '';
   }
 
   formatExpiryDate(): void {
@@ -103,6 +119,14 @@ export class PaymentComponent implements OnInit {
     }
   }
 
+  // 🆕 Nettoyer localStorage après paiement réussi
+  private clearDiscountStorage(): void {
+    localStorage.removeItem('discountApplied');
+    localStorage.removeItem('originalPrice');
+    localStorage.removeItem('discountAmount');
+    localStorage.removeItem('discountedPrice');
+  }
+
   processPayment(): void {
     if (!this.isFormValid() || !this.abonnement) return;
 
@@ -112,11 +136,12 @@ export class PaymentComponent implements OnInit {
 
     const userId = this.authService.getCurrentUserId();
 
+    // 🆕 Utiliser finalPrice (réduit ou normal) comme montant envoyé au backend
     this.http.post<any>('http://localhost:8090/api/payments/process', {
       userId:         userId,
       abonnementId:   this.abonnement.id,
       abonnementType: this.abonnement.type,
-      amount:         this.abonnement.prix,
+      amount:         this.finalPrice,
       cardNumber:     this.cardNumber.replace(/\s/g, ''),
       cardHolder:     this.cardHolder,
       expiryDate:     this.expiryDate,
@@ -131,6 +156,7 @@ export class PaymentComponent implements OnInit {
         if (response.success) {
           this.success = true;
           localStorage.removeItem('selectedAbonnement');
+          this.clearDiscountStorage(); // 🆕 Nettoyage remise
           setTimeout(() => {
             this.router.navigate(['/user/fidelities']);
           }, 3000);

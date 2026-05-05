@@ -1,0 +1,138 @@
+<div class="discount-container">
+
+  <!-- HEADER -->
+  <div class="discount-header">
+    <h1>🎁 Utiliser mes points fidélité</h1>
+    <p>Convertissez vos points en remise sur votre abonnement</p>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement...</p>
+  </div>
+
+  <!-- CONTENU -->
+  <div class="discount-content" *ngIf="!loading && info">
+
+    <!-- CARTE POINTS DISPONIBLES -->
+    <div class="points-card">
+      <div class="points-icon">⭐</div>
+      <div class="points-info">
+        <span class="points-label">Points disponibles</span>
+        <span class="points-value">{{ info.currentFidelityScore | number:'1.0-0' }} pts</span>
+      </div>
+      <div class="conversion-info">
+        100 pts = 1 DT de remise
+      </div>
+    </div>
+
+    <!-- CARTE ABONNEMENT -->
+    <div class="plan-card">
+      <div class="plan-top">
+        <span class="plan-badge">{{ info.planType }}</span>
+        <span class="plan-price">{{ info.originalPrice | number:'1.2-2' }} DT</span>
+      </div>
+      <div class="plan-limit">
+        Remise max : {{ info.maxDiscountAmount | number:'1.2-2' }} DT
+        ({{ info.maxUsablePoints | number:'1.0-0' }} pts)
+      </div>
+    </div>
+
+    <!-- SLIDER -->
+    <div class="slider-section">
+      <div class="slider-header">
+        <label>Points à utiliser</label>
+        <span class="slider-value">{{ pointsToUse | number:'1.0-0' }} pts</span>
+      </div>
+
+      <input
+        type="range"
+        class="points-slider"
+        [min]="0"
+        [max]="sliderMax"
+        [step]="100"
+        [(ngModel)]="pointsToUse"
+        (input)="onSliderChange()"/>
+
+      <div class="slider-labels">
+        <span>0 pts</span>
+        <span>{{ sliderMax | number:'1.0-0' }} pts max</span>
+      </div>
+    </div>
+
+    <!-- SIMULATION EN TEMPS RÉEL -->
+    <div class="simulation-card" *ngIf="simulation && pointsToUse >= 100">
+      <div class="sim-row">
+        <span>Prix original</span>
+        <span class="price-original">{{ simulation.originalPrice | number:'1.2-2' }} DT</span>
+      </div>
+      <div class="sim-row discount-row">
+        <span>🎁 Remise ({{ discountPercent }}%)</span>
+        <span class="price-discount">- {{ simulation.discountAmount | number:'1.2-2' }} DT</span>
+      </div>
+      <div class="sim-divider"></div>
+      <div class="sim-row final-row">
+        <span>Prix final</span>
+        <span class="price-final">{{ simulation.finalPrice | number:'1.2-2' }} DT</span>
+      </div>
+      <div class="sim-remaining">
+        Points restants après utilisation :
+        <strong>{{ simulation.remainingPoints | number:'1.0-0' }} pts</strong>
+      </div>
+    </div>
+
+    <!-- MESSAGE SI PAS ASSEZ DE POINTS -->
+    <div class="info-message" *ngIf="pointsToUse < 100 && pointsToUse > 0">
+      ⚠️ Minimum 100 points requis
+    </div>
+
+    <!-- BOUTON APPLIQUER -->
+    <button
+      class="btn-apply"
+      [disabled]="!simulation || pointsToUse < 100 || applying || (result && result.applied)"
+      (click)="applyDiscount()">
+      <span *ngIf="!applying">
+        ✅ Appliquer la remise de {{ simulation?.discountAmount | number:'1.2-2' }} DT
+      </span>
+      <span *ngIf="applying">Traitement...</span>
+    </button>
+
+    <!-- SUCCÈS + BOUTON PAYER -->
+    <div class="success-card" *ngIf="result && result.applied">
+      <div class="success-icon">🎉</div>
+      <div class="success-text">{{ result.message }}</div>
+      <div class="success-details">
+        <span>Points utilisés : <strong>{{ result.pointsToUse }}</strong></span>
+        <span>Nouveau solde : <strong>{{ result.remainingPoints }} pts</strong></span>
+      </div>
+
+      <!-- Résumé prix -->
+      <div class="price-summary">
+        <div class="price-row">
+          <span>Prix original</span>
+          <span class="crossed">{{ result.originalPrice | number:'1.2-2' }} DT</span>
+        </div>
+        <div class="price-row green">
+          <span>🎁 Remise</span>
+          <span>- {{ result.discountAmount | number:'1.2-2' }} DT</span>
+        </div>
+        <div class="price-row final">
+          <span>💳 Prix final</span>
+          <span>{{ result.finalPrice | number:'1.2-2' }} DT</span>
+        </div>
+      </div>
+
+      <!-- ✅ Bouton payer -->
+      <button class="btn-pay" (click)="payWithDiscount()">
+        💳 Payer {{ result.finalPrice | number:'1.2-2' }} DT maintenant
+      </button>
+    </div>
+
+    <!-- ERREUR -->
+    <div class="error-card" *ngIf="errorMessage">
+      ❌ {{ errorMessage }}
+    </div>
+
+  </div>
+</div>

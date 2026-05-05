@@ -6,9 +6,7 @@ import { SplashComponent } from './components/splash-screen/splash-screen';
 
 export const routes: Routes = [
 
-  // Splash Screen
   { path: '', component: SplashComponent },
-
 
   {
     path: 'auth/login',
@@ -190,11 +188,16 @@ export const routes: Routes = [
         loadComponent: () => import('./components/payment/payment').then(m => m.PaymentComponent),
         data: { title: 'Payment' }
       },
-      // ✅ Renewal — dans les children user (guard + layout appliqués)
       {
         path: 'renewal',
         loadComponent: () => import('./user/renewal-status/renewal-status.component').then(m => m.RenewalStatusComponent),
         data: { title: 'Renouvellement' }
+      },
+      // ✅ fidelity-discount dans les children user
+      {
+        path: 'fidelity-discount/:abonnementId',
+        loadComponent: () => import('./user/fidelity-discount/fidelity-discount.component').then(m => m.FidelityDiscountComponent),
+        data: { title: 'Remise Fidélité' }
       },
       {
         path: '',
@@ -210,6 +213,7 @@ export const routes: Routes = [
     data: { title: 'WatchParty Session' }
   },
   {
+
   path: 'kids',
   loadComponent: () => import('./components/kids/kids.component').then(m => m.KidsComponent),
   data: { title: 'Kids' }
@@ -218,15 +222,13 @@ export const routes: Routes = [
   path: 'mode',
   loadComponent: () =>
     import('./pages/mode/mode').then(m => m.ModeComponent)
+
+    path: 'mode',
+    loadComponent: () => import('./pages/mode/mode').then(m => m.ModeComponent)
+
   },
   {
     path: '**',
     redirectTo: '/auth/login'
   }
-
-
 ];
-
-
-
-

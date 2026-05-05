@@ -123,12 +123,15 @@
     <p class="text-gray-400 text-lg">Choose the plan that fits you</p>
   </div>
 
-  <div *ngIf="errorMessage" class="px-4 py-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-400 text-center">
+  <div *ngIf="errorMessage"
+       class="px-4 py-3 bg-red-500/20 border border-red-500/40
+              rounded-lg text-red-400 text-center">
     {{ errorMessage }}
   </div>
 
   <div *ngIf="loading" class="flex justify-center py-16">
-    <div class="w-10 h-10 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin"></div>
+    <div class="w-10 h-10 border-2 border-[#8B5CF6]
+                border-t-transparent rounded-full animate-spin"></div>
   </div>
 
   <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -138,15 +141,21 @@
           ? 'border-yellow-500 hover:shadow-yellow-500/20'
           : 'border-[#8B5CF6]/40 hover:border-[#8B5CF6] hover:shadow-[#8B5CF6]/20')">
 
+      <!-- Badge Popular -->
       <div *ngIf="isPremium(a)"
-        class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-yellow-500 text-black text-xs font-bold rounded-full uppercase tracking-wider">
+        class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1
+               bg-yellow-500 text-black text-xs font-bold
+               rounded-full uppercase tracking-wider">
         Popular
       </div>
 
+      <!-- Header plan -->
       <div class="flex items-center justify-between mb-6">
         <div>
           <div [class]="'inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border ' +
-            (isPremium(a) ? 'border-yellow-500/50 text-yellow-400 bg-yellow-500/10' : 'border-[#8B5CF6]/50 text-[#8B5CF6] bg-[#8B5CF6]/10')">
+            (isPremium(a)
+              ? 'border-yellow-500/50 text-yellow-400 bg-yellow-500/10'
+              : 'border-[#8B5CF6]/50 text-[#8B5CF6] bg-[#8B5CF6]/10')">
             <span *ngIf="isPremium(a)" class="w-3.5 h-3.5"></span>
             <span *ngIf="!isPremium(a)" class="w-3.5 h-3.5"></span>
             {{ a.type }}
@@ -157,19 +166,26 @@
         </div>
       </div>
 
+      <!-- Prix -->
       <div class="mb-4">
         <div class="flex items-baseline gap-1">
-          <span class="text-5xl font-bold text-white">{{ a.prix | number:'1.2-2' }}</span>
+          <span class="text-5xl font-bold text-white">
+            {{ a.prix | number:'1.2-2' }}
+          </span>
           <span class="text-gray-400 text-lg">USD/month</span>
         </div>
       </div>
 
+      <!-- Description -->
       <p class="text-gray-400 leading-relaxed mb-6">{{ a.description }}</p>
 
+      <!-- Divider -->
       <div [class]="'h-px mb-6 ' + (isPremium(a) ? 'bg-yellow-500/20' : 'bg-[#8B5CF6]/20')"></div>
 
-      <!-- Boutons -->
+      <!-- ══ BOUTONS ══ -->
       <div class="flex flex-col gap-3">
+
+        <!-- Choisir le plan -->
         <button
           (click)="choosePlan(a)"
           [class]="'w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer ' +
@@ -179,19 +195,32 @@
           💳 Choose Plan
         </button>
 
-        <!-- ✅ Bouton Renewal Status -->
+        <!-- Renewal Status -->
         <button
           (click)="goToRenewal()"
-          class="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200
-                 border border-[#8B5CF6]/50 text-[#8B5CF6] hover:bg-[#8B5CF6]/10">
+          class="w-full py-3 rounded-xl font-semibold text-sm
+                 transition-all duration-200
+                 border border-[#8B5CF6]/50 text-[#8B5CF6]
+                 hover:bg-[#8B5CF6]/10">
           🔄 My Renewal Status
         </button>
-      </div>
 
+        <!-- ✅ Utiliser points fidélité -->
+        <button
+          (click)="goToDiscount(a.id)"
+          class="w-full py-3 rounded-xl font-semibold text-sm
+                 transition-all duration-200
+                 border border-green-500/50 text-green-400
+                 hover:bg-green-500/10">
+          🎁 Utiliser mes points fidélité
+        </button>
+
+      </div>
     </div>
   </div>
 
-  <div *ngIf="!loading && abonnements.length === 0" class="text-center py-16 text-gray-500">
+  <div *ngIf="!loading && abonnements.length === 0"
+       class="text-center py-16 text-gray-500">
     No plans available right now.
   </div>
 </div>

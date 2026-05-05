@@ -28,6 +28,7 @@ export class UserAbonnementComponent implements OnInit {
   errorRec        = '';
   showModal       = false;
 
+  // ✅ Un seul constructeur avec tous les services
   constructor(
     private service:               AbonnementService,
     private router:                Router,
@@ -54,9 +55,13 @@ export class UserAbonnementComponent implements OnInit {
     });
   }
 
-  // ✅ Navigation vers la page renewal
   goToRenewal(): void {
     this.router.navigate(['/user/renewal']);
+  }
+
+  // ✅ Navigation vers fidelity-discount
+  goToDiscount(abonnementId: string): void {
+    this.router.navigate(['/user/fidelity-discount', abonnementId]);
   }
 
   openRecommendation(): void {
